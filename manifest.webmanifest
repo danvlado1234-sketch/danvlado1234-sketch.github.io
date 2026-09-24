@@ -1,0 +1,53 @@
+{
+  "name": "שיעורי הרה\"ג רבי יצחק ולדומירסקי שליט\"א",
+  "short_name": "שיעורי הרב",
+  "description": "שיעורי משנה יומיים ושיעורי פרשת שבוע ומועדים מפי הרה\"ג רבי יצחק ולדומירסקי שליט\"א",
+  "lang": "he",
+  "dir": "rtl",
+  "id": "/",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "launch_handler": {
+    "client_mode": [
+      "navigate-existing",
+      "auto"
+    ]
+  },
+  "handle_links": "preferred",
+  "orientation": "portrait",
+  "background_color": "#1b120c",
+  "theme_color": "#1b120c",
+  "icons": [
+    {
+      "src": "/icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "שיעורי משנה",
+      "url": "/Shiurim-mishnhyot/?app=1",
+      "icons": [{ "src": "/icons/mishna-192.png", "sizes": "192x192", "type": "image/png" }]
+    },
+    {
+      "name": "פרשת שבוע ומועדים",
+      "url": "/shiurim-parasha/?app=1",
+      "icons": [{ "src": "/icons/parasha-192.png", "sizes": "192x192", "type": "image/png" }]
+    }
+  ]
+}
