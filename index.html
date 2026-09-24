@@ -2,94 +2,334 @@
 <html lang="he" dir="rtl">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>שיעורי הרה"ג רבי יצחק ולדומירסקי שליט"א</title>
-<meta name="description" content="שיעורי תורה מפי הרה&quot;ג רבי יצחק ולדומירסקי שליט&quot;א — שיעורי משנה יומיים לפי סדר, מסכת, פרק ומשנה.">
+<meta name="description" content="שיעורי תורה מפי הרה&quot;ג רבי יצחק ולדומירסקי שליט&quot;א — שיעורי משנה יומיים לפי סדר, מסכת, פרק ומשנה, ושיעורי פרשת שבוע ומועדים.">
+<meta property="og:type" content="website">
+<meta property="og:locale" content="he_IL">
 <meta property="og:site_name" content='שיעורי הרה"ג רבי יצחק ולדומירסקי שליט"א'>
 <meta property="og:title" content='שיעורי הרה"ג רבי יצחק ולדומירסקי שליט"א'>
-<meta property="og:description" content="שיעורי תורה — שיעורי משנה יומיים ועוד.">
+<meta property="og:description" content="שיעורי משנה יומיים ושיעורי פרשת שבוע ומועדים.">
 <meta property="og:url" content="https://danvlado1234-sketch.github.io/">
-<meta property="og:image" content="https://danvlado1234-sketch.github.io/library.jpg">
+<meta property="og:image" content="https://danvlado1234-sketch.github.io/og.jpg">
+<meta name="twitter:card" content="summary_large_image">
 <script type="application/ld+json">
 {
   "@context": "https://schema.org",
   "@type": "WebSite",
   "name": "שיעורי הרה\"ג רבי יצחק ולדומירסקי שליט\"א",
-  "alternateName": ["שיעורי הרב ולדומירסקי", "שיעורי משנה", "שיעורי משנה ולדומירסקי"],
+  "alternateName": ["שיעורי הרב ולדומירסקי", "שיעורי משנה", "שיעורי משנה ולדומירסקי", "שיעורי פרשת שבוע"],
   "url": "https://danvlado1234-sketch.github.io/"
 }
 </script>
+<!-- האפליקציה המאוחדת: manifest אחד לכל השיעורים (scope "/"), כולל המשניות והפרשות -->
+<link rel="manifest" href="/manifest.webmanifest">
+<meta name="theme-color" content="#1b120c">
+<link rel="icon" type="image/png" sizes="32x32" href="/icons/favicon-32.png">
+<link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="שיעורי הרב">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Frank+Ruhl+Libre:wght@500;700;900&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Frank+Ruhl+Libre:wght@500;700;900&family=Heebo:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
-  :root { --cream:#f3e7c8; --brass:#c9a24b; --wine:#6d2733; }
-  * { margin:0; padding:0; box-sizing:border-box; }
-  html, body { height:100%; }
-  body {
-    font-family:'Frank Ruhl Libre',serif; color:var(--cream);
-    background:#1d120b; overflow:hidden;
+  :root {
+    --bg:#1b120c; --text:#f3e7d6; --text2:#dccab4; --muted:#b39f86; --muted2:#8d7a64;
+    --gold:#e3c27a; --gold-ink:#2a1210; --line:rgba(227,194,122,.16);
+    --card:rgba(20,12,7,.55); --track:rgba(255,255,255,.12);
+    color-scheme:dark;
   }
+  * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+  [hidden] { display:none !important; }
+  html { background:var(--bg); }
+  body { font-family:'Heebo',system-ui,sans-serif; color:var(--text); background:var(--bg); min-height:100vh; min-height:100dvh; }
+  a { color:inherit; text-decoration:none; }
 
-  /* ---- הספרייה: תמונה עם תנועת מצלמה איטית ---- */
-  .bg {
-    position:fixed; inset:0; width:100%; height:100%;
-    object-fit:cover; object-position:65% center;
-    animation: kenburns 55s ease-in-out infinite alternate;
-  }
-  @keyframes kenburns {
-    from { transform:scale(1.02) translateX(0); }
-    to   { transform:scale(1.12) translateX(-2.5%); }
-  }
-  /* שכבת תאורה: מכהה את אזור הטקסט ושומרת על אור החלון */
-  .glow {
-    position:fixed; inset:0;
+  /* ---- רקע: עץ כהה (סיבים אופקיים רכים, תמונה אחת שנמתחת על כל המסך), אור חם מלמעלה ---- */
+  .wood { position:fixed; inset:0; z-index:0; pointer-events:none;
     background:
-      linear-gradient(200deg, rgba(0,0,0,.05) 30%, rgba(20,10,5,.55) 75%, rgba(15,8,4,.82) 100%),
-      radial-gradient(ellipse 70% 55% at 78% 88%, rgba(15,8,4,.45), transparent 65%);
+      radial-gradient(ellipse 85% 50% at 50% -8%, rgba(240,196,120,.22), transparent 70%),
+      radial-gradient(ellipse 130% 95% at 50% 35%, transparent 52%, rgba(0,0,0,.6) 100%),
+      url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='900' height='1600' preserveAspectRatio='none'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.005 0.075' numOctaves='3' seed='3'/%3E%3CfeColorMatrix values='0 0 0 0 .41 0 0 0 0 .265 0 0 0 0 .15 .65 0 0 0 -.24'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E") center / cover no-repeat,
+      linear-gradient(180deg, #2b1c12 0%, #1d130c 55%, #150e09 100%);
   }
 
-  /* ---- תוכן ---- */
-  main {
-    position:relative; z-index:2; height:100vh; height:100dvh;
-    display:flex; flex-direction:column;
-    padding:clamp(24px, 6vw, 72px);
-  }
-  .bsd { font-size:13px; color:var(--brass); text-shadow:0 1px 4px rgba(0,0,0,.9); }
-  h1 { margin-top:auto; line-height:1.22; max-width:14em;
-       text-shadow:0 2px 20px rgba(0,0,0,.95), 0 1px 3px rgba(0,0,0,.95); }
-  h1 .of { display:block; font-size:clamp(19px, 4.6vw, 26px); font-weight:500;
-           letter-spacing:.30em; color:var(--brass); margin-bottom:8px; }
-  h1 .name { display:block; font-size:clamp(31px, 7.4vw, 56px); font-weight:900; }
-  .menu { margin-top:clamp(26px, 5.5vh, 44px); margin-bottom:clamp(10px, 4vh, 40px);
-          display:flex; flex-direction:column; gap:14px; align-items:flex-start; }
-  .menu a {
-    display:block; min-width:min(300px, 100%); padding:15px 22px;
-    font-size:21px; font-weight:700; text-decoration:none; text-align:center;
-    color:var(--cream); background:rgba(84,28,38,.78);
-    border:1px solid var(--brass);
-    box-shadow:0 8px 26px rgba(0,0,0,.6), inset 0 0 0 3px rgba(0,0,0,.18);
-    backdrop-filter:blur(3px);
-  }
-  .menu a:hover { background:var(--wine); }
-  .menu a:focus-visible { outline:3px solid var(--brass); outline-offset:3px; }
+  .wrap { position:relative; z-index:1; max-width:640px; margin:0 auto;
+    padding:calc(18px + env(safe-area-inset-top)) 20px calc(28px + env(safe-area-inset-bottom)); }
+  .bsd { font-size:12.5px; color:var(--gold); opacity:.85; }
 
-  @media (prefers-reduced-motion: reduce) { .bg { animation:none; } }
+  /* ---- כותרת ---- */
+  .head { text-align:center; margin-top:clamp(18px, 5vh, 44px); }
+  .of { font-family:'Frank Ruhl Libre',serif; font-weight:500; font-size:clamp(17px, 4.4vw, 22px); letter-spacing:.34em; color:var(--gold); }
+  h1 { font-family:'Frank Ruhl Libre',serif; font-weight:900; font-size:clamp(29px, 8.2vw, 46px); line-height:1.16; margin-top:6px;
+       text-shadow:0 2px 18px rgba(0,0,0,.6); text-wrap:balance; }
+  .orn { display:block; margin:16px auto 0; width:170px; height:22px; color:var(--gold); opacity:.8; }
+
+  /* ---- שני הספרים ---- */
+  .books { display:grid; grid-template-columns:1fr 1fr; gap:clamp(14px, 4.5vw, 30px); margin-top:clamp(24px, 5vh, 40px); }
+  .bk { display:block; min-width:0; }
+  .book { position:relative; display:block; aspect-ratio:3/4; border-radius:10px 3px 3px 10px; overflow:hidden;
+    box-shadow:0 20px 34px -14px rgba(0,0,0,.85), 0 5px 12px rgba(0,0,0,.45), inset 0 0 0 1px rgba(255,255,255,.07);
+    transition:transform .2s ease, box-shadow .2s ease; }
+  .book.mishna { background:radial-gradient(circle at 50% 30%, #7c2b2d 0%, #581c20 48%, #2f0f12 100%); }
+  .book.parasha { background:radial-gradient(circle at 50% 30%, #2f6448 0%, #1f4a33 46%, #112a1c 100%); }
+  /* מרקם עור עדין */
+  .book::before { content:""; position:absolute; inset:0; opacity:.5; mix-blend-mode:overlay;
+    background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .5 0 0 0 0 .5 0 0 0 0 .5 0 0 0 .55 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); }
+  /* שדרת הספר - בצד ימין (ספר עברי) */
+  .book::after { content:""; position:absolute; top:0; bottom:0; right:0; width:18px;
+    background:linear-gradient(90deg, transparent, rgba(255,255,255,.09) 45%, rgba(0,0,0,.45)); }
+  .frame { position:absolute; inset:11px 25px 11px 11px; border:1.5px solid rgba(227,194,122,.72); border-radius:4px;
+    box-shadow:inset 0 0 0 4px transparent, inset 0 0 0 5px rgba(227,194,122,.3);
+    display:flex; flex-direction:column; align-items:center; justify-content:center; gap:4px; text-align:center; padding:10px 6px; }
+  .glyph { font-family:'Frank Ruhl Libre',serif; font-weight:900; font-size:clamp(58px, 18vw, 104px); line-height:1; color:var(--gold);
+    text-shadow:0 3px 12px rgba(0,0,0,.4); }
+  .bt { font-family:'Frank Ruhl Libre',serif; font-weight:700; font-size:clamp(15px, 4.3vw, 21px); line-height:1.22; color:#f1dfb2; }
+  .bdash { width:44%; height:10px; margin-top:6px; color:var(--gold); opacity:.75; }
+  .badge { position:absolute; top:9px; left:9px; z-index:2; background:var(--gold); color:var(--gold-ink);
+    font-weight:700; font-size:11.5px; line-height:1; border-radius:999px; padding:5px 9px; box-shadow:0 2px 6px rgba(0,0,0,.35); }
+  .bk:hover .book, .bk:focus-visible .book { transform:translateY(-4px); box-shadow:0 26px 38px -14px rgba(0,0,0,.9), 0 6px 14px rgba(0,0,0,.45), inset 0 0 0 1px rgba(255,255,255,.1); }
+  .bk:active .book { transform:translateY(-1px) scale(.99); }
+  .bk:focus-visible { outline:none; }
+  .bk:focus-visible .book { outline:3px solid var(--gold); outline-offset:3px; }
+  .bk-n { display:block; margin-top:12px; font-weight:700; font-size:15.5px; text-align:center; }
+  .bk-m { display:block; margin-top:3px; font-size:12.5px; color:var(--muted); text-align:center; line-height:1.45; min-height:2.9em; }
+  .bk-m b { display:block; color:var(--text2); font-weight:600; font-size:13.5px; }
+
+  /* ---- המשך האזנה ---- */
+  .sec-t { font-family:'Frank Ruhl Libre',serif; font-weight:700; font-size:19px; margin:34px 2px 10px; }
+  .rows { background:var(--card); border:1px solid var(--line); border-radius:14px; overflow:hidden; }
+  .row { display:flex; align-items:center; gap:12px; padding:12px 14px; }
+  .row + .row { border-top:1px solid var(--line); }
+  .row:hover { background:rgba(255,255,255,.04); }
+  .mc { width:44px; height:44px; border-radius:8px 3px 3px 8px; flex-shrink:0; display:flex; align-items:center; justify-content:center;
+    font-family:'Frank Ruhl Libre',serif; font-weight:900; font-size:25px; color:var(--gold); box-shadow:0 3px 8px rgba(0,0,0,.4); }
+  .mc.mishna { background:radial-gradient(circle at 50% 30%, #7c2b2d, #3a1215); }
+  .mc.parasha { background:radial-gradient(circle at 50% 30%, #2f6448, #15321f); }
+  .row-gr { flex:1; min-width:0; }
+  .row-t { font-weight:700; font-size:15px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .row-s { font-size:12.5px; color:var(--muted); margin-top:1px; }
+  .row-s .ok { color:#7fcf9f; }
+  .row-bar { height:3px; background:var(--track); border-radius:2px; margin-top:6px; max-width:200px; overflow:hidden; }
+  .row-bar i { display:block; height:100%; background:var(--gold); border-radius:2px; }
+  .chev { color:var(--muted2); flex-shrink:0; width:18px; height:18px; }
+
+  /* ---- התקנה ---- */
+  .install { display:flex; align-items:center; gap:12px; margin-top:26px; padding:12px 14px; border-radius:14px;
+    background:var(--card); border:1px solid var(--line); }
+  .install img { width:44px; height:44px; border-radius:10px; flex-shrink:0; }
+  .install-gr { flex:1; min-width:0; }
+  .install-t { font-weight:700; font-size:15px; }
+  .install-s { font-size:12.5px; color:var(--muted); margin-top:1px; line-height:1.45; }
+  .install-go { border:0; cursor:pointer; font:inherit; font-weight:700; font-size:14px; color:var(--gold-ink); background:var(--gold);
+    border-radius:999px; padding:8px 16px; flex-shrink:0; }
+  .install-x { border:0; background:none; cursor:pointer; color:var(--muted2); width:30px; height:30px; flex-shrink:0; display:flex; align-items:center; justify-content:center; border-radius:50%; }
+  .install-x:hover { background:rgba(255,255,255,.06); }
+
+  @media (min-width:700px) {
+    .books { max-width:560px; margin-left:auto; margin-right:auto; }
+    .bk-n { font-size:17px; }
+  }
+  @media (prefers-reduced-motion: reduce) { .book { transition:none; } }
 </style>
 </head>
 <body>
-<img class="bg" src="library.jpg" alt="" aria-hidden="true">
-<div class="glow" aria-hidden="true"></div>
-<main>
+<div class="wood" aria-hidden="true"></div>
+<main class="wrap">
   <p class="bsd">בס"ד</p>
-  <h1>
-    <span class="of">שיעורי</span>
-    <span class="name">הרה"ג רבי יצחק ולדומירסקי שליט"א</span>
-  </h1>
-  <nav class="menu">
-    <a href="https://danvlado1234-sketch.github.io/Shiurim-mishnhyot/">שיעורי משנה</a>
-    <a href="https://danvlado1234-sketch.github.io/shiurim-parasha/">שיעורי פרשת שבוע ומועדים</a>
+  <header class="head">
+    <div class="of">שיעורי</div>
+    <h1>הרה"ג רבי יצחק ולדומירסקי שליט"א</h1>
+    <svg class="orn" viewBox="0 0 170 22" aria-hidden="true"><path d="M2 11h64M104 11h64" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><path d="M85 2l9 9-9 9-9-9z" fill="currentColor"/><circle cx="70" cy="11" r="2" fill="currentColor"/><circle cx="100" cy="11" r="2" fill="currentColor"/></svg>
+  </header>
+
+  <nav class="books" aria-label="השיעורים">
+    <a class="bk" href="/Shiurim-mishnhyot/">
+      <span class="book mishna" aria-hidden="true"><span class="badge" id="newMishna" hidden></span>
+        <span class="frame"><span class="glyph">מ</span><span class="bt">שיעורי<br>משנה</span>
+        <svg class="bdash" viewBox="0 0 80 10"><path d="M0 5h32M48 5h32" stroke="currentColor" stroke-width="1.5"/><path d="M40 1l4 4-4 4-4-4z" fill="currentColor"/></svg></span></span>
+      <span class="bk-n">שיעורי משנה</span>
+      <span class="bk-m" id="metaMishna">לפי סדר, מסכת, פרק ומשנה</span>
+    </a>
+    <a class="bk" href="/shiurim-parasha/">
+      <span class="book parasha" aria-hidden="true"><span class="badge" id="newParasha" hidden></span>
+        <span class="frame"><span class="glyph">פ</span><span class="bt">פרשת שבוע<br>ומועדים</span>
+        <svg class="bdash" viewBox="0 0 80 10"><path d="M0 5h32M48 5h32" stroke="currentColor" stroke-width="1.5"/><path d="M40 1l4 4-4 4-4-4z" fill="currentColor"/></svg></span></span>
+      <span class="bk-n">פרשת שבוע ומועדים</span>
+      <span class="bk-m" id="metaParasha">פרשות, מועדים ועיון</span>
+    </a>
   </nav>
+
+  <section id="cont" hidden>
+    <h2 class="sec-t">להמשיך מאיפה שעצרת</h2>
+    <div class="rows" id="contRows"></div>
+  </section>
+
+  <div id="installSlot"></div>
 </main>
+
+<script>
+(function(){
+  'use strict';
+  const MISHNA = { base:'/Shiurim-mishnhyot/', key:'mishna:progress', name:'שיעורי משנה', cls:'mishna', glyph:'מ' };
+  const PARASHA = { base:'/shiurim-parasha/', key:'parasha:progress', name:'פרשת שבוע ומועדים', cls:'parasha', glyph:'פ' };
+  const ICON_CHEV = '<svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 18l-6-6 6-6"/></svg>';
+  const ICON_X = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>';
+  const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;' }[c]));
+
+  // ====== פתוח כאפליקציה? ======
+  // האפליקציה המאוחדת נפתחת כאן (start_url "/"). מסמנים את החלון, כדי שאתרי
+  // המשניות והפרשות יידעו שהם בתוכה (ולא באפליקציית הפרשות הישנה) - ויציגו
+  // קישור חזרה לכאן במקום הודעת "עברו לאפליקציה החדשה".
+  const isStandalone = matchMedia('(display-mode: standalone)').matches || navigator.standalone === true;
+  if (isStandalone){
+    try { sessionStorage.setItem('shiurim:app', '1'); localStorage.setItem('shiurim:unified', '1'); } catch (e) {}
+  }
+
+  // ====== שמות השיעורים מתוך נתיב הקובץ ======
+  const GEM = { 'א':1,'ב':2,'ג':3,'ד':4,'ה':5,'ו':6,'ז':7,'ח':8,'ט':9,'י':10,'כ':20,'ל':30,'מ':40,'נ':50,'ס':60,'ע':70,'פ':80,'צ':90,'ק':100,'ר':200,'ש':300,'ת':400,'ך':20,'ם':40,'ן':50,'ף':80,'ץ':90 };
+  function hebNum(t){
+    if (/^\d+$/.test(t)) return +t;
+    let s = 0; for (const c of t){ if (!(c in GEM)) return 0; s += GEM[c]; } return s;
+  }
+  function tokens(path){
+    return path.split('/').pop().replace(/\.(m4a|mp3)$/i, '').split('_').filter(Boolean);
+  }
+  // "ערכין/ערכין_פרק_ב_משנה_ב.m4a" -> { title:"ערכין · פרק ב · משנה ב", short:"ערכין ב ב" }
+  function mishnaInfo(path){
+    const t = tokens(path), iP = t.indexOf('פרק'), iM = t.indexOf('משנה');
+    if (iP > 0 && iM > iP + 1 && iM + 1 < t.length){
+      const m = t.slice(0, iP).join(' '), p = t[iP + 1];
+      const n = t.slice(iM + 1).join(' ').replace(/[,\s-]+/g, '-').replace(/^-+|-+$/g, '');
+      return { title:`${m} · פרק ${p} · משנה ${n}`, short:`${m} ${p} ${n}`, masechet:m, ord:hebNum(p) * 1000 + hebNum(n.split('-')[0]) };
+    }
+    const s = t.join(' ');
+    return { title:s, short:s, masechet:null, ord:0 };
+  }
+  // "בראשית/פרשת_נח_תשפז.m4a" -> "פרשת נח תשפז";  "מועדים/מועד_פסח_תשפו.m4a" -> "פסח תשפו"
+  function parashaInfo(path){
+    const t = tokens(path);
+    if (t[0] === 'מועד') t.shift();
+    const s = t.join(' ');
+    return { title:s, short:s, masechet:null, ord:0 };
+  }
+
+  // ====== תאריכים ======
+  function localDay(d){ return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; }
+  const TODAY = localDay(new Date());
+  const daysAgo = d => Math.round((Date.parse(TODAY) - Date.parse(d)) / 86400000);
+  function whenTxt(d){
+    const n = daysAgo(d);
+    if (n <= 0) return 'היום';
+    if (n === 1) return 'אתמול';
+    if (n < 7) return `לפני ${n} ימים`;
+    return new Date(d + 'T12:00:00').toLocaleDateString('he-IL', { day:'numeric', month:'long' });
+  }
+
+  // ====== מה עלה לאחרונה (uploads.json של כל אתר) ======
+  async function uploadsOf(site){
+    try {
+      const r = await fetch(site.base + 'uploads.json', { cache:'no-cache' });
+      if (!r.ok) return {};
+      return await r.json() || {};
+    } catch (e) { return {}; }
+  }
+  function summarize(uploads, info){
+    let best = null, bestD = '', fresh = 0;
+    for (const path in uploads){
+      const d = uploads[path];
+      if (typeof d !== 'string') continue;
+      if (daysAgo(d) < 7) fresh++;
+      if (d > bestD){ best = path; bestD = d; continue; }
+      if (d === bestD){
+        // אותו יום: במשניות - המשנה המאוחרת יותר באותה מסכת; אחרת - מה שנרשם אחרון
+        const a = info(path), b = info(best);
+        if (!a.masechet || a.masechet !== b.masechet || a.ord >= b.ord) best = path;
+      }
+    }
+    return best ? { info:info(best), date:bestD, fresh } : null;
+  }
+  function showSite(site, info, metaId, badgeId, label){
+    uploadsOf(site).then(u => {
+      const s = summarize(u, info);
+      if (!s) return;
+      document.getElementById(metaId).innerHTML = `${label} · ${whenTxt(s.date)}<b>${esc(s.info.short)}</b>`;
+      const b = document.getElementById(badgeId);
+      if (s.fresh > 0){ b.textContent = s.fresh === 1 ? 'חדש' : `${s.fresh} חדשים`; b.hidden = false; }
+    });
+  }
+  showSite(MISHNA, mishnaInfo, 'metaMishna', 'newMishna', 'השיעור עכשיו');
+  showSite(PARASHA, parashaInfo, 'metaParasha', 'newParasha', 'עלה לאחרונה');
+
+  // ====== להמשיך מאיפה שעצרת (ההתקדמות שנשמרה באתרים, באותו מכשיר) ======
+  function lastActivity(site){
+    let o = {};
+    try { o = JSON.parse(localStorage.getItem(site.key) || '{}') || {}; } catch (e) { o = {}; }
+    let best = null;
+    for (const path in o){
+      const v = o[path];
+      if (!v || !(v.t > 5 || v.done)) continue;
+      if (!best || (v.at || 0) > (best.v.at || 0)) best = { path, v };
+    }
+    return best;
+  }
+  function contRow(site, info, a){
+    const i = info(a.path), v = a.v;
+    const mins = x => Math.max(1, Math.round(x / 60));
+    const sub = v.done ? '<span class="ok">✓ נשמע</span>'
+      : v.d ? `נשמעו ${mins(v.t)} מתוך ${mins(v.d)} דק'` : 'התחלת לשמוע';
+    const pct = v.done ? 100 : v.d ? Math.min(100, v.t / v.d * 100) : 0;
+    return `<a class="row" href="${site.base}">
+      <span class="mc ${site.cls}" aria-hidden="true">${site.glyph}</span>
+      <span class="row-gr"><span class="row-t" style="display:block">${esc(i.title)}</span><span class="row-s" style="display:block">${site.name} · ${sub}</span>
+        ${v.done ? '' : `<span class="row-bar" style="display:block"><i style="width:${pct.toFixed(1)}%"></i></span>`}</span>
+      ${ICON_CHEV}</a>`;
+  }
+  const acts = [[MISHNA, mishnaInfo, lastActivity(MISHNA)], [PARASHA, parashaInfo, lastActivity(PARASHA)]]
+    .filter(x => x[2]).sort((a, b) => (b[2].v.at || 0) - (a[2].v.at || 0));
+  if (acts.length){
+    document.getElementById('contRows').innerHTML = acts.map(x => contRow(x[0], x[1], x[2])).join('');
+    document.getElementById('cont').hidden = false;
+  }
+
+  // ====== התקנת האפליקציה ======
+  // אנדרואיד/מחשב (כרום): כפתור התקנה (beforeinstallprompt). אייפון: הסבר קצר.
+  // ?install=1 (מהודעת המעבר באפליקציית הפרשות הישנה): מציגים תמיד, גם אם נסגר.
+  let installEvt = null;
+  const INSTALL_KEY = 'shiurim:installDismissed';
+  const wantInstall = new URLSearchParams(location.search).has('install');
+  const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+  function dismissed(){ try { return !!localStorage.getItem(INSTALL_KEY); } catch (e) { return false; } }
+  function installHtml(){
+    if (isStandalone) return '';
+    if (!wantInstall && (dismissed() || !(installEvt || isIOS))) return '';
+    const sub = installEvt ? 'פרשות ומשניות במקום אחד, ממסך הבית'
+      : isIOS ? 'בספארי: כפתור השיתוף ⎋ ואז "הוסף למסך הבית"'
+      : 'בתפריט ⋮ של כרום בוחרים "התקנת אפליקציה" (אם צריך - קודם "פתיחה ב-Chrome")';
+    return `<div class="install"><img src="/icons/icon-192.png" alt="">
+      <div class="install-gr"><div class="install-t">התקינו את האפליקציה</div><div class="install-s">${sub}</div></div>
+      ${installEvt ? '<button class="install-go" id="installGo">התקנה</button>' : ''}
+      <button class="install-x" id="installX" aria-label="סגור">${ICON_X}</button></div>`;
+  }
+  function refreshInstall(){ document.getElementById('installSlot').innerHTML = installHtml(); }
+  window.addEventListener('beforeinstallprompt', (e) => { e.preventDefault(); installEvt = e; refreshInstall(); });
+  window.addEventListener('appinstalled', () => { installEvt = null; refreshInstall(); });
+  document.getElementById('installSlot').addEventListener('click', (e) => {
+    if (e.target.closest('#installGo') && installEvt){
+      installEvt.prompt();
+      installEvt.userChoice.finally(() => { installEvt = null; refreshInstall(); });
+    }
+    if (e.target.closest('#installX')){
+      try { localStorage.setItem(INSTALL_KEY, '1'); } catch (err) {}
+      document.getElementById('installSlot').innerHTML = '';
+    }
+  });
+  refreshInstall();
+
+  if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js').catch(() => {});
+})();
+</script>
 </body>
 </html>
