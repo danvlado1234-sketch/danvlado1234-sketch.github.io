@@ -212,7 +212,7 @@
   function parashaInfo(path){
     const t = tokens(path);
     if (t[0] === 'מועד') t.shift();
-    const s = t.join(' ');
+    const s = t.join(' ').replace(/''/g, '"');   // '' בשם הקובץ = מרכאות (אסורות בשם קובץ)
     return { title:s, short:s, masechet:null, ord:0 };
   }
 
