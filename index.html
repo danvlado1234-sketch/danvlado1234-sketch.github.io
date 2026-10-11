@@ -332,23 +332,29 @@
   const ICON_SHARE = '<svg class="ios-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-label="שיתוף"><path d="M12 3v12M8 7l4-4 4 4"/><path d="M8 11H6a1 1 0 0 0-1 1v8a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-8a1 1 0 0 0-1-1h-2"/></svg>';
   const ICON_MORE = '<svg class="ios-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-label="עוד"><circle cx="12" cy="12" r="10"/><circle cx="7.5" cy="12" r="1.2" fill="currentColor" stroke="none"/><circle cx="12" cy="12" r="1.2" fill="currentColor" stroke="none"/><circle cx="16.5" cy="12" r="1.2" fill="currentColor" stroke="none"/></svg>';
   const ICON_ADD = '<svg class="ios-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-label="הוספה"><rect x="3" y="3" width="18" height="18" rx="4"/><path d="M12 8v8M8 12h8"/></svg>';
-  const ADD_TXT = `<b>"הוספה למסך הבית"</b> ${ICON_ADD} (אם לא רואים - גוללים למטה ברשימה)`;
+  // שמות הכפתורים כמו שהם בתפריטים של האייפון - לפי שפת המכשיר (בטלפון באנגלית
+  // התפריטים באנגלית, ו"הוספה למסך הבית" לא יופיע שם)
+  const HE = /^he|^iw/i.test(navigator.language || "");
+  const N = HE ? { share:"שיתוף", add:"הוספה למסך הבית", webapp:"פתיחה כאפליקציית רשת", addBtn:"הוסף" }
+    : { share:"Share", add:"Add to Home Screen", webapp:"Open as Web App", addBtn:"Add" };
+  const q = t => `<b dir="auto">"${t}"</b>`;
+  const ADD_TXT = `${q(N.add)} ${ICON_ADD} (אם לא רואים - גוללים למטה ברשימה, או "${HE ? "עוד" : "More"}")`;
   function iosGuide(){
     const where = isIPad ? 'בשורת הכתובת למעלה' : 'בתחתית המסך';
     let steps, lead = '', note = '', copy = false;
     if (iosBrowser === 'safari' && safariVer >= 26){
-      steps = [`לוחצים על ${ICON_MORE} (שלוש נקודות) ליד שורת הכתובת ${where}, ובוחרים <b>"שיתוף"</b> ${ICON_SHARE}`,
+      steps = [`לוחצים על ${ICON_MORE} (שלוש נקודות) ליד שורת הכתובת ${where}, ובוחרים ${q(N.share)} ${ICON_SHARE}`,
         `בוחרים ${ADD_TXT}`,
-        `מוודאים ש<b>"פתיחה כאפליקציית רשת"</b> דולק, ולוחצים <b>"הוסף"</b>`];
+        `מוודאים ש-${q(N.webapp)} דולק, ולוחצים ${q(N.addBtn)}`];
       note = 'אם כפתור השיתוף מופיע ישר בשורת הכתובת - אפשר ללחוץ עליו מיד.';
     } else if (iosBrowser === 'safari'){
       steps = [`לוחצים על כפתור השיתוף ${ICON_SHARE} ${where}`,
         `בוחרים ${ADD_TXT}`,
-        'לוחצים <b>"הוסף"</b> בפינה למעלה'];
+        `לוחצים ${q(N.addBtn)} בפינה למעלה`];
     } else if (iosBrowser === 'chrome'){
-      steps = [`לוחצים על כפתור השיתוף ${ICON_SHARE} בשורת הכתובת (או בתפריט ⋯ ← <b>"שיתוף"</b>)`,
+      steps = [`לוחצים על כפתור השיתוף ${ICON_SHARE} בשורת הכתובת (או בתפריט ⋯ ← ${q(N.share)})`,
         `בוחרים ${ADD_TXT}`,
-        'לוחצים <b>"הוסף"</b>'];
+        `לוחצים ${q(N.addBtn)}`];
       note = 'אם האפשרות לא מופיעה - פותחים את האתר בספארי ומתקינים משם.';
       copy = true;
     } else {
