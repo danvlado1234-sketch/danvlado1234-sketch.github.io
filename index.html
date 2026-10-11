@@ -128,6 +128,24 @@
   .install-x { border:0; background:none; cursor:pointer; color:var(--muted2); width:30px; height:30px; flex-shrink:0; display:flex; align-items:center; justify-content:center; border-radius:50%; }
   .install-x:hover { background:rgba(255,255,255,.06); }
 
+  /* ---- הדרכת התקנה באייפון (אין שם כפתור התקנה - מראים את הצעדים) ---- */
+  .ios-bg { position:fixed; inset:0; z-index:10; background:rgba(0,0,0,.55); display:flex; align-items:flex-end; justify-content:center; }
+  .ios-sh { width:100%; max-width:520px; background:#2a1c12; border:1px solid var(--line); border-bottom:0; border-radius:18px 18px 0 0;
+    padding:18px 20px calc(22px + env(safe-area-inset-bottom)); box-shadow:0 -10px 30px rgba(0,0,0,.5); max-height:90vh; overflow:auto; }
+  .ios-hd { display:flex; align-items:center; gap:12px; }
+  .ios-hd img { width:48px; height:48px; border-radius:11px; flex-shrink:0; }
+  .ios-t { flex:1; font-family:'Frank Ruhl Libre',serif; font-weight:700; font-size:20px; }
+  .ios-lead { margin-top:14px; font-size:15px; line-height:1.55; color:var(--text2); }
+  .ios-steps { list-style:none; margin-top:16px; display:grid; gap:12px; }
+  .ios-steps li { display:flex; gap:12px; align-items:flex-start; font-size:15px; line-height:1.55; color:var(--text2); }
+  .ios-steps li > i { font-style:normal; width:26px; height:26px; flex-shrink:0; border-radius:50%; background:var(--gold); color:var(--gold-ink);
+    font-weight:700; font-size:14px; display:flex; align-items:center; justify-content:center; margin-top:1px; }
+  .ios-steps b { color:var(--text); font-weight:700; }
+  .ios-ic { display:inline-block; vertical-align:-4px; width:20px; height:20px; color:var(--gold); margin:0 2px; }
+  .ios-note { margin-top:14px; font-size:13px; color:var(--muted); line-height:1.5; }
+  .ios-copy { display:block; width:100%; margin-top:14px; border:0; cursor:pointer; font:inherit; font-weight:700; font-size:15px;
+    color:var(--gold-ink); background:var(--gold); border-radius:999px; padding:11px 16px; }
+
   @media (min-width:700px) {
     .books { max-width:560px; margin-left:auto; margin-right:auto; }
     .bk-n { font-size:17px; }
@@ -295,31 +313,102 @@
   }
 
   // ====== התקנת האפליקציה ======
-  // אנדרואיד/מחשב (כרום): כפתור התקנה (beforeinstallprompt). אייפון: הסבר קצר.
-  // ?install=1 (מהודעת המעבר באפליקציית הפרשות הישנה): מציגים תמיד, גם אם נסגר.
+  // אנדרואיד/מחשב (כרום): כפתור התקנה (beforeinstallprompt) שמתקין ישירות.
+  // אייפון: אפל לא מאפשרת לאתר להתקין את עצמו (אין beforeinstallprompt בשום
+  // דפדפן באייפון) - ההתקנה היא רק "הוספה למסך הבית" מתפריט השיתוף. לכן גם שם
+  // יש כפתור "התקנה", והוא פותח הדרכה קצרה לפי הדפדפן (ספארי חדש/ישן, כרום,
+  // או דפדפן בתוך אפליקציה - וואטסאפ, ג'ימייל - שבו אי אפשר להתקין בכלל).
+  // ?install=1 (מאתרי המשניות והפרשות, ומהודעת המעבר באפליקציית הפרשות הישנה):
+  // מציגים תמיד, גם אם נסגר, ובאייפון פותחים את ההדרכה מיד.
   let installEvt = null;
   const INSTALL_KEY = 'shiurim:installDismissed';
   const wantInstall = new URLSearchParams(location.search).has('install');
-  const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+  const UA = navigator.userAgent;
+  const isIOS = /iphone|ipad|ipod/i.test(UA) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+  const isIPad = /ipad/i.test(UA) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+  const iosBrowser = !isIOS ? '' : /FBAN|FBAV|Instagram|Line\/|GSA\/|Twitter|LinkedInApp|Snapchat|TikTok|musical_ly|Telegram|WhatsApp/i.test(UA) ? 'inapp'
+    : /CriOS/.test(UA) ? 'chrome' : /FxiOS|EdgiOS|OPiOS|OPT\/|YaBrowser|DuckDuckGo/.test(UA) ? 'other' : 'safari';
+  const safariVer = +((UA.match(/Version\/(\d+)/) || [])[1] || 0);
+  const ICON_SHARE = '<svg class="ios-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-label="שיתוף"><path d="M12 3v12M8 7l4-4 4 4"/><path d="M8 11H6a1 1 0 0 0-1 1v8a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-8a1 1 0 0 0-1-1h-2"/></svg>';
+  const ICON_MORE = '<svg class="ios-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-label="עוד"><circle cx="12" cy="12" r="10"/><circle cx="7.5" cy="12" r="1.2" fill="currentColor" stroke="none"/><circle cx="12" cy="12" r="1.2" fill="currentColor" stroke="none"/><circle cx="16.5" cy="12" r="1.2" fill="currentColor" stroke="none"/></svg>';
+  const ICON_ADD = '<svg class="ios-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-label="הוספה"><rect x="3" y="3" width="18" height="18" rx="4"/><path d="M12 8v8M8 12h8"/></svg>';
+  const ADD_TXT = `<b>"הוספה למסך הבית"</b> ${ICON_ADD} (אם לא רואים - גוללים למטה ברשימה)`;
+  function iosGuide(){
+    const where = isIPad ? 'בשורת הכתובת למעלה' : 'בתחתית המסך';
+    let steps, lead = '', note = '', copy = false;
+    if (iosBrowser === 'safari' && safariVer >= 26){
+      steps = [`לוחצים על ${ICON_MORE} (שלוש נקודות) ליד שורת הכתובת ${where}, ובוחרים <b>"שיתוף"</b> ${ICON_SHARE}`,
+        `בוחרים ${ADD_TXT}`,
+        `מוודאים ש<b>"פתיחה כאפליקציית רשת"</b> דולק, ולוחצים <b>"הוסף"</b>`];
+      note = 'אם כפתור השיתוף מופיע ישר בשורת הכתובת - אפשר ללחוץ עליו מיד.';
+    } else if (iosBrowser === 'safari'){
+      steps = [`לוחצים על כפתור השיתוף ${ICON_SHARE} ${where}`,
+        `בוחרים ${ADD_TXT}`,
+        'לוחצים <b>"הוסף"</b> בפינה למעלה'];
+    } else if (iosBrowser === 'chrome'){
+      steps = [`לוחצים על כפתור השיתוף ${ICON_SHARE} בשורת הכתובת (או בתפריט ⋯ ← <b>"שיתוף"</b>)`,
+        `בוחרים ${ADD_TXT}`,
+        'לוחצים <b>"הוסף"</b>'];
+      note = 'אם האפשרות לא מופיעה - פותחים את האתר בספארי ומתקינים משם.';
+      copy = true;
+    } else {
+      lead = iosBrowser === 'inapp'
+        ? 'האתר נפתח בתוך אפליקציה אחרת (וואטסאפ, מייל וכדומה), ומשם אי אפשר להתקין. צריך לפתוח אותו ב<b>ספארי</b>:'
+        : 'מהדפדפן הזה ההתקנה לא תמיד אפשרית. הכי פשוט - לפתוח את האתר ב<b>ספארי</b>:';
+      steps = ['מעתיקים את הקישור בכפתור למטה',
+        'פותחים את <b>ספארי</b>, מדביקים בשורת הכתובת ונכנסים',
+        `שם: כפתור השיתוף ${ICON_SHARE} ← ${ADD_TXT}`];
+      if (iosBrowser === 'inapp') note = 'לפעמים יש בתפריט של האפליקציה (⋯ או ↗) אפשרות "פתיחה בספארי" - זה עוד יותר מהיר.';
+      copy = true;
+    }
+    return `<div class="ios-bg" id="iosBg"><div class="ios-sh" role="dialog" aria-modal="true" aria-labelledby="iosT">
+      <div class="ios-hd"><img src="/icons/icon-192.png" alt=""><div class="ios-t" id="iosT">התקנת האפליקציה באייפון</div>
+        <button class="install-x" id="iosX" aria-label="סגור">${ICON_X}</button></div>
+      ${lead ? `<p class="ios-lead">${lead}</p>` : ''}
+      <ol class="ios-steps">${steps.map((s, i) => `<li><i>${i + 1}</i><span>${s}</span></li>`).join('')}</ol>
+      ${note ? `<p class="ios-note">${note}</p>` : ''}
+      ${copy ? '<button class="ios-copy" id="iosCopy">העתקת הקישור לאתר</button>' : ''}
+      <p class="ios-note">אחרי זה האייקון "שיעורי הרב" יופיע במסך הבית, ונפתח כמו אפליקציה רגילה.</p>
+    </div></div>`;
+  }
+  function openIosGuide(){
+    closeIosGuide();
+    document.body.insertAdjacentHTML('beforeend', iosGuide());
+  }
+  function closeIosGuide(){ const g = document.getElementById('iosBg'); if (g) g.remove(); }
+  document.addEventListener('click', (e) => {
+    if (!document.getElementById('iosBg')) return;
+    if (e.target.id === 'iosBg' || e.target.closest('#iosX')) closeIosGuide();
+    const c = e.target.closest('#iosCopy');
+    if (c){
+      const url = location.origin + '/';
+      const done = () => { c.textContent = 'הקישור הועתק ✓'; };
+      if (navigator.clipboard) navigator.clipboard.writeText(url).then(done, () => { c.textContent = url; });
+      else c.textContent = url;
+    }
+  });
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeIosGuide(); });
+
   function dismissed(){ try { return !!localStorage.getItem(INSTALL_KEY); } catch (e) { return false; } }
   function installHtml(){
     if (isStandalone) return '';
     if (!wantInstall && (dismissed() || !(installEvt || isIOS))) return '';
-    const sub = installEvt ? 'פרשות ומשניות במקום אחד, ממסך הבית'
-      : isIOS ? 'בספארי: כפתור השיתוף ⎋ ואז "הוסף למסך הבית"'
+    const sub = (installEvt || isIOS) ? 'פרשות ומשניות במקום אחד, ממסך הבית'
       : 'בתפריט ⋮ של כרום בוחרים "התקנת אפליקציה" (אם צריך - קודם "פתיחה ב-Chrome")';
     return `<div class="install"><img src="/icons/icon-192.png" alt="">
       <div class="install-gr"><div class="install-t">התקינו את האפליקציה</div><div class="install-s">${sub}</div></div>
-      ${installEvt ? '<button class="install-go" id="installGo">התקנה</button>' : ''}
+      ${(installEvt || isIOS) ? '<button class="install-go" id="installGo">התקנה</button>' : ''}
       <button class="install-x" id="installX" aria-label="סגור">${ICON_X}</button></div>`;
   }
   function refreshInstall(){ document.getElementById('installSlot').innerHTML = installHtml(); }
   window.addEventListener('beforeinstallprompt', (e) => { e.preventDefault(); installEvt = e; refreshInstall(); });
   window.addEventListener('appinstalled', () => { installEvt = null; refreshInstall(); });
   document.getElementById('installSlot').addEventListener('click', (e) => {
-    if (e.target.closest('#installGo') && installEvt){
-      installEvt.prompt();
-      installEvt.userChoice.finally(() => { installEvt = null; refreshInstall(); });
+    if (e.target.closest('#installGo')){
+      if (installEvt){
+        installEvt.prompt();
+        installEvt.userChoice.finally(() => { installEvt = null; refreshInstall(); });
+      } else if (isIOS) openIosGuide();
     }
     if (e.target.closest('#installX')){
       try { localStorage.setItem(INSTALL_KEY, '1'); } catch (err) {}
@@ -327,6 +416,7 @@
     }
   });
   refreshInstall();
+  if (wantInstall && isIOS && !isStandalone) openIosGuide();
 
   if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js').catch(() => {});
 })();
