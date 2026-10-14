@@ -1,0 +1,223 @@
+<!doctype html>
+<html dir="rtl" lang="he">
+<head>
+<meta charset="utf-8">
+<meta name="robots" content="noindex">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>שיעורי הרב ולדומירסקי</title>
+<meta name="theme-color" content="#121110">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Frank+Ruhl+Libre:wght@500;700;900&family=Rubik:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css?v=202610150122">
+</head>
+<body>
+<div class="shell">
+  <!-- סרגל צד (מחשב) — הספרייה, כמו בספוטיפיי -->
+  <aside class="side" aria-label="ניווט">
+    <div class="side-top">
+      <a class="brand" href="#/"><span class="brand-word">שיעורי הרב</span><span class="brand-sub">ולדומירסקי</span></a>
+      <nav class="side-nav">
+        <a href="#/" data-nav="home"><svg class="i"><use href="#i-home"/></svg>בית</a>
+        <a href="#/search" data-nav="search"><svg class="i"><use href="#i-search"/></svg>חיפוש</a>
+        <a href="#/library" data-nav="library"><svg class="i"><use href="#i-library"/></svg>הספרייה שלי</a>
+      </nav>
+    </div>
+    <div class="side-lib">
+      <div class="side-lib-head"><svg class="i"><use href="#i-library"/></svg><span>הספרייה</span></div>
+      <div class="side-chips" role="tablist">
+        <button class="chip is-on" data-lib="all">הכל</button>
+        <button class="chip" data-lib="m">משנה</button>
+        <button class="chip" data-lib="p">פרשה ומועדים</button>
+      </div>
+      <ul class="side-list" id="sideList"></ul>
+    </div>
+  </aside>
+
+  <main class="main" id="main">
+    <header class="top" id="top">
+      <span class="bsd">בס״ד</span>
+      <a class="brand brand-mob" href="#/"><span class="brand-word">שיעורי הרב</span><span class="brand-sub">ולדומירסקי</span></a>
+      <div class="top-chips" id="topChips">
+        <button class="chip is-on" data-f="all">הכל</button>
+        <button class="chip" data-f="m">משנה</button>
+        <button class="chip" data-f="p">פרשת השבוע</button>
+        <button class="chip" data-f="h">מועדים</button>
+        <button class="chip" data-f="i">עיון</button>
+      </div>
+      <button class="theme-btn" id="themeBtn" aria-pressed="false" aria-label="מצב יום / לילה"><svg class="i"><use href="#i-moon"/></svg><span>לילה</span></button>
+    </header>
+    <div id="view"></div>
+  </main>
+
+  <!-- נגן בינוני: נפתח לבד בלחיצה על "נגן". מחשב — לוח בצד (ספוטיפיי); נייד — גיליון מלמטה (יוטיוב/נטפליקס) -->
+  <aside class="dock" id="dock" aria-label="מתנגן עכשיו" hidden>
+    <div class="dock-grab" id="dockGrab" aria-hidden="true"><i></i></div>
+    <header class="dock-head">
+      <b id="dockFrom">מתנגן עכשיו</b>
+      <button class="ib" id="dockExpand" aria-label="הגדלה למסך מלא"><svg class="i"><use href="#i-expand"/></svg></button>
+      <button class="ib" id="dockMin" aria-label="סגירת הלוח"><svg class="i only-mob"><use href="#i-down"/></svg><svg class="i only-desk"><use href="#i-x"/></svg></button>
+    </header>
+    <div class="dock-scroll">
+      <div class="dock-cover cover" id="dockCover" role="button" tabindex="0" aria-label="הגדלה למסך מלא"></div>
+      <div class="dock-meta"><h3 id="dockTitle"></h3><p id="dockSub"></p></div>
+      <div class="dock-play">
+        <div class="np-scrub" dir="ltr"><input type="range" id="dockSeek" min="0" max="1000" value="0" aria-label="מיקום בשיעור"><div class="np-times"><span id="dockCur">0:00</span><span id="dockDur">0:00</span></div></div>
+        <div class="dock-ctl" dir="ltr">
+          <button class="ib" id="dockPrev" aria-label="המשנה הקודמת"><svg class="i"><use href="#i-prev-track"/></svg></button>
+          <button class="ib mid" id="dockBack" aria-label="15 שניות אחורה"><svg class="i"><use href="#i-back15"/></svg></button>
+          <button class="np-play" id="dockPlay" aria-label="נגן"><svg class="i"><use href="#i-play"/></svg></button>
+          <button class="ib mid" id="dockFwd" aria-label="15 שניות קדימה"><svg class="i"><use href="#i-fwd15"/></svg></button>
+          <button class="ib" id="dockNext" aria-label="המשנה הבאה"><svg class="i"><use href="#i-next-track"/></svg></button>
+        </div>
+      </div>
+      <div class="dock-acts">
+        <button class="act act-main" data-act="study"><svg class="i"><use href="#i-text"/></svg><span>לימוד עם טקסט</span></button>
+        <a class="act" data-act="sefaria" target="_blank" rel="noopener"><svg class="i"><use href="#i-book"/></svg><span class="act-sf">ספריא</span></a>
+        <button class="act" data-act="download"><svg class="i"><use href="#i-download"/></svg><span>הורדה</span></button>
+        <button class="act" data-act="loop" data-loop aria-pressed="false"><svg class="i"><use href="#i-repeat1"/></svg><span>חזרה</span></button>
+        <button class="act" data-act="share"><svg class="i"><use href="#i-share"/></svg><span>שיתוף</span></button>
+      </div>
+      <section class="dock-card" id="dockTextCard">
+        <header><h4 id="dockTextTitle">טקסט המשנה</h4><button data-full="text">לימוד עם טקסט</button></header>
+        <div class="dock-text" id="dockText"></div>
+      </section>
+      <section class="dock-card">
+        <header><h4>הבא בתור</h4><button data-full="queue">לכל התור</button></header>
+        <div id="dockQueue"></div>
+      </section>
+    </div>
+    <ol class="dock-q np-queue" id="dockQ" aria-label="התור"></ol>
+    <div class="dock-b" id="dockB" aria-label="רשימה חדשה"></div>
+  </aside>
+</div>
+
+<!-- נגן תחתון: מחשב — סרגל מלא; נייד — נגן מוקטן. ציר הזמן משמאל לימין (כמו בכל נגן) -->
+<div class="bar" id="bar" hidden>
+  <div class="bar-prog" dir="ltr"><i id="barProg"></i></div>
+  <button class="bar-now" id="barOpen" aria-label="פתח את הנגן">
+    <span class="bar-art" id="barArt"></span>
+    <span class="bar-txt"><b id="barTitle"></b><span id="barSub"></span></span>
+  </button>
+  <div class="bar-ctl" dir="ltr">
+    <div class="bar-btns">
+      <button class="ib hide-mob" id="barPrev" aria-label="המשנה הקודמת"><svg class="i"><use href="#i-prev-track"/></svg></button>
+      <button class="ib hide-mob" id="barBack" aria-label="15 שניות אחורה"><svg class="i"><use href="#i-back15"/></svg></button>
+      <button class="playbtn" id="barPlay" aria-label="נגן"><svg class="i"><use href="#i-play"/></svg></button>
+      <button class="ib hide-mob" id="barFwd" aria-label="15 שניות קדימה"><svg class="i"><use href="#i-fwd15"/></svg></button>
+      <button class="ib hide-mob" id="barNext" aria-label="המשנה הבאה"><svg class="i"><use href="#i-next-track"/></svg></button>
+    </div>
+    <div class="bar-scrub hide-mob"><span class="t" id="barCur">0:00</span><input type="range" id="barSeek" min="0" max="1000" value="0" aria-label="מיקום בשיעור"><span class="t" id="barDur">0:00</span></div>
+  </div>
+  <div class="bar-end hide-mob">
+    <button class="ib tip" id="barLoop" data-loop aria-pressed="false" aria-label="חזרה על השיעור" data-tip="חזרה על השיעור"><svg class="i"><use href="#i-repeat1"/></svg></button>
+    <button class="pill" id="barSpeed" aria-label="מהירות ההשמעה"><span dir="ltr">1×</span></button>
+    <button class="ib tip" id="barPanel" aria-label="מתנגן עכשיו" aria-pressed="false" data-tip="מתנגן עכשיו"><svg class="i"><use href="#i-panel"/></svg></button>
+    <button class="ib tip" id="barQueue" aria-label="התור" aria-pressed="false" data-tip="התור"><svg class="i"><use href="#i-queue"/></svg></button>
+    <button class="ib tip" id="barExpand" aria-label="מסך מלא" data-tip="מסך מלא"><svg class="i"><use href="#i-expand"/></svg></button>
+  </div>
+</div>
+
+<!-- סרגל ניווט תחתון (נייד) -->
+<nav class="tabs" aria-label="ניווט">
+  <a href="#/" data-nav="home"><svg class="i"><use href="#i-home"/></svg>בית</a>
+  <a href="#/search" data-nav="search"><svg class="i"><use href="#i-search"/></svg>חיפוש</a>
+  <a href="#/library" data-nav="library"><svg class="i"><use href="#i-library"/></svg>הספרייה</a>
+</nav>
+
+<!-- נגן מלא — אפל מיוזיק: כריכה, צבע מהתמונה, טקסט והבא בתור -->
+<section class="np" id="np" aria-label="הנגן" hidden>
+  <div class="np-bg" aria-hidden="true"><i></i><i></i><i></i></div>
+  <div class="np-in">
+    <header class="np-head">
+      <button class="ib" id="npClose" aria-label="סגור את הנגן"><svg class="i"><use href="#i-down"/></svg></button>
+      <span class="np-from" id="npFrom"></span>
+      <button class="ib" id="npShare" aria-label="שיתוף"><svg class="i"><use href="#i-share"/></svg></button>
+    </header>
+    <div class="np-body">
+      <div class="np-main">
+        <div class="np-cover cover" id="npCover"></div>
+        <button class="np-mini" id="npMini" aria-label="חזרה לכריכה"><span class="cover sm" id="npMiniCover"></span><span><b id="npMiniTitle"></b><span id="npMiniSub"></span></span></button>
+        <div class="np-meta"><h2 id="npTitle"></h2><p id="npSub"></p></div>
+        <div class="np-scrub" dir="ltr">
+          <input type="range" id="npSeek" min="0" max="1000" value="0" aria-label="מיקום בשיעור">
+          <div class="np-times"><span id="npCur">0:00</span><span id="npDur">0:00</span></div>
+        </div>
+        <div class="np-ctl" dir="ltr">
+          <button class="ib" id="npPrev" aria-label="המשנה הקודמת"><svg class="i"><use href="#i-prev-track"/></svg></button>
+          <button class="ib mid" id="npBack" aria-label="15 שניות אחורה"><svg class="i"><use href="#i-back15"/></svg></button>
+          <button class="np-play" id="npPlay" aria-label="נגן"><svg class="i"><use href="#i-play"/></svg></button>
+          <button class="ib mid" id="npFwd" aria-label="15 שניות קדימה"><svg class="i"><use href="#i-fwd15"/></svg></button>
+          <button class="ib" id="npNext" aria-label="המשנה הבאה"><svg class="i"><use href="#i-next-track"/></svg></button>
+        </div>
+        <div class="np-tools">
+          <button class="tool" id="npTextBtn" data-pane="text" aria-pressed="false"><svg class="i"><use href="#i-text"/></svg><span id="npTextLbl">טקסט</span></button>
+          <button class="tool" id="npCont" aria-pressed="true"><svg class="i"><use href="#i-cont"/></svg><span>ניגון רציף</span></button>
+          <button class="tool" id="npSpeed" aria-label="מהירות ההשמעה"><span class="spd" dir="ltr">1×</span><span>מהירות</span></button>
+          <button class="tool" id="npQueueBtn" data-pane="queue" aria-pressed="false"><svg class="i"><use href="#i-queue"/></svg><span>הבא בתור</span></button>
+          <a class="tool" id="npSefaria" target="_blank" rel="noopener"><svg class="i"><use href="#i-book"/></svg><span id="npSefariaLbl">ספריא</span></a>
+          <button class="tool" id="npDownload"><svg class="i"><use href="#i-download"/></svg><span id="npDlLbl">הורדה</span></button>
+        </div>
+      </div>
+      <aside class="np-panel" aria-label="טקסט והבא בתור">
+        <div class="np-tabs" role="tablist">
+          <button role="tab" data-pane="text" aria-selected="true" id="npTabText">טקסט המשנה</button>
+          <button role="tab" data-pane="queue" aria-selected="false">הבא בתור</button>
+        </div>
+        <div class="np-pane np-text" id="npText" data-pane="text" aria-live="polite"></div>
+        <ol class="np-pane np-queue" id="npQueue" data-pane="queue" hidden></ol>
+      </aside>
+    </div>
+  </div>
+</section>
+
+<div class="menu" id="menu" role="menu" hidden>
+  <button role="menuitem" data-m="next"><svg class="i"><use href="#i-play-next"/></svg>נגן הבא</button>
+  <button role="menuitem" data-m="queue"><svg class="i"><use href="#i-queue"/></svg>הוסף לתור</button>
+  <button role="menuitem" data-m="fav"><svg class="i"><use href="#i-plus"/></svg>שמירה ב"השמורים שלי"</button>
+</div>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <symbol id="i-play" viewBox="0 0 24 24"><path d="M7 4.5v15a1 1 0 0 0 1.5.86l12.4-7.5a1 1 0 0 0 0-1.72L8.5 3.64A1 1 0 0 0 7 4.5Z" fill="currentColor" stroke="none"/></symbol>
+    <symbol id="i-pause" viewBox="0 0 24 24"><rect x="6" y="4" width="4.2" height="16" rx="1.2" fill="currentColor" stroke="none"/><rect x="13.8" y="4" width="4.2" height="16" rx="1.2" fill="currentColor" stroke="none"/></symbol>
+    <symbol id="i-home" viewBox="0 0 24 24"><path d="M15 21v-8a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v8"/><path d="M3 10a2 2 0 0 1 .709-1.528l7-5.999a2 2 0 0 1 2.582 0l7 5.999A2 2 0 0 1 21 10v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></symbol>
+    <symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7.5"/><path d="m20.5 20.5-4.2-4.2"/></symbol>
+    <symbol id="i-library" viewBox="0 0 24 24"><path d="m16 6 4 14"/><path d="M12 6v14"/><path d="M8 8v12"/><path d="M4 4v16"/></symbol>
+    <symbol id="i-down" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></symbol>
+    <symbol id="i-up" viewBox="0 0 24 24"><path d="m18 15-6-6-6 6"/></symbol>
+    <symbol id="i-next" viewBox="0 0 24 24"><path d="m15 18-6-6 6-6"/></symbol>
+    <symbol id="i-prev" viewBox="0 0 24 24"><path d="m9 18 6-6-6-6"/></symbol>
+    <symbol id="i-info" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9.5"/><path d="M12 16v-4.5"/><path d="M12 8h.01"/></symbol>
+    <symbol id="i-plus" viewBox="0 0 24 24"><path d="M5 12h14"/><path d="M12 5v14"/></symbol>
+    <symbol id="i-check" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></symbol>
+    <symbol id="i-back15" viewBox="0 0 24 24"><path d="M12 3a9 9 0 1 1-7.8 4.5"/><path d="M13 3H9.4"/><path d="M11.4 1 9.4 3l2 2"/><text x="12" y="15.3" text-anchor="middle" font-size="7" font-weight="600" fill="currentColor" stroke="none" font-family="Rubik, sans-serif">15</text></symbol>
+    <symbol id="i-fwd15" viewBox="0 0 24 24"><path d="M12 3a9 9 0 1 0 7.8 4.5"/><path d="M11 3h3.6"/><path d="M12.6 1l2 2-2 2"/><text x="12" y="15.3" text-anchor="middle" font-size="7" font-weight="600" fill="currentColor" stroke="none" font-family="Rubik, sans-serif">15</text></symbol>
+    <symbol id="i-prev-track" viewBox="0 0 24 24"><path d="M19 5.2v13.6a.8.8 0 0 1-1.25.66L8.6 13a1.2 1.2 0 0 1 0-2l9.15-6.46A.8.8 0 0 1 19 5.2Z" fill="currentColor" stroke="none"/><rect x="5" y="5" width="2.4" height="14" rx="1" fill="currentColor" stroke="none"/></symbol>
+    <symbol id="i-next-track" viewBox="0 0 24 24"><path d="M5 5.2v13.6a.8.8 0 0 0 1.25.66L15.4 13a1.2 1.2 0 0 0 0-2L6.25 4.54A.8.8 0 0 0 5 5.2Z" fill="currentColor" stroke="none"/><rect x="16.6" y="5" width="2.4" height="14" rx="1" fill="currentColor" stroke="none"/></symbol>
+    <symbol id="i-text" viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/><path d="M8 8h8"/><path d="M8 12h5"/></symbol>
+    <symbol id="i-queue" viewBox="0 0 24 24"><path d="M3 6h13"/><path d="M3 12h9"/><path d="M3 18h9"/><path d="M16 12v8l5-4z" fill="currentColor"/></symbol>
+    <symbol id="i-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></symbol>
+    <symbol id="i-moon" viewBox="0 0 24 24"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></symbol>
+    <symbol id="i-repeat1" viewBox="0 0 24 24"><path d="m17 2 4 4-4 4"/><path d="M3 11v-1a4 4 0 0 1 4-4h14"/><path d="m7 22-4-4 4-4"/><path d="M21 13v1a4 4 0 0 1-4 4H3"/><path d="M11 10h1v4"/></symbol>
+    <symbol id="i-grip" viewBox="0 0 24 24"><path d="M5 8h14"/><path d="M5 12h14"/><path d="M5 16h14"/></symbol>
+    <symbol id="i-cont" viewBox="0 0 24 24"><path d="m17 2 4 4-4 4"/><path d="M3 11v-1a4 4 0 0 1 4-4h14"/><path d="m7 22-4-4 4-4"/><path d="M21 13v1a4 4 0 0 1-4 4H3"/></symbol>
+    <symbol id="i-more" viewBox="0 0 24 24"><circle cx="12" cy="5" r="1.6" fill="currentColor"/><circle cx="12" cy="12" r="1.6" fill="currentColor"/><circle cx="12" cy="19" r="1.6" fill="currentColor"/></symbol>
+    <symbol id="i-panel" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2.5"/><path d="M9.5 4v16"/><rect x="4.8" y="8" width="2.6" height="2.6" rx=".6" fill="currentColor" stroke="none"/></symbol>
+    <symbol id="i-play-next" viewBox="0 0 24 24"><path d="M3 6h10"/><path d="M3 12h6"/><path d="M3 18h6"/><path d="M14 10.5v9l7-4.5z" fill="currentColor"/></symbol>
+    <symbol id="i-download" viewBox="0 0 24 24"><path d="M12 15V3"/><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m7 10 5 5 5-5"/></symbol>
+    <symbol id="i-expand" viewBox="0 0 24 24"><path d="M15 3h6v6"/><path d="M9 21H3v-6"/><path d="m21 3-7 7"/><path d="m3 21 7-7"/></symbol>
+    <symbol id="i-book" viewBox="0 0 24 24"><path d="M12 7v14"/><path d="M3 18a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h5a4 4 0 0 1 4 4 4 4 0 0 1 4-4h5a1 1 0 0 1 1 1v13a1 1 0 0 1-1 1h-6a3 3 0 0 0-3 3 3 3 0 0 0-3-3z"/></symbol>
+    <symbol id="i-file" viewBox="0 0 24 24"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M16 13H8"/><path d="M16 17H8"/><path d="M10 9H8"/></symbol>
+    <symbol id="i-share" viewBox="0 0 24 24"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><path d="m16 6-4-4-4 4"/><path d="M12 2v13"/></symbol>
+    <symbol id="i-x" viewBox="0 0 24 24"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></symbol>
+  </defs>
+</svg>
+
+<script>window.BETA_V="202610150122"</script>
+<script src="gen.js?v=202610150122"></script>
+<script src="live.js?v=202610150122"></script>
+</body>
+</html>
