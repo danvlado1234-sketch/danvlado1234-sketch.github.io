@@ -1152,7 +1152,8 @@
   // לחיצה על כל דבר עם data-play
   document.addEventListener('click', e => {
     const p = e.target.closest('[data-play]'); if (!p) return;
-    const onCard = p.matches('.wide, .iyun, .res');
+    // כרטיס עיון = שיעור אחד (נושא משלו) — לחיצה בכל מקום מנגנת אותו, לא פותחת את דף המועד (דניאל, 15.10)
+    const onCard = p.matches('.wide, .res');
     if (onCard && !e.target.closest('.over, .playbtn') && !e.metaKey) return; // לחיצה על הכרטיס — פותחת את הסדרה
     e.preventDefault(); play(p.dataset.play);
   });
