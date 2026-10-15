@@ -1190,6 +1190,83 @@
   if (params.has('blend')) document.documentElement.classList.add('blend');
   applyTheme();
 
+  // ---------- התקנת האפליקציה (מהשער הישן, 15.10) ----------
+  // כפתור קטן ליד יום/לילה — בלי הודעה קופצת. לא מופיע בתוך האפליקציה המותקנת.
+  // אנדרואיד/מחשב (כרום): מתקין ישירות (beforeinstallprompt; נתפס כבר ב-index.html, לפני שהקוד הזה נטען).
+  // אייפון: אפל לא מאפשרת לאתר להתקין את עצמו — הכפתור פותח הדרכה לפי הדפדפן, שמות הכפתורים בעברית ובאנגלית.
+  // באייפון אין לאתר דרך לדעת שהותקן — לכן "כבר התקנתי" בהדרכה מסתיר את הכפתור בדפדפן הזה.
+  {
+    const KEY = 'installDone';
+    const UA = navigator.userAgent;
+    const standalone = matchMedia('(display-mode: standalone)').matches || navigator.standalone === true;
+    const isIOS = /iphone|ipad|ipod/i.test(UA) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+    const isIPad = /ipad/i.test(UA) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+    const iosBrowser = !isIOS ? '' : /FBAN|FBAV|Instagram|Line\/|GSA\/|Twitter|LinkedInApp|Snapchat|TikTok|musical_ly|Telegram|WhatsApp/i.test(UA) ? 'inapp'
+      : /CriOS/.test(UA) ? 'chrome' : /FxiOS|EdgiOS|OPiOS|OPT\/|YaBrowser|DuckDuckGo/.test(UA) ? 'other' : 'safari';
+    const safariVer = +((UA.match(/Version\/(\d+)/) || [])[1] || 0);
+    const btn = $('#installBtn');
+    let evt = window.__bip || null;
+    const show = () => { btn.hidden = standalone || (!evt && !isIOS) || (isIOS && store.get(KEY, false) && !window.WANT_INSTALL); };
+    window.addEventListener('beforeinstallprompt', e => { e.preventDefault(); evt = e; show(); });
+    window.addEventListener('appinstalled', () => { evt = null; btn.hidden = true; toast('האפליקציה הותקנה — "שיעורי הרב" במסך הבית'); });
+    const SVG = d => `<svg class="ios-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${d}</svg>`;
+    const I_SHARE = SVG('<path d="M12 3v12M8 7l4-4 4 4"/><path d="M8 11H6a1 1 0 0 0-1 1v8a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-8a1 1 0 0 0-1-1h-2"/>');
+    const I_MORE = SVG('<circle cx="12" cy="12" r="10"/><circle cx="7.5" cy="12" r="1.2" fill="currentColor" stroke="none"/><circle cx="12" cy="12" r="1.2" fill="currentColor" stroke="none"/><circle cx="16.5" cy="12" r="1.2" fill="currentColor" stroke="none"/>');
+    const I_ADD = SVG('<rect x="3" y="3" width="18" height="18" rx="4"/><path d="M12 8v8M8 12h8"/>');
+    // שם הכפתור כמו בתפריט של האייפון — בעברית, ובאנגלית לטלפון שמוגדר באנגלית
+    const nm = (he, en) => `<b>"${he}"</b> <span class="en" dir="ltr">(${en})</span>`;
+    const SHARE = nm('שיתוף', 'Share'), ADDBTN = nm('הוסף', 'Add');
+    const ADD = `${nm('הוספה למסך הבית', 'Add to Home Screen')} ${I_ADD}<br><small>לא רואים? גוללים למטה ברשימה, או ${nm('עוד', 'More')}</small>`;
+    function guide() {
+      const where = isIPad ? 'בשורת הכתובת למעלה' : 'בתחתית המסך';
+      let steps, lead = '', note = '', copy = false;
+      if (iosBrowser === 'safari' && safariVer >= 26) {
+        steps = [`לוחצים על ${I_MORE} (שלוש נקודות) ליד שורת הכתובת ${where}, ובוחרים ${SHARE} ${I_SHARE}`, `בוחרים ${ADD}`,
+          `מוודאים ש-${nm('פתיחה כאפליקציית רשת', 'Open as Web App')} דולק, ולוחצים ${ADDBTN}`];
+        note = 'אם כפתור השיתוף מופיע ישר בשורת הכתובת — אפשר ללחוץ עליו מיד.';
+      } else if (iosBrowser === 'safari') {
+        steps = [`לוחצים על כפתור השיתוף ${I_SHARE} ${where}`, `בוחרים ${ADD}`, `לוחצים ${ADDBTN} בפינה למעלה`];
+      } else if (iosBrowser === 'chrome') {
+        steps = [`לוחצים על כפתור השיתוף ${I_SHARE} בשורת הכתובת (או בתפריט ⋯ ← ${SHARE})`, `בוחרים ${ADD}`, `לוחצים ${ADDBTN}`];
+        note = 'אם האפשרות לא מופיעה — פותחים את האתר בספארי ומתקינים משם.'; copy = true;
+      } else {
+        lead = iosBrowser === 'inapp'
+          ? 'האתר נפתח בתוך אפליקציה אחרת (וואטסאפ, מייל וכדומה), ומשם אי אפשר להתקין. צריך לפתוח אותו ב<b>ספארי</b> (Safari):'
+          : 'מהדפדפן הזה ההתקנה לא תמיד אפשרית. הכי פשוט — לפתוח את האתר ב<b>ספארי</b> (Safari):';
+        steps = ['מעתיקים את הקישור בכפתור למטה', 'פותחים את <b>ספארי</b>, מדביקים בשורת הכתובת ונכנסים', `שם: כפתור השיתוף ${I_SHARE} ← ${ADD}`];
+        if (iosBrowser === 'inapp') note = `לפעמים בתפריט של האפליקציה (⋯ או ↗) יש ${nm('פתיחה בספארי', 'Open in Safari')} — עוד יותר מהיר.`;
+        copy = true;
+      }
+      const arrow = iosBrowser === 'safari' && safariVer < 26 && !isIPad;
+      return `<div class="ios-bg${arrow ? ' to-top' : ''}" id="iosBg"><div class="ios-sh" role="dialog" aria-modal="true" aria-labelledby="iosT">
+        <div class="ios-hd"><img src="/icons/icon-192.png" alt=""><div><div class="ios-t" id="iosT">התקנת האפליקציה באייפון</div>
+          <div class="ios-sub" dir="ltr">Install on iPhone</div></div><button class="ios-x" id="iosX" aria-label="סגור">${icon('x')}</button></div>
+        ${lead ? `<p class="ios-lead">${lead}</p>` : ''}
+        <ol class="ios-steps">${steps.map((s, i) => `<li><i>${i + 1}</i><span>${s}</span></li>`).join('')}</ol>
+        ${note ? `<p class="ios-note">${note}</p>` : ''}
+        <p class="ios-note">אחרי זה האייקון "שיעורי הרב" יופיע במסך הבית, ונפתח כמו אפליקציה רגילה.</p>
+        <div class="ios-acts">${copy ? '<button class="ios-copy" id="iosCopy">העתקת הקישור לאתר</button>' : ''}<button class="ios-done" id="iosDone">כבר התקנתי</button></div>
+      </div>${arrow ? '<div class="ios-arrow" aria-hidden="true">' + icon('down') + '</div>' : ''}</div>`;
+    }
+    const closeGuide = () => $('#iosBg')?.remove();
+    const openGuide = () => { closeGuide(); document.body.insertAdjacentHTML('beforeend', guide()); $('#iosX').focus(); };
+    document.addEventListener('click', e => {
+      if (!$('#iosBg')) return;
+      if (e.target.id === 'iosBg' || e.target.closest('#iosX')) closeGuide();
+      if (e.target.closest('#iosDone')) { store.set(KEY, true); window.WANT_INSTALL = false; closeGuide(); show(); toast('הכפתור הוסתר. אפשר להמשיך כאן או מהאייקון במסך הבית'); }
+      const c = e.target.closest('#iosCopy');
+      if (c) { const url = location.origin + '/', done = () => { c.textContent = 'הקישור הועתק ✓'; };
+        navigator.clipboard ? navigator.clipboard.writeText(url).then(done, () => { c.textContent = url; }) : (c.textContent = url); }
+    });
+    document.addEventListener('keydown', e => { if (e.key === 'Escape') closeGuide(); });
+    btn.addEventListener('click', () => {
+      if (evt) { evt.prompt(); evt.userChoice.finally(() => { evt = null; window.__bip = null; show(); }); }
+      else if (isIOS) openGuide();
+    });
+    show();
+    if (window.WANT_INSTALL && isIOS && !standalone) openGuide();
+  }
+
   if (params.get('f')) { filter = params.get('f'); $$('#topChips .chip').forEach(x => x.classList.toggle('is-on', x.dataset.f === filter)); }
   sideList();
   route();
