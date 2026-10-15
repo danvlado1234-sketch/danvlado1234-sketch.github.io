@@ -518,6 +518,7 @@
     if (a === 'search') { const q = $('#q'); $('#res').innerHTML = searchResults(''); q.addEventListener('input', () => { $('#res').innerHTML = searchResults(q.value); }); if (matchMedia('(hover:hover)').matches) q.focus(); }
     (matchMedia('(min-width:1024px)').matches ? $('#main') : document.scrollingElement).scrollTop = 0;
     onScroll();
+    if (typeof syncPlayBtns === 'function' && nowId) syncPlayBtns();
   }
   // רקע לפי הדף (מצב יום): הבית — נוף/שמיים; כל סדרה — מהכריכה שלה, מטושטש (כמו ספוטיפיי/אפל מיוזיק)
   const pageBg = document.createElement('div'); pageBg.className = 'pagebg'; pageBg.setAttribute('aria-hidden', 'true'); document.body.prepend(pageBg);
@@ -858,6 +859,17 @@
     const on = !audio.paused;
     for (const b of [$('#barPlay'), $('#npPlay'), $('#dockPlay')]) { b.innerHTML = icon(on ? 'pause' : 'play'); b.setAttribute('aria-label', on ? 'השהה' : 'נגן'); }
     np.classList.toggle('is-paused', !on);
+    syncPlayBtns();
+  }
+  // כפתורי נגן בדפים (השלט של מסכת/פרשה, להאזנה, קיצורים): של השיעור שמתנגן עכשיו — השהיה; כל השאר — נגן
+  function syncPlayBtns() {
+    const on = !audio.paused;
+    for (const b of $$('[data-play]')) {
+      const u = b.querySelector(':scope > svg > use'); if (!u || !/^#i-(play|pause)$/.test(u.getAttribute('href'))) continue;
+      const me = on && b.dataset.play === nowId;
+      u.setAttribute('href', me ? '#i-pause' : '#i-play');
+      if (b.hasAttribute('aria-label') && !b.classList.contains('ep')) b.setAttribute('aria-label', me ? 'השהה' : 'נגן');
+    }
   }
   audio.addEventListener('play', setPlayIcons); audio.addEventListener('pause', setPlayIcons);
   audio.addEventListener('ended', () => { if (loopOn) { audio.currentTime = 0; audio.play().catch(() => {}); return; } prog[nowId] = [audio.duration, audio.duration, Date.now()]; store.set('prog', prog); next(true); });
