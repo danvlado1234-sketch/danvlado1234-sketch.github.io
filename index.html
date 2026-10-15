@@ -1,8 +1,8 @@
-<!DOCTYPE html>
-<html lang="he" dir="rtl">
+<!doctype html>
+<html dir="rtl" lang="he">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>שיעורי הרה"ג רבי יצחק ולדומירסקי שליט"א</title>
 <meta name="description" content="שיעורי תורה מפי הרה&quot;ג רבי יצחק ולדומירסקי שליט&quot;א — שיעורי משנה יומיים לפי סדר, מסכת, פרק ומשנה, ושיעורי פרשת שבוע ומועדים.">
 <meta property="og:type" content="website">
@@ -22,410 +22,245 @@
   "url": "https://danvlado1234-sketch.github.io/"
 }
 </script>
-<!-- האפליקציה המאוחדת: manifest אחד לכל השיעורים (scope "/"), כולל המשניות והפרשות -->
+<!-- האתר המאוחד: manifest אחד לכל השיעורים (scope "/"). העיצוב — מהסטודיו (design-studio/projects/shiurim) -->
 <link rel="manifest" href="/manifest.webmanifest">
-<meta name="theme-color" content="#1b120c">
+<meta name="theme-color" content="#121110">
 <link rel="icon" type="image/png" sizes="32x32" href="/icons/favicon-32.png">
 <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="שיעורי הרב">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<script>
+  // גרסת הקבצים — בכל עדכון של app.js / style.css / live.js / gen.js מחליפים את כל המופעים של 20261015a בקובץ הזה
+  // (ה-SW שומר קבצים לפי הכתובת המלאה, אז גרסה חדשה = כתובת חדשה = הקובץ החדש מיד)
+  window.APP_V = '20261015a';
+  // קישורים מהאתרים הקודמים (/shiurim-parasha/?parasha=נח, /Shiurim-mishnhyot/?m=ברכות&p=2, המייל) — לכתובת החדשה
+  (() => {
+    const q = new URLSearchParams(location.search); if (!q.toString() || location.hash.length > 2) return;
+    const e = encodeURIComponent; let h = null;
+    if (q.get('parasha')) h = '#/p/' + e(q.get('parasha'));
+    else if (q.get('chumash')) h = '#/book/' + e(q.get('chumash'));
+    else if (q.get('m')) h = '#/m/' + e(q.get('m')) + (parseInt(q.get('p'), 10) ? '/' + parseInt(q.get('p'), 10) : '');
+    else if (q.get('seder')) h = '#/seder/' + e(q.get('seder'));
+    else if (q.has('search') || q.has('q')) h = '#/search';
+    else if (q.has('list')) h = '#/library';
+    else if (q.has('new') || q.has('app') || q.has('install')) h = '#/';
+    if (h) history.replaceState(null, '', location.pathname + h);
+  })();
+</script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Frank+Ruhl+Libre:wght@500;700;900&family=Heebo:wght@400;500;600;700&display=swap" rel="stylesheet">
-<style>
-  :root {
-    --bg:#1b120c; --text:#f3e7d6; --text2:#dccab4; --muted:#b39f86; --muted2:#8d7a64;
-    --gold:#e3c27a; --gold-ink:#2a1210; --line:rgba(227,194,122,.16);
-    --card:rgba(20,12,7,.55); --track:rgba(255,255,255,.12);
-    color-scheme:dark;
-  }
-  * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
-  [hidden] { display:none !important; }
-  html { background:var(--bg); }
-  body { font-family:'Heebo',system-ui,sans-serif; color:var(--text); background:var(--bg); min-height:100vh; min-height:100dvh; }
-  a { color:inherit; text-decoration:none; }
-
-  /* ---- רקע: עץ כהה (סיבים אופקיים רכים, תמונה אחת שנמתחת על כל המסך), אור חם מלמעלה ---- */
-  .wood { position:fixed; inset:0; z-index:0; pointer-events:none;
-    background:
-      radial-gradient(ellipse 85% 50% at 50% -8%, rgba(240,196,120,.22), transparent 70%),
-      radial-gradient(ellipse 130% 95% at 50% 35%, transparent 52%, rgba(0,0,0,.6) 100%),
-      url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='900' height='1600' preserveAspectRatio='none'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.005 0.075' numOctaves='3' seed='3'/%3E%3CfeColorMatrix values='0 0 0 0 .41 0 0 0 0 .265 0 0 0 0 .15 .65 0 0 0 -.24'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E") center / cover no-repeat,
-      linear-gradient(180deg, #2b1c12 0%, #1d130c 55%, #150e09 100%);
-  }
-
-  .wrap { position:relative; z-index:1; max-width:640px; margin:0 auto;
-    padding:calc(18px + env(safe-area-inset-top)) 20px calc(28px + env(safe-area-inset-bottom)); }
-  .bsd { font-size:12.5px; color:var(--gold); opacity:.85; }
-
-  /* ---- כותרת ---- */
-  .head { text-align:center; margin-top:clamp(18px, 5vh, 44px); }
-  .of { font-family:'Frank Ruhl Libre',serif; font-weight:500; font-size:clamp(17px, 4.4vw, 22px); letter-spacing:.34em; color:var(--gold); }
-  h1 { font-family:'Frank Ruhl Libre',serif; font-weight:900; font-size:clamp(29px, 8.2vw, 46px); line-height:1.16; margin-top:6px;
-       text-shadow:0 2px 18px rgba(0,0,0,.6); text-wrap:balance; }
-  .orn { display:block; margin:16px auto 0; width:170px; height:22px; color:var(--gold); opacity:.8; }
-
-  /* ---- שני הספרים ---- */
-  .books { display:grid; grid-template-columns:1fr 1fr; gap:clamp(14px, 4.5vw, 30px); margin-top:clamp(24px, 5vh, 40px); }
-  .bk { display:block; min-width:0; }
-  .book { position:relative; display:block; aspect-ratio:3/4; border-radius:10px 3px 3px 10px; overflow:hidden;
-    box-shadow:0 20px 34px -14px rgba(0,0,0,.85), 0 5px 12px rgba(0,0,0,.45), inset 0 0 0 1px rgba(255,255,255,.07);
-    transition:transform .2s ease, box-shadow .2s ease; }
-  .book.mishna { background:radial-gradient(circle at 50% 30%, #7c2b2d 0%, #581c20 48%, #2f0f12 100%); }
-  .book.parasha { background:radial-gradient(circle at 50% 30%, #2f6448 0%, #1f4a33 46%, #112a1c 100%); }
-  /* מרקם עור עדין */
-  .book::before { content:""; position:absolute; inset:0; opacity:.5; mix-blend-mode:overlay;
-    background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .5 0 0 0 0 .5 0 0 0 0 .5 0 0 0 .55 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); }
-  /* שדרת הספר - בצד ימין (ספר עברי) */
-  .book::after { content:""; position:absolute; top:0; bottom:0; right:0; width:18px;
-    background:linear-gradient(90deg, transparent, rgba(255,255,255,.09) 45%, rgba(0,0,0,.45)); }
-  .frame { position:absolute; inset:11px 25px 11px 11px; border:1.5px solid rgba(227,194,122,.72); border-radius:4px;
-    box-shadow:inset 0 0 0 4px transparent, inset 0 0 0 5px rgba(227,194,122,.3);
-    display:flex; flex-direction:column; align-items:center; justify-content:center; gap:4px; text-align:center; padding:10px 6px; }
-  .glyph { font-family:'Frank Ruhl Libre',serif; font-weight:900; font-size:clamp(58px, 18vw, 104px); line-height:1; color:var(--gold);
-    text-shadow:0 3px 12px rgba(0,0,0,.4); }
-  .bt { font-family:'Frank Ruhl Libre',serif; font-weight:700; font-size:clamp(15px, 4.3vw, 21px); line-height:1.22; color:#f1dfb2; }
-  .bdash { width:44%; height:10px; margin-top:6px; color:var(--gold); opacity:.75; }
-  .badge { position:absolute; top:9px; left:9px; z-index:2; background:var(--gold); color:var(--gold-ink);
-    font-weight:700; font-size:11.5px; line-height:1; border-radius:999px; padding:5px 9px; box-shadow:0 2px 6px rgba(0,0,0,.35); }
-  .bk:hover .book, .bk:focus-visible .book { transform:translateY(-4px); box-shadow:0 26px 38px -14px rgba(0,0,0,.9), 0 6px 14px rgba(0,0,0,.45), inset 0 0 0 1px rgba(255,255,255,.1); }
-  .bk:active .book { transform:translateY(-1px) scale(.99); }
-  .bk:focus-visible { outline:none; }
-  .bk:focus-visible .book { outline:3px solid var(--gold); outline-offset:3px; }
-  .bk-n { display:block; margin-top:12px; font-weight:700; font-size:15.5px; text-align:center; }
-  .bk-m { display:block; margin-top:3px; font-size:12.5px; color:var(--muted); text-align:center; line-height:1.45; min-height:2.9em; }
-  .bk-m b { display:block; color:var(--text2); font-weight:600; font-size:13.5px; }
-
-  /* ---- המשך האזנה ---- */
-  .sec-t { font-family:'Frank Ruhl Libre',serif; font-weight:700; font-size:19px; margin:34px 2px 10px; }
-  .rows { background:var(--card); border:1px solid var(--line); border-radius:14px; overflow:hidden; }
-  .row { display:flex; align-items:center; gap:12px; padding:12px 14px; }
-  .row + .row { border-top:1px solid var(--line); }
-  .row:hover { background:rgba(255,255,255,.04); }
-  .mc { width:44px; height:44px; border-radius:8px 3px 3px 8px; flex-shrink:0; display:flex; align-items:center; justify-content:center;
-    font-family:'Frank Ruhl Libre',serif; font-weight:900; font-size:25px; color:var(--gold); box-shadow:0 3px 8px rgba(0,0,0,.4); }
-  .mc.mishna { background:radial-gradient(circle at 50% 30%, #7c2b2d, #3a1215); }
-  .mc.parasha { background:radial-gradient(circle at 50% 30%, #2f6448, #15321f); }
-  .row-gr { flex:1; min-width:0; }
-  .row-t { font-weight:700; font-size:15px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-  .row-s { font-size:12.5px; color:var(--muted); margin-top:1px; }
-  .row-s .ok { color:#7fcf9f; }
-  .row-bar { height:3px; background:var(--track); border-radius:2px; margin-top:6px; max-width:200px; overflow:hidden; }
-  .row-bar i { display:block; height:100%; background:var(--gold); border-radius:2px; }
-  .chev { color:var(--muted2); flex-shrink:0; width:18px; height:18px; }
-
-  /* ---- התקנה ---- */
-  .install { display:flex; align-items:center; gap:12px; margin-top:26px; padding:12px 14px; border-radius:14px;
-    background:var(--card); border:1px solid var(--line); }
-  .install img { width:44px; height:44px; border-radius:10px; flex-shrink:0; }
-  .install-gr { flex:1; min-width:0; }
-  .install-t { font-weight:700; font-size:15px; }
-  .install-s { font-size:12.5px; color:var(--muted); margin-top:1px; line-height:1.45; }
-  .install-go { border:0; cursor:pointer; font:inherit; font-weight:700; font-size:14px; color:var(--gold-ink); background:var(--gold);
-    border-radius:999px; padding:8px 16px; flex-shrink:0; }
-  .install-x { border:0; background:none; cursor:pointer; color:var(--muted2); width:30px; height:30px; flex-shrink:0; display:flex; align-items:center; justify-content:center; border-radius:50%; }
-  .install-x:hover { background:rgba(255,255,255,.06); }
-
-  /* ---- הדרכת התקנה באייפון (אין שם כפתור התקנה - מראים את הצעדים) ---- */
-  .ios-bg { position:fixed; inset:0; z-index:10; background:rgba(0,0,0,.55); display:flex; align-items:flex-end; justify-content:center; }
-  .ios-sh { width:100%; max-width:520px; background:#2a1c12; border:1px solid var(--line); border-bottom:0; border-radius:18px 18px 0 0;
-    padding:18px 20px calc(22px + env(safe-area-inset-bottom)); box-shadow:0 -10px 30px rgba(0,0,0,.5); max-height:90vh; overflow:auto; }
-  .ios-hd { display:flex; align-items:center; gap:12px; }
-  .ios-hd img { width:48px; height:48px; border-radius:11px; flex-shrink:0; }
-  .ios-t { flex:1; font-family:'Frank Ruhl Libre',serif; font-weight:700; font-size:20px; }
-  .ios-lead { margin-top:14px; font-size:15px; line-height:1.55; color:var(--text2); }
-  .ios-steps { list-style:none; margin-top:16px; display:grid; gap:12px; }
-  .ios-steps li { display:flex; gap:12px; align-items:flex-start; font-size:15px; line-height:1.55; color:var(--text2); }
-  .ios-steps li > i { font-style:normal; width:26px; height:26px; flex-shrink:0; border-radius:50%; background:var(--gold); color:var(--gold-ink);
-    font-weight:700; font-size:14px; display:flex; align-items:center; justify-content:center; margin-top:1px; }
-  .ios-steps b { color:var(--text); font-weight:700; }
-  .ios-ic { display:inline-block; vertical-align:-4px; width:20px; height:20px; color:var(--gold); margin:0 2px; }
-  .ios-note { margin-top:14px; font-size:13px; color:var(--muted); line-height:1.5; }
-  .ios-copy { display:block; width:100%; margin-top:14px; border:0; cursor:pointer; font:inherit; font-weight:700; font-size:15px;
-    color:var(--gold-ink); background:var(--gold); border-radius:999px; padding:11px 16px; }
-
-  @media (min-width:700px) {
-    .books { max-width:560px; margin-left:auto; margin-right:auto; }
-    .bk-n { font-size:17px; }
-  }
-  @media (prefers-reduced-motion: reduce) { .book { transition:none; } }
-</style>
+<link href="https://fonts.googleapis.com/css2?family=Frank+Ruhl+Libre:wght@500;700;900&family=Rubik:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css?v=20261015a">
 </head>
 <body>
-<div class="wood" aria-hidden="true"></div>
-<main class="wrap">
-  <p class="bsd">בס"ד</p>
-  <header class="head">
-    <div class="of">שיעורי</div>
-    <h1>הרה"ג רבי יצחק ולדומירסקי שליט"א</h1>
-    <svg class="orn" viewBox="0 0 170 22" aria-hidden="true"><path d="M2 11h64M104 11h64" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><path d="M85 2l9 9-9 9-9-9z" fill="currentColor"/><circle cx="70" cy="11" r="2" fill="currentColor"/><circle cx="100" cy="11" r="2" fill="currentColor"/></svg>
-  </header>
+<div class="shell">
+  <!-- סרגל צד (מחשב) — הספרייה, כמו בספוטיפיי -->
+  <aside class="side" aria-label="ניווט">
+    <div class="side-top">
+      <a class="brand" href="#/"><span class="brand-word">שיעורי הרב</span><span class="brand-sub">ולדומירסקי</span></a>
+      <nav class="side-nav">
+        <a href="#/" data-nav="home"><svg class="i"><use href="#i-home"/></svg>בית</a>
+        <a href="#/search" data-nav="search"><svg class="i"><use href="#i-search"/></svg>חיפוש</a>
+        <a href="#/library" data-nav="library"><svg class="i"><use href="#i-library"/></svg>הספרייה שלי</a>
+      </nav>
+    </div>
+    <div class="side-lib">
+      <div class="side-lib-head"><svg class="i"><use href="#i-library"/></svg><span>הספרייה</span></div>
+      <div class="side-chips" role="tablist">
+        <button class="chip is-on" data-lib="all">הכל</button>
+        <button class="chip" data-lib="m">משנה</button>
+        <button class="chip" data-lib="p">פרשה ומועדים</button>
+      </div>
+      <ul class="side-list" id="sideList"></ul>
+    </div>
+  </aside>
 
-  <nav class="books" aria-label="השיעורים">
-    <a class="bk" href="/Shiurim-mishnhyot/">
-      <span class="book mishna" aria-hidden="true"><span class="badge" id="newMishna" hidden></span>
-        <span class="frame"><span class="glyph">מ</span><span class="bt">שיעורי<br>משנה</span>
-        <svg class="bdash" viewBox="0 0 80 10"><path d="M0 5h32M48 5h32" stroke="currentColor" stroke-width="1.5"/><path d="M40 1l4 4-4 4-4-4z" fill="currentColor"/></svg></span></span>
-      <span class="bk-n">שיעורי משנה</span>
-      <span class="bk-m" id="metaMishna">לפי סדר, מסכת, פרק ומשנה</span>
-    </a>
-    <a class="bk" href="/shiurim-parasha/">
-      <span class="book parasha" aria-hidden="true"><span class="badge" id="newParasha" hidden></span>
-        <span class="frame"><span class="glyph">פ</span><span class="bt">פרשת שבוע<br>ומועדים</span>
-        <svg class="bdash" viewBox="0 0 80 10"><path d="M0 5h32M48 5h32" stroke="currentColor" stroke-width="1.5"/><path d="M40 1l4 4-4 4-4-4z" fill="currentColor"/></svg></span></span>
-      <span class="bk-n">פרשת שבוע ומועדים</span>
-      <span class="bk-m" id="metaParasha">פרשות, מועדים ועיון</span>
-    </a>
-  </nav>
+  <main class="main" id="main">
+    <header class="top" id="top">
+      <span class="bsd">בס״ד</span>
+      <a class="brand brand-mob" href="#/"><span class="brand-word">שיעורי הרב</span><span class="brand-sub">ולדומירסקי</span></a>
+      <div class="top-chips" id="topChips">
+        <button class="chip is-on" data-f="all">הכל</button>
+        <button class="chip" data-f="m">משנה</button>
+        <button class="chip" data-f="p">פרשת השבוע</button>
+        <button class="chip" data-f="h">מועדים</button>
+        <button class="chip" data-f="i">עיון</button>
+      </div>
+      <button class="theme-btn" id="themeBtn" aria-pressed="false" aria-label="מצב יום / לילה"><svg class="i"><use href="#i-moon"/></svg><span>לילה</span></button>
+    </header>
+    <div id="view"></div>
+  </main>
 
-  <section id="cont" hidden>
-    <h2 class="sec-t">להמשיך מאיפה שעצרת</h2>
-    <div class="rows" id="contRows"></div>
-  </section>
+  <!-- נגן בינוני: נפתח לבד בלחיצה על "נגן". מחשב — לוח בצד (ספוטיפיי); נייד — גיליון מלמטה (יוטיוב/נטפליקס) -->
+  <aside class="dock" id="dock" aria-label="מתנגן עכשיו" hidden>
+    <div class="dock-grab" id="dockGrab" aria-hidden="true"><i></i></div>
+    <header class="dock-head">
+      <b id="dockFrom">מתנגן עכשיו</b>
+      <button class="ib" id="dockExpand" aria-label="הגדלה למסך מלא"><svg class="i"><use href="#i-expand"/></svg></button>
+      <button class="ib" id="dockMin" aria-label="סגירת הלוח"><svg class="i only-mob"><use href="#i-down"/></svg><svg class="i only-desk"><use href="#i-x"/></svg></button>
+    </header>
+    <div class="dock-scroll">
+      <div class="dock-cover cover" id="dockCover" role="button" tabindex="0" aria-label="הגדלה למסך מלא"></div>
+      <div class="dock-meta"><h3 id="dockTitle"></h3><p id="dockSub"></p></div>
+      <div class="dock-play">
+        <div class="np-scrub" dir="ltr"><input type="range" id="dockSeek" min="0" max="1000" value="0" aria-label="מיקום בשיעור"><div class="np-times"><span id="dockCur">0:00</span><span id="dockDur">0:00</span></div></div>
+        <div class="dock-ctl" dir="ltr">
+          <button class="ib" id="dockPrev" aria-label="המשנה הקודמת"><svg class="i"><use href="#i-prev-track"/></svg></button>
+          <button class="ib mid" id="dockBack" aria-label="15 שניות אחורה"><svg class="i"><use href="#i-back15"/></svg></button>
+          <button class="np-play" id="dockPlay" aria-label="נגן"><svg class="i"><use href="#i-play"/></svg></button>
+          <button class="ib mid" id="dockFwd" aria-label="15 שניות קדימה"><svg class="i"><use href="#i-fwd15"/></svg></button>
+          <button class="ib" id="dockNext" aria-label="המשנה הבאה"><svg class="i"><use href="#i-next-track"/></svg></button>
+        </div>
+      </div>
+      <div class="dock-acts">
+        <button class="act act-main" data-act="study"><svg class="i"><use href="#i-text"/></svg><span>לימוד עם טקסט</span></button>
+        <a class="act" data-act="sefaria" target="_blank" rel="noopener"><svg class="i"><use href="#i-book"/></svg><span class="act-sf">ספריא</span></a>
+        <button class="act" data-act="download"><svg class="i"><use href="#i-download"/></svg><span>הורדה</span></button>
+        <button class="act" data-act="loop" data-loop aria-pressed="false"><svg class="i"><use href="#i-repeat1"/></svg><span>חזרה</span></button>
+        <button class="act" data-act="share"><svg class="i"><use href="#i-share"/></svg><span>שיתוף</span></button>
+      </div>
+      <section class="dock-card" id="dockTextCard">
+        <header><h4 id="dockTextTitle">טקסט המשנה</h4><button data-full="text">לימוד עם טקסט</button></header>
+        <div class="dock-text" id="dockText"></div>
+      </section>
+      <section class="dock-card">
+        <header><h4>הבא בתור</h4><button data-full="queue">לכל התור</button></header>
+        <div id="dockQueue"></div>
+      </section>
+    </div>
+    <ol class="dock-q np-queue" id="dockQ" aria-label="התור"></ol>
+    <div class="dock-b" id="dockB" aria-label="רשימה חדשה"></div>
+  </aside>
+</div>
 
-  <div id="installSlot"></div>
-</main>
+<!-- נגן תחתון: מחשב — סרגל מלא; נייד — נגן מוקטן. ציר הזמן משמאל לימין (כמו בכל נגן) -->
+<div class="bar" id="bar" hidden>
+  <div class="bar-prog" dir="ltr"><i id="barProg"></i></div>
+  <button class="bar-now" id="barOpen" aria-label="פתח את הנגן">
+    <span class="bar-art" id="barArt"></span>
+    <span class="bar-txt"><b id="barTitle"></b><span id="barSub"></span></span>
+  </button>
+  <div class="bar-ctl" dir="ltr">
+    <div class="bar-btns">
+      <button class="ib hide-mob" id="barPrev" aria-label="המשנה הקודמת"><svg class="i"><use href="#i-prev-track"/></svg></button>
+      <button class="ib hide-mob" id="barBack" aria-label="15 שניות אחורה"><svg class="i"><use href="#i-back15"/></svg></button>
+      <button class="playbtn" id="barPlay" aria-label="נגן"><svg class="i"><use href="#i-play"/></svg></button>
+      <button class="ib hide-mob" id="barFwd" aria-label="15 שניות קדימה"><svg class="i"><use href="#i-fwd15"/></svg></button>
+      <button class="ib hide-mob" id="barNext" aria-label="המשנה הבאה"><svg class="i"><use href="#i-next-track"/></svg></button>
+    </div>
+    <div class="bar-scrub hide-mob"><span class="t" id="barCur">0:00</span><input type="range" id="barSeek" min="0" max="1000" value="0" aria-label="מיקום בשיעור"><span class="t" id="barDur">0:00</span></div>
+  </div>
+  <div class="bar-end hide-mob">
+    <button class="ib tip" id="barLoop" data-loop aria-pressed="false" aria-label="חזרה על השיעור" data-tip="חזרה על השיעור"><svg class="i"><use href="#i-repeat1"/></svg></button>
+    <button class="pill" id="barSpeed" aria-label="מהירות ההשמעה"><span dir="ltr">1×</span></button>
+    <button class="ib tip" id="barPanel" aria-label="מתנגן עכשיו" aria-pressed="false" data-tip="מתנגן עכשיו"><svg class="i"><use href="#i-panel"/></svg></button>
+    <button class="ib tip" id="barQueue" aria-label="התור" aria-pressed="false" data-tip="התור"><svg class="i"><use href="#i-queue"/></svg></button>
+    <button class="ib tip" id="barExpand" aria-label="מסך מלא" data-tip="מסך מלא"><svg class="i"><use href="#i-expand"/></svg></button>
+  </div>
+</div>
 
-<script>
-(function(){
-  'use strict';
-  const MISHNA = { base:'/Shiurim-mishnhyot/', key:'mishna:progress', name:'שיעורי משנה', cls:'mishna', glyph:'מ' };
-  const PARASHA = { base:'/shiurim-parasha/', key:'parasha:progress', name:'פרשת שבוע ומועדים', cls:'parasha', glyph:'פ' };
-  const ICON_CHEV = '<svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 18l-6-6 6-6"/></svg>';
-  const ICON_X = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>';
-  const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;' }[c]));
+<!-- סרגל ניווט תחתון (נייד) -->
+<nav class="tabs" aria-label="ניווט">
+  <a href="#/" data-nav="home"><svg class="i"><use href="#i-home"/></svg>בית</a>
+  <a href="#/search" data-nav="search"><svg class="i"><use href="#i-search"/></svg>חיפוש</a>
+  <a href="#/library" data-nav="library"><svg class="i"><use href="#i-library"/></svg>הספרייה</a>
+</nav>
 
-  // ====== פתוח כאפליקציה? ======
-  // האפליקציה המאוחדת נפתחת כאן (start_url "/"). מסמנים את החלון, כדי שאתרי
-  // המשניות והפרשות יידעו שהם בתוכה (ולא באפליקציית הפרשות הישנה) - ויציגו
-  // קישור חזרה לכאן במקום הודעת "עברו לאפליקציה החדשה".
-  const isStandalone = matchMedia('(display-mode: standalone)').matches || navigator.standalone === true;
-  if (isStandalone){
-    try { sessionStorage.setItem('shiurim:app', '1'); localStorage.setItem('shiurim:unified', '1'); } catch (e) {}
-  }
+<!-- נגן מלא — אפל מיוזיק: כריכה, צבע מהתמונה, טקסט והבא בתור -->
+<section class="np" id="np" aria-label="הנגן" hidden>
+  <div class="np-bg" aria-hidden="true"><i></i><i></i><i></i></div>
+  <div class="np-in">
+    <header class="np-head">
+      <button class="ib" id="npClose" aria-label="סגור את הנגן"><svg class="i"><use href="#i-down"/></svg></button>
+      <span class="np-from" id="npFrom"></span>
+      <button class="ib" id="npShare" aria-label="שיתוף"><svg class="i"><use href="#i-share"/></svg></button>
+    </header>
+    <div class="np-body">
+      <div class="np-main">
+        <div class="np-cover cover" id="npCover"></div>
+        <button class="np-mini" id="npMini" aria-label="חזרה לכריכה"><span class="cover sm" id="npMiniCover"></span><span><b id="npMiniTitle"></b><span id="npMiniSub"></span></span></button>
+        <div class="np-meta"><h2 id="npTitle"></h2><p id="npSub"></p></div>
+        <div class="np-scrub" dir="ltr">
+          <input type="range" id="npSeek" min="0" max="1000" value="0" aria-label="מיקום בשיעור">
+          <div class="np-times"><span id="npCur">0:00</span><span id="npDur">0:00</span></div>
+        </div>
+        <div class="np-ctl" dir="ltr">
+          <button class="ib" id="npPrev" aria-label="המשנה הקודמת"><svg class="i"><use href="#i-prev-track"/></svg></button>
+          <button class="ib mid" id="npBack" aria-label="15 שניות אחורה"><svg class="i"><use href="#i-back15"/></svg></button>
+          <button class="np-play" id="npPlay" aria-label="נגן"><svg class="i"><use href="#i-play"/></svg></button>
+          <button class="ib mid" id="npFwd" aria-label="15 שניות קדימה"><svg class="i"><use href="#i-fwd15"/></svg></button>
+          <button class="ib" id="npNext" aria-label="המשנה הבאה"><svg class="i"><use href="#i-next-track"/></svg></button>
+        </div>
+        <div class="np-tools">
+          <button class="tool" id="npTextBtn" data-pane="text" aria-pressed="false"><svg class="i"><use href="#i-text"/></svg><span id="npTextLbl">טקסט</span></button>
+          <button class="tool" id="npCont" aria-pressed="true"><svg class="i"><use href="#i-cont"/></svg><span>ניגון רציף</span></button>
+          <button class="tool" id="npSpeed" aria-label="מהירות ההשמעה"><span class="spd" dir="ltr">1×</span><span>מהירות</span></button>
+          <button class="tool" id="npQueueBtn" data-pane="queue" aria-pressed="false"><svg class="i"><use href="#i-queue"/></svg><span>הבא בתור</span></button>
+          <a class="tool" id="npSefaria" target="_blank" rel="noopener"><svg class="i"><use href="#i-book"/></svg><span id="npSefariaLbl">ספריא</span></a>
+          <button class="tool" id="npDownload"><svg class="i"><use href="#i-download"/></svg><span id="npDlLbl">הורדה</span></button>
+        </div>
+      </div>
+      <aside class="np-panel" aria-label="טקסט והבא בתור">
+        <div class="np-tabs" role="tablist">
+          <button role="tab" data-pane="text" aria-selected="true" id="npTabText">טקסט המשנה</button>
+          <button role="tab" data-pane="queue" aria-selected="false">הבא בתור</button>
+        </div>
+        <div class="np-pane np-text" id="npText" data-pane="text" aria-live="polite"></div>
+        <ol class="np-pane np-queue" id="npQueue" data-pane="queue" hidden></ol>
+      </aside>
+    </div>
+  </div>
+</section>
 
-  // ====== שמות השיעורים מתוך נתיב הקובץ ======
-  const GEM = { 'א':1,'ב':2,'ג':3,'ד':4,'ה':5,'ו':6,'ז':7,'ח':8,'ט':9,'י':10,'כ':20,'ל':30,'מ':40,'נ':50,'ס':60,'ע':70,'פ':80,'צ':90,'ק':100,'ר':200,'ש':300,'ת':400,'ך':20,'ם':40,'ן':50,'ף':80,'ץ':90 };
-  function hebNum(t){
-    if (/^\d+$/.test(t)) return +t;
-    let s = 0; for (const c of t){ if (!(c in GEM)) return 0; s += GEM[c]; } return s;
-  }
-  function tokens(path){
-    return path.split('/').pop().replace(/\.(m4a|mp3)$/i, '').split('_').filter(Boolean);
-  }
-  // "ערכין/ערכין_פרק_ב_משנה_ב.m4a" -> { title:"ערכין · פרק ב · משנה ב", short:"ערכין ב ב" }
-  function mishnaInfo(path){
-    const t = tokens(path), iP = t.indexOf('פרק'), iM = t.indexOf('משנה');
-    if (iP > 0 && iM > iP + 1 && iM + 1 < t.length){
-      const m = t.slice(0, iP).join(' '), p = t[iP + 1];
-      const n = t.slice(iM + 1).join(' ').replace(/[,\s-]+/g, '-').replace(/^-+|-+$/g, '');
-      return { title:`${m} · פרק ${p} · משנה ${n}`, short:`${m} ${p} ${n}`, masechet:m, ord:hebNum(p) * 1000 + hebNum(n.split('-')[0]) };
-    }
-    const s = t.join(' ');
-    return { title:s, short:s, masechet:null, ord:0 };
-  }
-  // "בראשית/פרשת_נח_תשפז.m4a" -> "פרשת נח תשפז";  "מועדים/מועד_פסח_תשפו.m4a" -> "פסח תשפו"
-  function parashaInfo(path){
-    const t = tokens(path);
-    if (t[0] === 'מועד') t.shift();
-    const s = t.join(' ').replace(/''/g, '"');   // '' בשם הקובץ = מרכאות (אסורות בשם קובץ)
-    return { title:s, short:s, masechet:null, ord:0 };
-  }
+<div class="menu" id="menu" role="menu" hidden>
+  <button role="menuitem" data-m="next"><svg class="i"><use href="#i-play-next"/></svg>נגן הבא</button>
+  <button role="menuitem" data-m="queue"><svg class="i"><use href="#i-queue"/></svg>הוסף לתור</button>
+  <button role="menuitem" data-m="fav"><svg class="i"><use href="#i-plus"/></svg>שמירה ב"השמורים שלי"</button>
+</div>
 
-  // ====== תאריכים ======
-  function localDay(d){ return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; }
-  const TODAY = localDay(new Date());
-  const daysAgo = d => Math.round((Date.parse(TODAY) - Date.parse(d)) / 86400000);
-  function whenTxt(d){
-    const n = daysAgo(d);
-    if (n <= 0) return 'היום';
-    if (n === 1) return 'אתמול';
-    if (n < 7) return `לפני ${n} ימים`;
-    return new Date(d + 'T12:00:00').toLocaleDateString('he-IL', { day:'numeric', month:'long' });
-  }
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
 
-  // ====== מה עלה לאחרונה (uploads.json של כל אתר) ======
-  async function uploadsOf(site){
-    try {
-      const r = await fetch(site.base + 'uploads.json', { cache:'no-cache' });
-      if (!r.ok) return {};
-      return await r.json() || {};
-    } catch (e) { return {}; }
-  }
-  function summarize(uploads, info){
-    let best = null, bestD = '', fresh = 0;
-    for (const path in uploads){
-      const d = uploads[path];
-      if (typeof d !== 'string') continue;
-      if (daysAgo(d) < 7) fresh++;
-      if (d > bestD){ best = path; bestD = d; continue; }
-      if (d === bestD){
-        // אותו יום: במשניות - המשנה המאוחרת יותר באותה מסכת; אחרת - מה שנרשם אחרון
-        const a = info(path), b = info(best);
-        if (!a.masechet || a.masechet !== b.masechet || a.ord >= b.ord) best = path;
-      }
-    }
-    return best ? { info:info(best), date:bestD, fresh } : null;
-  }
-  function showSite(site, info, metaId, badgeId, label){
-    uploadsOf(site).then(u => {
-      const s = summarize(u, info);
-      if (!s) return;
-      document.getElementById(metaId).innerHTML = `${label} · ${whenTxt(s.date)}<b>${esc(s.info.short)}</b>`;
-      const b = document.getElementById(badgeId);
-      if (s.fresh > 0){ b.textContent = s.fresh === 1 ? 'חדש' : `${s.fresh} חדשים`; b.hidden = false; }
-    });
-  }
-  showSite(MISHNA, mishnaInfo, 'metaMishna', 'newMishna', 'השיעור עכשיו');
-  showSite(PARASHA, parashaInfo, 'metaParasha', 'newParasha', 'עלה לאחרונה');
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <symbol id="i-play" viewBox="0 0 24 24"><path d="M7 4.5v15a1 1 0 0 0 1.5.86l12.4-7.5a1 1 0 0 0 0-1.72L8.5 3.64A1 1 0 0 0 7 4.5Z" fill="currentColor" stroke="none"/></symbol>
+    <symbol id="i-pause" viewBox="0 0 24 24"><rect x="6" y="4" width="4.2" height="16" rx="1.2" fill="currentColor" stroke="none"/><rect x="13.8" y="4" width="4.2" height="16" rx="1.2" fill="currentColor" stroke="none"/></symbol>
+    <symbol id="i-home" viewBox="0 0 24 24"><path d="M15 21v-8a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v8"/><path d="M3 10a2 2 0 0 1 .709-1.528l7-5.999a2 2 0 0 1 2.582 0l7 5.999A2 2 0 0 1 21 10v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></symbol>
+    <symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7.5"/><path d="m20.5 20.5-4.2-4.2"/></symbol>
+    <symbol id="i-library" viewBox="0 0 24 24"><path d="m16 6 4 14"/><path d="M12 6v14"/><path d="M8 8v12"/><path d="M4 4v16"/></symbol>
+    <symbol id="i-down" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></symbol>
+    <symbol id="i-up" viewBox="0 0 24 24"><path d="m18 15-6-6-6 6"/></symbol>
+    <symbol id="i-next" viewBox="0 0 24 24"><path d="m15 18-6-6 6-6"/></symbol>
+    <symbol id="i-prev" viewBox="0 0 24 24"><path d="m9 18 6-6-6-6"/></symbol>
+    <symbol id="i-info" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9.5"/><path d="M12 16v-4.5"/><path d="M12 8h.01"/></symbol>
+    <symbol id="i-plus" viewBox="0 0 24 24"><path d="M5 12h14"/><path d="M12 5v14"/></symbol>
+    <symbol id="i-check" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></symbol>
+    <symbol id="i-back15" viewBox="0 0 24 24"><path d="M12 3a9 9 0 1 1-7.8 4.5"/><path d="M13 3H9.4"/><path d="M11.4 1 9.4 3l2 2"/><text x="12" y="15.3" text-anchor="middle" font-size="7" font-weight="600" fill="currentColor" stroke="none" font-family="Rubik, sans-serif">15</text></symbol>
+    <symbol id="i-fwd15" viewBox="0 0 24 24"><path d="M12 3a9 9 0 1 0 7.8 4.5"/><path d="M11 3h3.6"/><path d="M12.6 1l2 2-2 2"/><text x="12" y="15.3" text-anchor="middle" font-size="7" font-weight="600" fill="currentColor" stroke="none" font-family="Rubik, sans-serif">15</text></symbol>
+    <symbol id="i-prev-track" viewBox="0 0 24 24"><path d="M19 5.2v13.6a.8.8 0 0 1-1.25.66L8.6 13a1.2 1.2 0 0 1 0-2l9.15-6.46A.8.8 0 0 1 19 5.2Z" fill="currentColor" stroke="none"/><rect x="5" y="5" width="2.4" height="14" rx="1" fill="currentColor" stroke="none"/></symbol>
+    <symbol id="i-next-track" viewBox="0 0 24 24"><path d="M5 5.2v13.6a.8.8 0 0 0 1.25.66L15.4 13a1.2 1.2 0 0 0 0-2L6.25 4.54A.8.8 0 0 0 5 5.2Z" fill="currentColor" stroke="none"/><rect x="16.6" y="5" width="2.4" height="14" rx="1" fill="currentColor" stroke="none"/></symbol>
+    <symbol id="i-text" viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/><path d="M8 8h8"/><path d="M8 12h5"/></symbol>
+    <symbol id="i-queue" viewBox="0 0 24 24"><path d="M3 6h13"/><path d="M3 12h9"/><path d="M3 18h9"/><path d="M16 12v8l5-4z" fill="currentColor"/></symbol>
+    <symbol id="i-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></symbol>
+    <symbol id="i-moon" viewBox="0 0 24 24"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></symbol>
+    <symbol id="i-repeat1" viewBox="0 0 24 24"><path d="m17 2 4 4-4 4"/><path d="M3 11v-1a4 4 0 0 1 4-4h14"/><path d="m7 22-4-4 4-4"/><path d="M21 13v1a4 4 0 0 1-4 4H3"/><path d="M11 10h1v4"/></symbol>
+    <symbol id="i-grip" viewBox="0 0 24 24"><path d="M5 8h14"/><path d="M5 12h14"/><path d="M5 16h14"/></symbol>
+    <symbol id="i-cont" viewBox="0 0 24 24"><path d="m17 2 4 4-4 4"/><path d="M3 11v-1a4 4 0 0 1 4-4h14"/><path d="m7 22-4-4 4-4"/><path d="M21 13v1a4 4 0 0 1-4 4H3"/></symbol>
+    <symbol id="i-more" viewBox="0 0 24 24"><circle cx="12" cy="5" r="1.6" fill="currentColor"/><circle cx="12" cy="12" r="1.6" fill="currentColor"/><circle cx="12" cy="19" r="1.6" fill="currentColor"/></symbol>
+    <symbol id="i-panel" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2.5"/><path d="M9.5 4v16"/><rect x="4.8" y="8" width="2.6" height="2.6" rx=".6" fill="currentColor" stroke="none"/></symbol>
+    <symbol id="i-play-next" viewBox="0 0 24 24"><path d="M3 6h10"/><path d="M3 12h6"/><path d="M3 18h6"/><path d="M14 10.5v9l7-4.5z" fill="currentColor"/></symbol>
+    <symbol id="i-download" viewBox="0 0 24 24"><path d="M12 15V3"/><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m7 10 5 5 5-5"/></symbol>
+    <symbol id="i-expand" viewBox="0 0 24 24"><path d="M15 3h6v6"/><path d="M9 21H3v-6"/><path d="m21 3-7 7"/><path d="m3 21 7-7"/></symbol>
+    <symbol id="i-book" viewBox="0 0 24 24"><path d="M12 7v14"/><path d="M3 18a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h5a4 4 0 0 1 4 4 4 4 0 0 1 4-4h5a1 1 0 0 1 1 1v13a1 1 0 0 1-1 1h-6a3 3 0 0 0-3 3 3 3 0 0 0-3-3z"/></symbol>
+    <symbol id="i-file" viewBox="0 0 24 24"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M16 13H8"/><path d="M16 17H8"/><path d="M10 9H8"/></symbol>
+    <symbol id="i-share" viewBox="0 0 24 24"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><path d="m16 6-4-4-4 4"/><path d="M12 2v13"/></symbol>
+    <symbol id="i-x" viewBox="0 0 24 24"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></symbol>
+  </defs>
+</svg>
 
-  // ====== להמשיך מאיפה שעצרת (ההתקדמות שנשמרה באתרים, באותו מכשיר) ======
-  function lastActivity(site){
-    let o = {};
-    try { o = JSON.parse(localStorage.getItem(site.key) || '{}') || {}; } catch (e) { o = {}; }
-    let best = null;
-    for (const path in o){
-      const v = o[path];
-      if (!v || !(v.t > 5 || v.done)) continue;
-      if (!best || (v.at || 0) > (best.v.at || 0)) best = { path, v };
-    }
-    return best;
-  }
-  function contRow(site, info, a){
-    const i = info(a.path), v = a.v;
-    const mins = x => Math.max(1, Math.round(x / 60));
-    const sub = v.done ? '<span class="ok">✓ נשמע</span>'
-      : v.d ? `נשמעו ${mins(v.t)} מתוך ${mins(v.d)} דק'` : 'התחלת לשמוע';
-    const pct = v.done ? 100 : v.d ? Math.min(100, v.t / v.d * 100) : 0;
-    return `<a class="row" href="${site.base}">
-      <span class="mc ${site.cls}" aria-hidden="true">${site.glyph}</span>
-      <span class="row-gr"><span class="row-t" style="display:block">${esc(i.title)}</span><span class="row-s" style="display:block">${site.name} · ${sub}</span>
-        ${v.done ? '' : `<span class="row-bar" style="display:block"><i style="width:${pct.toFixed(1)}%"></i></span>`}</span>
-      ${ICON_CHEV}</a>`;
-  }
-  const acts = [[MISHNA, mishnaInfo, lastActivity(MISHNA)], [PARASHA, parashaInfo, lastActivity(PARASHA)]]
-    .filter(x => x[2]).sort((a, b) => (b[2].v.at || 0) - (a[2].v.at || 0));
-  if (acts.length){
-    document.getElementById('contRows').innerHTML = acts.map(x => contRow(x[0], x[1], x[2])).join('');
-    document.getElementById('cont').hidden = false;
-  }
-
-  // ====== התקנת האפליקציה ======
-  // אנדרואיד/מחשב (כרום): כפתור התקנה (beforeinstallprompt) שמתקין ישירות.
-  // אייפון: אפל לא מאפשרת לאתר להתקין את עצמו (אין beforeinstallprompt בשום
-  // דפדפן באייפון) - ההתקנה היא רק "הוספה למסך הבית" מתפריט השיתוף. לכן גם שם
-  // יש כפתור "התקנה", והוא פותח הדרכה קצרה לפי הדפדפן (ספארי חדש/ישן, כרום,
-  // או דפדפן בתוך אפליקציה - וואטסאפ, ג'ימייל - שבו אי אפשר להתקין בכלל).
-  // ?install=1 (מאתרי המשניות והפרשות, ומהודעת המעבר באפליקציית הפרשות הישנה):
-  // מציגים תמיד, גם אם נסגר, ובאייפון פותחים את ההדרכה מיד.
-  let installEvt = null;
-  const INSTALL_KEY = 'shiurim:installDismissed';
-  const wantInstall = new URLSearchParams(location.search).has('install');
-  const UA = navigator.userAgent;
-  const isIOS = /iphone|ipad|ipod/i.test(UA) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
-  const isIPad = /ipad/i.test(UA) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
-  const iosBrowser = !isIOS ? '' : /FBAN|FBAV|Instagram|Line\/|GSA\/|Twitter|LinkedInApp|Snapchat|TikTok|musical_ly|Telegram|WhatsApp/i.test(UA) ? 'inapp'
-    : /CriOS/.test(UA) ? 'chrome' : /FxiOS|EdgiOS|OPiOS|OPT\/|YaBrowser|DuckDuckGo/.test(UA) ? 'other' : 'safari';
-  const safariVer = +((UA.match(/Version\/(\d+)/) || [])[1] || 0);
-  const ICON_SHARE = '<svg class="ios-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-label="שיתוף"><path d="M12 3v12M8 7l4-4 4 4"/><path d="M8 11H6a1 1 0 0 0-1 1v8a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-8a1 1 0 0 0-1-1h-2"/></svg>';
-  const ICON_MORE = '<svg class="ios-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-label="עוד"><circle cx="12" cy="12" r="10"/><circle cx="7.5" cy="12" r="1.2" fill="currentColor" stroke="none"/><circle cx="12" cy="12" r="1.2" fill="currentColor" stroke="none"/><circle cx="16.5" cy="12" r="1.2" fill="currentColor" stroke="none"/></svg>';
-  const ICON_ADD = '<svg class="ios-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-label="הוספה"><rect x="3" y="3" width="18" height="18" rx="4"/><path d="M12 8v8M8 12h8"/></svg>';
-  // שמות הכפתורים כמו שהם בתפריטים של האייפון - לפי שפת המכשיר (בטלפון באנגלית
-  // התפריטים באנגלית, ו"הוספה למסך הבית" לא יופיע שם)
-  const HE = /^he|^iw/i.test(navigator.language || "");
-  const N = HE ? { share:"שיתוף", add:"הוספה למסך הבית", webapp:"פתיחה כאפליקציית רשת", addBtn:"הוסף" }
-    : { share:"Share", add:"Add to Home Screen", webapp:"Open as Web App", addBtn:"Add" };
-  const q = t => `<b dir="auto">"${t}"</b>`;
-  const ADD_TXT = `${q(N.add)} ${ICON_ADD} (אם לא רואים - גוללים למטה ברשימה, או "${HE ? "עוד" : "More"}")`;
-  function iosGuide(){
-    const where = isIPad ? 'בשורת הכתובת למעלה' : 'בתחתית המסך';
-    let steps, lead = '', note = '', copy = false;
-    if (iosBrowser === 'safari' && safariVer >= 26){
-      steps = [`לוחצים על ${ICON_MORE} (שלוש נקודות) ליד שורת הכתובת ${where}, ובוחרים ${q(N.share)} ${ICON_SHARE}`,
-        `בוחרים ${ADD_TXT}`,
-        `מוודאים ש-${q(N.webapp)} דולק, ולוחצים ${q(N.addBtn)}`];
-      note = 'אם כפתור השיתוף מופיע ישר בשורת הכתובת - אפשר ללחוץ עליו מיד.';
-    } else if (iosBrowser === 'safari'){
-      steps = [`לוחצים על כפתור השיתוף ${ICON_SHARE} ${where}`,
-        `בוחרים ${ADD_TXT}`,
-        `לוחצים ${q(N.addBtn)} בפינה למעלה`];
-    } else if (iosBrowser === 'chrome'){
-      steps = [`לוחצים על כפתור השיתוף ${ICON_SHARE} בשורת הכתובת (או בתפריט ⋯ ← ${q(N.share)})`,
-        `בוחרים ${ADD_TXT}`,
-        `לוחצים ${q(N.addBtn)}`];
-      note = 'אם האפשרות לא מופיעה - פותחים את האתר בספארי ומתקינים משם.';
-      copy = true;
-    } else {
-      lead = iosBrowser === 'inapp'
-        ? 'האתר נפתח בתוך אפליקציה אחרת (וואטסאפ, מייל וכדומה), ומשם אי אפשר להתקין. צריך לפתוח אותו ב<b>ספארי</b>:'
-        : 'מהדפדפן הזה ההתקנה לא תמיד אפשרית. הכי פשוט - לפתוח את האתר ב<b>ספארי</b>:';
-      steps = ['מעתיקים את הקישור בכפתור למטה',
-        'פותחים את <b>ספארי</b>, מדביקים בשורת הכתובת ונכנסים',
-        `שם: כפתור השיתוף ${ICON_SHARE} ← ${ADD_TXT}`];
-      if (iosBrowser === 'inapp') note = 'לפעמים יש בתפריט של האפליקציה (⋯ או ↗) אפשרות "פתיחה בספארי" - זה עוד יותר מהיר.';
-      copy = true;
-    }
-    return `<div class="ios-bg" id="iosBg"><div class="ios-sh" role="dialog" aria-modal="true" aria-labelledby="iosT">
-      <div class="ios-hd"><img src="/icons/icon-192.png" alt=""><div class="ios-t" id="iosT">התקנת האפליקציה באייפון</div>
-        <button class="install-x" id="iosX" aria-label="סגור">${ICON_X}</button></div>
-      ${lead ? `<p class="ios-lead">${lead}</p>` : ''}
-      <ol class="ios-steps">${steps.map((s, i) => `<li><i>${i + 1}</i><span>${s}</span></li>`).join('')}</ol>
-      ${note ? `<p class="ios-note">${note}</p>` : ''}
-      ${copy ? '<button class="ios-copy" id="iosCopy">העתקת הקישור לאתר</button>' : ''}
-      <p class="ios-note">אחרי זה האייקון "שיעורי הרב" יופיע במסך הבית, ונפתח כמו אפליקציה רגילה.</p>
-    </div></div>`;
-  }
-  function openIosGuide(){
-    closeIosGuide();
-    document.body.insertAdjacentHTML('beforeend', iosGuide());
-  }
-  function closeIosGuide(){ const g = document.getElementById('iosBg'); if (g) g.remove(); }
-  document.addEventListener('click', (e) => {
-    if (!document.getElementById('iosBg')) return;
-    if (e.target.id === 'iosBg' || e.target.closest('#iosX')) closeIosGuide();
-    const c = e.target.closest('#iosCopy');
-    if (c){
-      const url = location.origin + '/';
-      const done = () => { c.textContent = 'הקישור הועתק ✓'; };
-      if (navigator.clipboard) navigator.clipboard.writeText(url).then(done, () => { c.textContent = url; });
-      else c.textContent = url;
-    }
-  });
-  document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeIosGuide(); });
-
-  function dismissed(){ try { return !!localStorage.getItem(INSTALL_KEY); } catch (e) { return false; } }
-  function installHtml(){
-    if (isStandalone) return '';
-    if (!wantInstall && (dismissed() || !(installEvt || isIOS))) return '';
-    const sub = (installEvt || isIOS) ? 'פרשות ומשניות במקום אחד, ממסך הבית'
-      : 'בתפריט ⋮ של כרום בוחרים "התקנת אפליקציה" (אם צריך - קודם "פתיחה ב-Chrome")';
-    return `<div class="install"><img src="/icons/icon-192.png" alt="">
-      <div class="install-gr"><div class="install-t">התקינו את האפליקציה</div><div class="install-s">${sub}</div></div>
-      ${(installEvt || isIOS) ? '<button class="install-go" id="installGo">התקנה</button>' : ''}
-      <button class="install-x" id="installX" aria-label="סגור">${ICON_X}</button></div>`;
-  }
-  function refreshInstall(){ document.getElementById('installSlot').innerHTML = installHtml(); }
-  window.addEventListener('beforeinstallprompt', (e) => { e.preventDefault(); installEvt = e; refreshInstall(); });
-  window.addEventListener('appinstalled', () => { installEvt = null; refreshInstall(); });
-  document.getElementById('installSlot').addEventListener('click', (e) => {
-    if (e.target.closest('#installGo')){
-      if (installEvt){
-        installEvt.prompt();
-        installEvt.userChoice.finally(() => { installEvt = null; refreshInstall(); });
-      } else if (isIOS) openIosGuide();
-    }
-    if (e.target.closest('#installX')){
-      try { localStorage.setItem(INSTALL_KEY, '1'); } catch (err) {}
-      document.getElementById('installSlot').innerHTML = '';
-    }
-  });
-  refreshInstall();
-  if (wantInstall && isIOS && !isStandalone) openIosGuide();
-
-  if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js').catch(() => {});
-})();
-</script>
+<script src="gen.js?v=20261015a" onerror="window.GEN={}"></script>
+<script src="live.js?v=20261015a"></script>
+<script>if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js').catch(() => {});</script>
 </body>
 </html>

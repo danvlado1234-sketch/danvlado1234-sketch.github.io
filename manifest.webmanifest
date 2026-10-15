@@ -16,8 +16,8 @@
   },
   "handle_links": "preferred",
   "orientation": "portrait",
-  "background_color": "#1b120c",
-  "theme_color": "#1b120c",
+  "background_color": "#121110",
+  "theme_color": "#121110",
   "icons": [
     {
       "src": "/icons/icon-192.png",
@@ -41,12 +41,12 @@
   "shortcuts": [
     {
       "name": "שיעורי משנה",
-      "url": "/Shiurim-mishnhyot/?app=1",
+      "url": "/?f=m",
       "icons": [{ "src": "/icons/mishna-192.png", "sizes": "192x192", "type": "image/png" }]
     },
     {
       "name": "פרשת שבוע ומועדים",
-      "url": "/shiurim-parasha/?app=1",
+      "url": "/?f=p",
       "icons": [{ "src": "/icons/parasha-192.png", "sizes": "192x192", "type": "image/png" }]
     }
   ]
