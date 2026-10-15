@@ -370,7 +370,14 @@ input[type=range]::-moz-range-thumb{ width: 13px; height: 13px; border: 0; borde
 @media (prefers-reduced-motion: reduce){ .np, .np-cover, .bar-now{ transition-duration: .01ms !important; } }
 .np-scrub input::-webkit-slider-runnable-track{ height: 6px; border-radius: 6px; background: linear-gradient(to right, oklch(1 0 0 / 0.92) var(--p), oklch(1 0 0 / 0.28) var(--p)); }
 .np-scrub input::-webkit-slider-thumb{ width: 0; height: 0; }
-.np-times{ display: flex; justify-content: space-between; font-size: 0.8rem; font-weight: 500; color: oklch(1 0 0 / 0.65); font-variant-numeric: tabular-nums; margin-top: 2px; }
+.np-times{ display: flex; justify-content: space-between; align-items: center; font-size: 0.8rem; font-weight: 500; color: oklch(1 0 0 / 0.65); font-variant-numeric: tabular-nums; margin-top: 2px; }
+/* ניגון רציף ומהירות — ליד ציר הזמן, בין הזמנים (דניאל, 15.10: "יותר מדי אייקונים למטה") */
+.np-opts{ display: flex; gap: 8px; }
+.opt{ height: 44px; min-width: 52px; padding: 0 12px; border-radius: 99px; display: grid; place-items: center; color: oklch(1 0 0 / 0.75); background: oklch(1 0 0 / 0.08); transition: color .2s, background .2s; }
+.opt .i{ width: 21px; height: 21px; }
+.opt .spd{ font-size: 0.95rem; font-weight: 700; }
+.opt:hover{ color: var(--text); background: oklch(1 0 0 / 0.14); }
+.opt#npCont[aria-pressed="true"]{ color: var(--accent); }
 .np-ctl{ display: flex; align-items: center; justify-content: space-between; margin-top: clamp(10px, 2.4vh, 22px); }
 .np-ctl .ib{ color: var(--text); width: 52px; height: 52px; }
 .np-ctl .ib .i{ width: 30px; height: 30px; }
@@ -611,7 +618,12 @@ body.building .top{ display: none; }
 .switch i{ position: absolute; top: 3px; inset-inline-start: 3px; width: 22px; height: 22px; border-radius: 99px; background: var(--text); box-shadow: 0 2px 6px oklch(0 0 0 / 0.35); transition: inset-inline-start .2s var(--ease); }
 .switch[aria-checked="true"]{ background: var(--accent); }
 .switch[aria-checked="true"] i{ inset-inline-start: 21px; background: var(--accent-ink); }
-.tool#npCont[aria-pressed="true"]{ color: var(--accent); }
+/* הפעולה העיקרית בשורה: סיכום (פרשה/מועד) או טקסט (משנה) — זהב, עם שם */
+.tool.is-key{ grid-auto-flow: column; gap: 8px; flex: 0 1 auto; max-width: none; padding: 10px 20px; border-radius: 99px; background: var(--accent); color: var(--accent-ink); font-size: 0.95rem; font-weight: 700; }
+.tool.is-key:hover{ color: var(--accent-ink); filter: brightness(1.06); }
+.tool.is-key[aria-pressed="true"]{ background: var(--accent); color: var(--accent-ink); box-shadow: 0 0 0 2px oklch(1 0 0 / 0.5); }
+.tool[hidden]{ display: none; }
+.np-tools{ align-items: center; }
 
 /* רשתות לחומש / מועדים / עיון */
 .sq-grid{ grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 22px 16px; }

@@ -634,6 +634,8 @@
     const sf = $('#npSefaria');
     if (it.kind === 'm') { sf.href = `https://www.sefaria.org.il/${SEFARIA[it.masechet] || ''}.${it.perek}.${it.nums[0]}`; $('#npSefariaLbl').textContent = 'ספריא'; sf.hidden = !SEFARIA[it.masechet]; }
     else { sf.href = it.pdf || '#'; $('#npSefariaLbl').textContent = 'סיכום'; sf.hidden = !it.pdf; }
+    // בפרשה "טקסט" היה רק הפניה לאותו סיכום — כפתור אחד, בולט. במשנה הבולט הוא הטקסט.
+    $('#npTextBtn').hidden = it.kind !== 'm'; $('#npTextBtn').classList.toggle('is-key', it.kind === 'm'); sf.classList.toggle('is-key', it.kind !== 'm');
     // הנגן הבינוני
     $('#dockCover').innerHTML = cover(it, 700);
     $('#dockTitle').textContent = npTitle(it); $('#dockSub').textContent = npSub(it); 

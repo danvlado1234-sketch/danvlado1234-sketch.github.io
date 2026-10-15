@@ -32,9 +32,9 @@
 <meta name="apple-mobile-web-app-title" content="שיעורי הרב">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <script>
-  // גרסת הקבצים — בכל עדכון של app.js / style.css / live.js / gen.js מחליפים את כל המופעים של 20261015b בקובץ הזה
+  // גרסת הקבצים — בכל עדכון של app.js / style.css / live.js / gen.js מחליפים את כל המופעים של 20261015c בקובץ הזה
   // (ה-SW שומר קבצים לפי הכתובת המלאה, אז גרסה חדשה = כתובת חדשה = הקובץ החדש מיד)
-  window.APP_V = '20261015b';
+  window.APP_V = '20261015c';
   // קישורים מהאתרים הקודמים (/shiurim-parasha/?parasha=נח, /Shiurim-mishnhyot/?m=ברכות&p=2, המייל) — לכתובת החדשה
   (() => {
     const q = new URLSearchParams(location.search); if (!q.toString() || location.hash.length > 2) return;
@@ -52,7 +52,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Frank+Ruhl+Libre:wght@500;700;900&family=Rubik:wght@400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="style.css?v=20261015b">
+<link rel="stylesheet" href="style.css?v=20261015c">
 </head>
 <body>
 <div class="shell">
@@ -184,7 +184,12 @@
         <div class="np-meta"><h2 id="npTitle"></h2><p id="npSub"></p></div>
         <div class="np-scrub" dir="ltr">
           <input type="range" id="npSeek" min="0" max="1000" value="0" aria-label="מיקום בשיעור">
-          <div class="np-times"><span id="npCur">0:00</span><span id="npDur">0:00</span></div>
+          <div class="np-times"><span id="npCur">0:00</span>
+            <span class="np-opts" dir="rtl">
+              <button class="opt" id="npCont" aria-pressed="true" aria-label="ניגון רציף" title="ניגון רציף"><svg class="i"><use href="#i-cont"/></svg></button>
+              <button class="opt" id="npSpeed" aria-label="מהירות ההשמעה" title="מהירות"><span class="spd" dir="ltr">1×</span></button>
+            </span>
+            <span id="npDur">0:00</span></div>
         </div>
         <div class="np-ctl" dir="ltr">
           <button class="ib" id="npPrev" aria-label="המשנה הקודמת"><svg class="i"><use href="#i-prev-track"/></svg></button>
@@ -195,8 +200,6 @@
         </div>
         <div class="np-tools">
           <button class="tool" id="npTextBtn" data-pane="text" aria-pressed="false"><svg class="i"><use href="#i-text"/></svg><span id="npTextLbl">טקסט</span></button>
-          <button class="tool" id="npCont" aria-pressed="true"><svg class="i"><use href="#i-cont"/></svg><span>ניגון רציף</span></button>
-          <button class="tool" id="npSpeed" aria-label="מהירות ההשמעה"><span class="spd" dir="ltr">1×</span><span>מהירות</span></button>
           <button class="tool" id="npQueueBtn" data-pane="queue" aria-pressed="false"><svg class="i"><use href="#i-queue"/></svg><span>הבא בתור</span></button>
           <a class="tool" id="npSefaria" target="_blank" rel="noopener"><svg class="i"><use href="#i-book"/></svg><span id="npSefariaLbl">ספריא</span></a>
           <button class="tool" id="npDownload"><svg class="i"><use href="#i-download"/></svg><span id="npDlLbl">הורדה</span></button>
@@ -259,8 +262,8 @@
   </defs>
 </svg>
 
-<script src="gen.js?v=20261015b" onerror="window.GEN={}"></script>
-<script src="live.js?v=20261015b"></script>
+<script src="gen.js?v=20261015c" onerror="window.GEN={}"></script>
+<script src="live.js?v=20261015c"></script>
 <script>if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js').catch(() => {});</script>
 </body>
 </html>
