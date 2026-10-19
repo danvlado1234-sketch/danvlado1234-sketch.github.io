@@ -281,7 +281,7 @@
       <div class="week-in">
         <span class="week-k"><i></i>פרשת השבוע · שבת ${esc(hebDate(w.date))}</span>
         <h2>פרשת ${esc(w.label)}</h2>
-        <p>${g ? `${g.items.length === 1 ? 'שיעור אחד' : `${g.items.length} שיעורים`} על הפרשה · האחרון: ${esc(last.year)}${last.pdf ? ' · עם סיכום כתוב' : ''}` : 'השיעור על הפרשה יעלה לקראת שבת'}</p>
+        <p>${g ? `${g.items.length === 1 ? 'שיעור אחד' : `${g.items.length} שיעורים`} על הפרשה · האחרון: ${esc(last.year)}${last.pdf ? ' · עם סיכום כתוב' : ''}` : 'השיעור על הפרשה יעלה בקרוב'}</p>
         <div class="week-acts">${g ? `<button class="btn btn-play" data-play="${esc(last.id)}">${icon('play')}להאזנה</button><a class="btn btn-ghost" href="#/p/${encodeURIComponent(w.name)}">לכל השיעורים</a>` : `<a class="btn btn-ghost" href="#/book/${encodeURIComponent(Object.keys(CHUMASH).find(b => CHUMASH[b].includes(w.name)) || 'בראשית')}">לחומש</a>`}</div>
       </div></section>`;
   }
