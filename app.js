@@ -251,7 +251,10 @@
           ${door('href="#/" data-f="i"', 'עיון', `${nI} סוגיות בהלכה`, 'oklch(0.55 0.08 170)')}
         </div>
         <div class="quick">
-          ${(() => { const g = groups[weekParasha.name]; const it = g ? g.items[0] : latestP; return `<button class="qk" data-play="${esc(it.id)}"><span class="cover sm">${coverHTML(it)}</span><span><small>פרשת השבוע · שבת ${esc(hebDate(weekParasha.date))}</small><b>פרשת ${esc(weekParasha.label)}</b></span>${icon('play')}</button>`; })()}
+          ${(() => { const g = groups[weekParasha.name], k = `פרשת השבוע · שבת ${esc(hebDate(weekParasha.date))}`;
+            // פרשה שעוד לא הוקלטה — לא מנגנים במקומה את הקודמת (דניאל, 19.10), רק אומרים שתעלה בקרוב
+            if (!g) return `<a class="qk" href="#/" data-f="p"><span class="cover sm"><img src="${IMG(ART[weekParasha.name] || FALLBACK, 120, 120)}" alt=""></span><span><small>${k}</small><b>פרשת ${esc(weekParasha.label)}</b><small>השיעור יעלה בקרוב</small></span>${icon('next')}</a>`;
+            const it = g.items[0]; return `<button class="qk" data-play="${esc(it.id)}"><span class="cover sm">${coverHTML(it)}</span><span><small>${k}</small><b>פרשת ${esc(weekParasha.label)}</b></span>${icon('play')}</button>`; })()}
         </div>
       </div></section>`;
   }
@@ -546,7 +549,7 @@
   }
   window.addEventListener('hashchange', route);
   document.addEventListener('click', e => {
-    const d = e.target.closest('.door[data-f]'); if (!d) return;
+    const d = e.target.closest('.door[data-f], .qk[data-f]'); if (!d) return;
     e.preventDefault(); filter = d.dataset.f; $$('#topChips .chip').forEach(x => x.classList.toggle('is-on', x.dataset.f === filter)); route();
   });
   // "בית" = דף הבית (שלט + שורות). כבר בבית? חוזר להתחלה ומאפס את הסינון.
