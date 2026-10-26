@@ -37,6 +37,9 @@
   for (const [k, id] of Object.entries(window.GEN || {})) {
     if (k.startsWith('סדר:')) SEDER_ART[k.slice(4)] = 'gen:' + id; else if (k.startsWith('מסכת:')) MART[k.slice(5)] = 'gen:' + id; else ART[k] = 'gen:' + id;
   }
+  // איות שונה בקובץ הכריכות (gen.js) מאשר ברשימות כאן
+  for (const [a, b] of [['חקת', 'חוקת'], ['פנחס', 'פינחס']]) if (ART[a] && !ART[b]) ART[b] = ART[a];
+  if (MART['ידיים'] && !MART['ידים']) MART['ידים'] = MART['ידיים'];
   const mArt = n => MART[n] || ART[n];
   const artOf = it => ((window.GENL || {})[it.id] ? 'gen:' + window.GENL[it.id] : null) || (it.kind === 'm' ? mArt(it.masechet) : ART[it.title]) || SEDER_ART[it.seder] || FALLBACK;
 
@@ -90,7 +93,7 @@
   const SNAP = window.SNAP;
   const items = [];
   for (const x of SNAP.mishna) items.push({ kind: 'm', id: x.f, masechet: x.m, seder: sederOf[x.m], perek: x.p, nums: x.n, date: x.d, url: `${MBASE}/${enc(x.f)}` });
-  for (const x of SNAP.parasha) items.push({ kind: 'p', id: x.f, title: x.t, moed: x.moed, book: x.book, year: x.y, tag: x.tag, iyun: x.iyun, date: x.d, pdf: x.pdf ? `${PBASE}/${enc(x.f.replace(/\.m4a$/, '.pdf'))}` : null, url: `${PBASE}/${enc(x.f)}` });
+  for (const x of SNAP.parasha) items.push({ kind: 'p', id: x.f, title: x.t, moed: x.moed, book: x.book, year: x.y, tag: x.tag, iyun: x.iyun, date: x.d, pdf: x.pdf ? `${PBASE}/${enc(x.pdf)}${x.pv ? '?v=' + x.pv : ''}` : null, url: `${PBASE}/${enc(x.f)}` });
   const byId = Object.fromEntries(items.map(i => [i.id, i]));
   const mItems = items.filter(i => i.kind === 'm').sort((a, b) => a.masechet === b.masechet ? (a.perek - b.perek || a.nums[0] - b.nums[0]) : 0);
   const masechet = {};
@@ -239,11 +242,11 @@
       <div class="sys-in">
         <h1 class="sys-title">שיעורי הרב <span>ולדומירסקי</span></h1>
         <p class="sys-sub">שיעורי הרה״ג רבי יצחק ולדומירסקי שליט״א — משנה, פרשת השבוע, מועדים ועיון. <b class="num">${items.length}</b> שיעורים בקול, עם הטקסט, פתוחים לכולם.</p>
-        <div class="latest">
+        ${latestM ? `<div class="latest">
           <span class="cover sm">${coverHTML(latestM)}</span>
           <div><small>המשנה האחרונה בספרייה</small><b>${esc(`${latestM.masechet} ${heb(latestM.perek)}, ${latestM.nums.map(heb).join('–')}`)}</b><span>${rel(latestM.date)} · האזנה עם טקסט המשנה</span></div>
           <button class="btn btn-play" data-play="${esc(latestM.id)}">${icon('play')}להאזנה</button>
-        </div>
+        </div>` : ''}
         <div class="doors">
           ${door('href="#/" data-f="m"', 'משנה', `${Object.keys(masechet).length} מסכתות · ${nM} שיעורים`, 'var(--mishna)')}
           ${door('href="#/" data-f="p"', 'פרשת השבוע', `${nP} שיעורים · 5 חומשים`, 'var(--parasha)')}
@@ -373,9 +376,10 @@
     if (!s) return `<section class="hero"><img src="${IMG(art, 1800)}" alt="" style="filter:grayscale(1) brightness(.5)">
       <div><span class="kick">סדר ${seder} · ${total} פרקים</span><h1>מסכת ${esc(name)}</h1><p>עוד לא הוקלטו שיעורים במסכת הזו. כשתעלה המשנה הראשונה — היא תופיע כאן, ובשורת "חדש השבוע".</p>
       <div class="acts"><a class="btn btn-ghost" href="#/seder/${encodeURIComponent(seder)}">לכל מסכתות סדר ${seder}</a></div></div></section>`;
+    if (perekArg && !(+perekArg >= 1 && +perekArg <= total)) return notFound(); // פרק שאין במסכת (כתובת שגויה)
     const lastP = Object.keys(prog).map(id => byId[id]).filter(i => i && i.kind === 'm' && i.masechet === name).sort((a, b) => (prog[b.id][2] || 0) - (prog[a.id][2] || 0))[0];
     const perek = +perekArg || lastP?.perek || +Object.keys(s.perakim).sort((a, b) => b - a)[0];
-    const resume = lastP && fracOf(lastP.id) < 0.95 ? lastP : s.perakim[perek]?.[0];
+    const resume = (lastP && fracOf(lastP.id) < 0.95 ? lastP : s.perakim[perek]?.[0]) || s.items[0]; // פרק שעוד לא הוקלט — מתחילים מהראשון
     const eps = s.perakim[perek] || [];
     const html = `<section class="hero"><img src="${HERO(art)}" alt="">
       <div><span class="kick">סדר ${seder} · מסכת</span><h1>${esc(name)}</h1>
@@ -394,16 +398,18 @@
               <span class="over"><span>${icon('play')}</span></span>${fracOf(it.id) > 0.02 ? `<span class="prog"><i style="width:${Math.round(fracOf(it.id) * 100)}%"></i></span>` : ''}</div>
             <div class="ep-body"><b>משנה ${it.nums.map(heb).join('–')}<span>${rel(it.date)}</span></b><p class="wait" data-n="${it.nums.join(',')}">טוען את לשון המשנה…</p></div>
             ${moreBtn(it)}
-          </div>`).join('')}</div>
+          </div>`).join('') || '<p class="note">הפרק הזה עוד לא הוקלט.</p>'}</div>
       </div>`;
-    queueMicrotask(() => sefariaPerek(name, perek).then(t => {
-      $$('#eps p[data-n]').forEach(p => {
+    // התשובה מספריא נכתבת רק לרשימה של הדף הזה — אם בינתיים עברו לפרק אחר, הרשימה כבר לא בדף
+    queueMicrotask(() => { const box = $('#eps'); sefariaPerek(name, perek).then(t => {
+      if (!box || !box.isConnected) return;
+      $$('p[data-n]', box).forEach(p => {
         const ns = p.dataset.n.split(',').map(Number);
         const line = t && ns.map(n => t[n - 1]).filter(Boolean).join(' ');
         p.textContent = line || 'הטקסט לא נטען — אפשר לפתוח בספריא';
         if (line) p.classList.remove('wait');
       });
-    }));
+    }); });
     return html;
   }
 
@@ -474,7 +480,7 @@
     if (m && masechet[m[1]]) {
       const p = HEB.indexOf(m[2]), n = m[3] ? HEB.indexOf(m[3]) : 0;
       const hit = masechet[m[1]].perakim[p]?.find(i => !n || i.nums.includes(n));
-      if (hit) out.push(`<a class="res" href="${seriesHref(hit)}" data-play="${esc(hit.id)}"><img src="${IMG(artOf(hit), 120, 120)}" alt=""><div><b>${esc(fullName(hit))}</b><span>משנה · נגן עכשיו</span></div></a>`);
+      if (hit) out.push(`<a class="res res-play" href="${seriesHref(hit)}" data-play="${esc(hit.id)}"><img src="${IMG(artOf(hit), 120, 120)}" alt=""><div><b>${esc(fullName(hit))}</b><span>משנה · נגן עכשיו</span></div></a>`);
     }
     for (const [s, ms] of SEDARIM) for (const name of ms) if (name.includes(q) || q.includes(name)) out.push(`<a class="res" href="#/m/${encodeURIComponent(name)}"><img src="${IMG(mArt(name) || SEDER_ART[s], 120, 120)}" alt=""><div><b>מסכת ${esc(name)}</b><span>סדר ${s} · ${masechet[name] ? `${masechet[name].items.length} משניות` : 'טרם הוקלט'}</span></div></a>`);
     for (const g of Object.values(groups)) if (g.title.includes(q) || (MOED_NAME[g.title] || '').includes(q)) out.push(`<a class="res" href="#/p/${encodeURIComponent(g.title)}"><img src="${IMG(ART[g.title] || FALLBACK, 120, 120)}" alt=""><div><b>${esc(g.moed ? (MOED_NAME[g.title] || g.title) : 'פרשת ' + g.title)}</b><span>${g.moed ? 'מועד' : 'חומש ' + g.book} · ${g.items.length} שיעורים</span></div></a>`);
@@ -499,9 +505,11 @@
   // ---------- ניתוב ----------
   const top = $('#top');
   function route() {
-    const [, a, b, c] = location.hash.split('/').map(decodeURIComponent);
+    let a, b, c, bad = false;
+    try { [, a, b, c] = location.hash.split('/').map(decodeURIComponent); } catch { bad = true; a = 'x'; } // קידוד משובש בכתובת
     let html, flat = true, nav = '';
-    if (!a) { html = home(); flat = false; nav = 'home'; }
+    if (bad) html = notFound();
+    else if (!a) { html = home(); flat = false; nav = 'home'; }
     else if (a === 'm') html = masechetPage(b, c);
     else if (a === 'p') html = groupPage(b);
     else if (a === 'seder') html = sederPage(b);
@@ -771,16 +779,22 @@
   document.addEventListener('pointerup', () => {
     if (!drag) return;
     const ids = [...drag.list.children].map(r => r.dataset.id);
-    if (drag.src === 'user') userQ = ids; else contQ = [...ids, ...contQ.slice(ids.length)];
-    drag.row.classList.remove('dragging'); drag = null; renderQueue();
+    const src = drag.src;
+    if (src === 'user') userQ = ids; else if (src === 'cont') contQ = [...ids, ...contQ.slice(ids.length)]; else if (src === 'build' && building) building.ids = ids;
+    drag.row.classList.remove('dragging'); drag = null;
+    if (src === 'build') { if (building) buildPanel(); } else renderQueue();
   });
   document.addEventListener('keydown', e => {
     const h = e.target.closest && e.target.closest('.qh'); if (!h || (e.key !== 'ArrowUp' && e.key !== 'ArrowDown')) return;
     e.preventDefault();
-    const id = h.closest('.qrow').dataset.id, list = h.dataset.src === 'cont' ? contQ : userQ, k = list.indexOf(id), to = k + (e.key === 'ArrowUp' ? -1 : 1);
-    if (to < 0 || to >= list.length) return;
-    list.splice(k, 1); list.splice(to, 0, id); renderQueue();
-    const again = $(`${h.closest('ol').closest('#npQueue') ? '#npQueue' : '#dockQ'} .qrow[data-id="${CSS.escape(id)}"] .qh`); if (again) again.focus();
+    // build = הרשימה שבבנייה (לוח הצד) — לא נוגעים בתור
+    const src = h.dataset.src, id = h.closest('.qrow').dataset.id;
+    const list = src === 'build' ? (building ? building.ids : []) : src === 'cont' ? contQ : userQ, k = list.indexOf(id), to = k + (e.key === 'ArrowUp' ? -1 : 1);
+    if (k < 0 || to < 0 || to >= list.length) return;
+    list.splice(k, 1); list.splice(to, 0, id);
+    if (src === 'build') buildPanel(); else renderQueue();
+    const scope = src === 'build' ? '#dockB' : h.closest('#npQueue') ? '#npQueue' : '#dockQ';
+    const again = $(`${scope} .qrow[data-id="${CSS.escape(id)}"] .qh`); if (again) again.focus();
   });
 
   document.addEventListener('click', e => { const a = e.target.closest('[data-list]'); if (!a) return; e.preventDefault(); playList(+a.dataset.list); });
@@ -797,7 +811,7 @@
     const its = building.ids.map(id => byId[id]);
     $('#dockB').innerHTML = `<input class="bname" id="bName" dir="auto" value="${esc(building.name)}" placeholder="שם הרשימה, למשל: לנסיעה" aria-label="שם הרשימה">
       <p class="bhint">${its.length ? `${its.length} שיעורים` : 'חפשו שיעורים מימין ולחצו ＋ — הם יופיעו כאן.'}</p>
-      <div class="blist">${its.map(x => qRow(x, { mine: true })).join('')}</div>
+      <div class="blist">${its.map(x => qRow(x, 'build')).join('')}</div>
       <div class="bact"><button class="btn-save" data-bsave ${its.length ? '' : 'disabled'}>שמירת הרשימה</button><button class="lnk" data-bcancel>ביטול</button></div>`;
     const bar = $('.buildbar'); if (bar) bar.outerHTML = buildBar();
   }
@@ -886,9 +900,18 @@
       if (!s.matches(':active')) { s.value = pct * 10; s.style.setProperty('--p', pct + '%'); }
       c.textContent = d ? fmt(t) : '–:––'; du.textContent = d ? '-' + fmt(d - t) : '–:––';
     }
-    if (Date.now() - lastSave > 4000 && d && !audio.paused) { lastSave = Date.now(); prog[nowId] = [t, d, Date.now()]; store.set('prog', prog); }
+    if (Date.now() - lastSave > 4000 && d && !audio.paused) saveProg();
+  }
+  // שמירת המקום: תוך כדי ניגון כל 4 שניות, וגם בהשהיה, בקפיצה, וכשיוצאים מהאפליקציה/מהלשונית
+  function saveProg() {
+    const d = audio.duration, t = audio.currentTime;
+    if (!nowId || !d || !isFinite(d)) return; // באמצע החלפת שיעור אין עדיין אורך — לא שומרים
+    lastSave = Date.now(); prog[nowId] = [t, d, Date.now()]; store.set('prog', prog);
   }
   for (const ev of ['timeupdate', 'loadedmetadata', 'seeked', 'emptied']) audio.addEventListener(ev, updTime);
+  audio.addEventListener('pause', saveProg); audio.addEventListener('seeked', saveProg);
+  addEventListener('pagehide', saveProg);
+  document.addEventListener('visibilitychange', () => { if (document.hidden) saveProg(); });
   for (const s of [$('#barSeek'), $('#npSeek'), $('#dockSeek')]) s.addEventListener('input', () => { s.style.setProperty('--p', s.value / 10 + '%'); if (audio.duration) audio.currentTime = s.value / 1000 * audio.duration; });
   for (const k of ['bar', 'np', 'dock']) {
     $(`#${k}Play`).addEventListener('click', toggle);
@@ -967,7 +990,7 @@
     try {
       const r = await fetch(it.url); if (!r.ok) throw new Error(r.status);
       const blob = await r.blob(), a = document.createElement('a');
-      a.href = URL.createObjectURL(blob); a.download = `${fullName(it).replace(/[\\/:*?"<>|]/g, '')}.m4a`;
+      a.href = URL.createObjectURL(blob); a.download = `${fullName(it).replace(/[\\/:*?"<>|]/g, '')}.${(it.id.match(/\.(m4a|mp3)$/i) || [, 'm4a'])[1].toLowerCase()}`;
       document.body.append(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 4000);
       toast('השיעור נשמר בהורדות');
     } catch { window.open(it.url, '_blank', 'noopener'); toast('הקובץ נפתח בלשונית חדשה — שם אפשר לשמור'); }
@@ -1124,7 +1147,8 @@
       if (!t) { box.innerHTML = dbox.innerHTML = '<p class="src">הטקסט לא נטען כרגע.</p>'; return; }
       dbox.textContent = it.nums.map(n => t[n - 1] || '').join(' ');
       box.innerHTML = it.nums.map(n => {
-        const lines = (t[n - 1] || '').split(/(?<=[.:])\s+/).filter(Boolean);
+        // בלי lookbehind — ספארי לפני 16.4 לא מכיר אותו, ואז כל הקובץ לא נטען (אתר ריק באייפון ישן)
+        const lines = (t[n - 1] || '').replace(/([.:])\s+/g, '$1\n').split('\n').filter(Boolean);
         return `<span class="ln-n">משנה ${heb(n)}</span>${lines.map(l => `<p class="ln">${esc(l)}</p>`).join('')}`;
       }).join('') + `<p class="src">הטקסט מספריא · <a href="https://www.sefaria.org.il/${SEFARIA[it.masechet]}.${it.perek}.${it.nums[0]}" target="_blank" rel="noopener" style="text-decoration:underline">לפתוח בספריא</a></p>`;
     });
@@ -1156,7 +1180,8 @@
   document.addEventListener('click', e => {
     const p = e.target.closest('[data-play]'); if (!p) return;
     // כרטיס עיון = שיעור אחד (נושא משלו) — לחיצה בכל מקום מנגנת אותו, לא פותחת את דף המועד (דניאל, 15.10)
-    const onCard = p.matches('.wide, .res');
+    // תוצאת חיפוש מדויקת ("נגן עכשיו", .res-play) — מנגנת, כמו שכתוב עליה
+    const onCard = p.matches('.wide, .res:not(.res-play)');
     if (onCard && !e.target.closest('.over, .playbtn') && !e.metaKey) return; // לחיצה על הכרטיס — פותחת את הסדרה
     e.preventDefault(); play(p.dataset.play);
   });
@@ -1274,4 +1299,5 @@
   if (params.get('f')) { filter = params.get('f'); $$('#topChips .chip').forEach(x => x.classList.toggle('is-on', x.dataset.f === filter)); }
   sideList();
   route();
+  if ((SNAP.failed || []).some(p => p.endsWith('list.json'))) toast('חלק מהשיעורים לא נטענו — כדאי לרענן את הדף');
 })();
