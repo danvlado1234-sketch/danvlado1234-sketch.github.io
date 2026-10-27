@@ -377,6 +377,15 @@ input[type=range]::-moz-range-thumb{ width: 13px; height: 13px; border: 0; borde
   .bar-now{ transition: opacity .15s; }
   .bar-now:active{ opacity: 0.72; }
 }
+/* נייד: הנגן נפתח מתוך הסרגל (app.js, morphAt) — בזמן המעבר הכל נשלט מהקוד, בלי מעברי CSS שייגררו מאחור.
+   הרקע (--bgo) מופיע קודם, הפקדים (--fo) אחריו; הכריכה עפה מהתמונה הקטנה בסרגל (translate/scale) */
+.np.is-morph, .np.is-morph *{ transition: none !important; }
+.np.is-morph{ background: transparent; border-radius: 14px 14px 0 0; }
+.np.is-morph::before{ content: ""; position: absolute; inset: 0; background: var(--np-c, oklch(0.22 0.03 40)); opacity: var(--bgo, 1); }
+.np.is-morph .np-bg{ opacity: var(--bgo, 1); will-change: opacity; }
+.np.is-morph .np-bg i{ animation-play-state: paused; }
+.np.is-morph :is(.np-head, .np-meta, .np-scrub, .np-ctl, .np-tools, .np-mini, .np-panel){ opacity: var(--fo, 1); }
+.np.is-morph .np-cover{ will-change: translate, scale; }
 /* טלפון נמוך: הכריכה קטנה כדי שהכל ייכנס — אחרת היא נמעכת למלבן */
 @media (max-width: 899px){
   .np-cover{ flex: none; align-self: center; width: min(100%, max(190px, 100vh - 430px)); width: min(100%, max(190px, 100dvh - 430px)); }

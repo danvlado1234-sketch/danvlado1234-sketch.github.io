@@ -976,12 +976,77 @@
   if (history.state?.np) history.replaceState(null, ''); // רענון כשהנגן היה פתוח
   function openNP(pane) {
     if (!history.state?.np) history.pushState({ np: 1 }, '');
-    np.hidden = false; npWant = true; requestAnimationFrame(() => { if (npWant) np.classList.add('is-open'); });
+    np.hidden = false; npWant = true;
     setPane(pane || null);
     document.body.style.overflow = 'hidden';
+    if (isMob()) { morphBegin(); morphAt(mo.p); morphTo(1); return; }
+    requestAnimationFrame(() => { if (npWant) np.classList.add('is-open'); });
   }
   let npWant = false;
-  function shutNP() { npWant = false; np.classList.remove('is-open'); document.body.style.overflow = ''; setTimeout(() => { if (!np.classList.contains('is-open')) np.hidden = true; }, 520); }
+  function shutNP() {
+    npWant = false; document.body.style.overflow = '';
+    if (isMob() && !np.hidden) { if (mo && mo.to === 0) return; morphBegin(); morphTo(0); return; }
+    np.classList.remove('is-open'); setTimeout(() => { if (!np.classList.contains('is-open')) np.hidden = true; }, 520);
+  }
+
+  // ---------- נייד: הנגן נפתח מתוך הסרגל (כמו אפל מיוזיק, דניאל 27.10) ----------
+  // מצב אחד, p: 0 = הסרגל הקטן · 1 = נגן מלא. הגיליון עולה מגובה הסרגל, הכריכה גדלה מהתמונה הקטנה שבסרגל,
+  // הרקע ואחריו הפקדים מופיעים בהדרגה. אותו p משמש לנגיעה, לגרירה ולסגירה — אפשר לעצור באמצע ולחזור.
+  const MORPH_COVER = !!(window.CSS && CSS.supports('translate', '1px') && CSS.supports('scale', '1')); // אייפון ישן: בלי הכריכה המעופפת
+  const clamp01 = v => Math.min(1, Math.max(0, v)), lerp = (a, b, t) => a + (b - a) * t;
+  // עקומת הגיליון של iOS — cubic-bezier(0.32, 0.72, 0, 1)
+  const sheetEase = (() => {
+    const B = (a, b, t) => ((1 - 3 * b + 3 * a) * t + (3 * b - 6 * a)) * t * t + 3 * a * t;
+    return x => { let lo = 0, hi = 1, t = x; for (let i = 0; i < 24; i++) { const v = B(0.32, 0, t); if (Math.abs(v - x) < 1e-4) break; if (v < x) lo = t; else hi = t; t = (lo + hi) / 2; } return B(0.72, 1, t); };
+  })();
+  let mo = null; // { p, to, top, c, raf }
+  // מודד מחדש בכל התחלה (גם באמצע מעבר) — ממשיך מאותו p
+  function morphBegin() {
+    const cov = $('#npCover'), art = $('#barArt');
+    if (mo) cancelAnimationFrame(mo.raf);
+    const p = mo ? mo.p : np.classList.contains('is-open') ? 1 : 0;
+    np.hidden = false; np.classList.add('is-morph');
+    cov.style.translate = cov.style.scale = cov.style.borderRadius = '';
+    const b = !bar.hidden && bar.getBoundingClientRect(), hasBar = !!(b && b.height);
+    const n = np.getBoundingClientRect(), c = cov.getBoundingClientRect(), a = hasBar && art.getBoundingClientRect();
+    mo = { p, p0: p, to: null, top: hasBar ? b.top : innerHeight,
+      c: MORPH_COVER && a && a.width && c.width ? { w: c.width, cx: c.left + c.width / 2 - n.left, cy: c.top + c.height / 2 - n.top, tw: a.width, tx: a.left + a.width / 2, ty: a.top + a.height / 2 } : null };
+    art.style.visibility = mo.c ? 'hidden' : '';
+  }
+  function morphAt(p) {
+    mo.p = p;
+    const t = (1 - p) * mo.top;
+    np.style.transform = `translateY(${t}px)`;
+    np.style.setProperty('--bgo', clamp01(p / 0.35));
+    np.style.setProperty('--fo', clamp01((p - 0.3) / 0.45));
+    bar.style.opacity = 1 - clamp01(p / 0.3);
+    const c = mo.c; if (!c) return;
+    const cov = $('#npCover'), sc = lerp(c.tw, c.w, p) / c.w;
+    cov.style.translate = `${lerp(c.tx, c.cx, p) - c.cx}px ${lerp(c.ty, c.cy, p) - (t + c.cy)}px`;
+    cov.style.scale = sc;
+    cov.style.borderRadius = lerp(6, 12, clamp01(p)) / sc + 'px';
+  }
+  function morphTo(to, done) {
+    const from = mo.p, t0 = performance.now();
+    const dur = matchMedia('(prefers-reduced-motion: reduce)').matches ? 0 : 500 * Math.max(0.5, Math.min(1, Math.abs(to - from)));
+    mo.to = to;
+    const step = now => {
+      const k = dur ? Math.min(1, (now - t0) / dur) : 1;
+      morphAt(lerp(from, to, sheetEase(k)));
+      if (k < 1) { mo.raf = requestAnimationFrame(step); return; }
+      morphEnd(to === 1); done && done();
+    };
+    mo.raf = requestAnimationFrame(step);
+  }
+  function morphEnd(open) {
+    const cov = $('#npCover');
+    mo = null;
+    np.classList.remove('is-morph'); np.classList.toggle('is-open', open);
+    np.style.transform = ''; np.style.removeProperty('--bgo'); np.style.removeProperty('--fo');
+    bar.style.opacity = ''; $('#barArt').style.visibility = '';
+    cov.style.translate = cov.style.scale = cov.style.borderRadius = '';
+    if (!open) np.hidden = true;
+  }
   function closeNP() { shutNP(); if (history.state?.np) history.back(); }
   window.addEventListener('popstate', () => { if (!history.state?.np && !np.hidden) shutNP(); });
   // pane: 'text' / 'queue' / null (נייד: null = כריכה; מחשב: הלוח תמיד פתוח, ברירת מחדל טקסט)
@@ -1088,20 +1153,19 @@
   gesture(bar, {
     ok: e => !e.target.closest('.bar-ctl, .bar-end'),
     start(lock, dx, dy) {
-      if (lock === 'y') { if (dy > 0) return false; np.hidden = false; np.classList.add('is-drag'); np.style.transform = `translateY(${innerHeight}px)`; setPane(null); return; }
+      if (lock === 'y') { if (dy > 0) return false; setPane(null); morphBegin(); morphAt(mo.p); return; }
       barNow.classList.add('is-drag');
     },
     move(lock, dx, dy) {
-      if (lock === 'y') np.style.transform = `translateY(${Math.max(0, innerHeight + dy)}px)`;
+      if (lock === 'y') morphAt(clamp01(mo.p0 - dy / mo.top));
       else barNow.style.setProperty('--sx', pull(dx) + 'px');
     },
     end(lock, dx, dy, vx, vy) {
       if (lock === 'y') {
         const open = -dy > innerHeight * 0.2 || vy < -0.45;
-        np.classList.remove('is-drag');
         // כמו פתיחה בנגיעה: רשומה בהיסטוריה, כדי ש"חזור" בטלפון יסגור את הנגן ולא ייצא מהאתר
-        if (open) { buzz(); if (!history.state?.np) history.pushState({ np: 1 }, ''); npWant = true; settle(np, 'transform', 'translateY(0px)', () => { np.classList.add('is-open'); np.style.transform = ''; document.body.style.overflow = 'hidden'; }); }
-        else settle(np, 'transform', `translateY(${innerHeight}px)`, () => { np.style.transform = ''; np.hidden = true; });
+        if (open) { buzz(); if (!history.state?.np) history.pushState({ np: 1 }, ''); npWant = true; document.body.style.overflow = 'hidden'; morphTo(1); }
+        else morphTo(0);
         return;
       }
       barNow.classList.remove('is-drag');
@@ -1119,14 +1183,13 @@
   // 2) הנגן המלא: גרירה למטה סוגרת (עוקב אחרי האצבע, מעלה — התנגדות) · הכריכה: הצידה מחליפה שיעור
   gesture(np, {
     ok: e => !noDrag(e.target) && np.classList.contains('is-open'),
-    start(lock) { if (lock !== 'y') return false; np.classList.add('is-drag'); },
-    move(lock, dx, dy) { np.style.transform = `translateY(${dy > 0 ? dy : dy * 0.12}px)`; },
+    start(lock) { if (lock !== 'y') return false; morphBegin(); },
+    move(lock, dx, dy) { morphAt(mo.p0 - (dy > 0 ? dy : dy * 0.12) / mo.top); }, // הגיליון צמוד לאצבע; למעלה — התנגדות
     end(lock, dx, dy, vx, vy) {
-      np.classList.remove('is-drag');
       if (dy > innerHeight * 0.22 || vy > 0.45) {
         buzz(); npWant = false; document.body.style.overflow = '';
-        settle(np, 'transform', `translateY(${innerHeight}px)`, () => { np.classList.remove('is-open'); np.style.transform = ''; np.hidden = true; if (history.state?.np) history.back(); });
-      } else settle(np, 'transform', 'translateY(0px)', () => { np.style.transform = ''; });
+        morphTo(0, () => { if (history.state?.np) history.back(); });
+      } else morphTo(1);
     },
   });
   const npCov = $('#npCover');
