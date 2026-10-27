@@ -779,7 +779,8 @@
     }
     if (drag.list.lastElementChild !== drag.row) drag.list.appendChild(drag.row);
   });
-  document.addEventListener('pointerup', () => {
+  // גם pointercancel — אחרת שורה נשארת "תלויה" באמצע גרירה כשהדפדפן לוקח את המגע
+  for (const ev of ['pointerup', 'pointercancel']) document.addEventListener(ev, () => {
     if (!drag) return;
     const ids = [...drag.list.children].map(r => r.dataset.id);
     const src = drag.src;
@@ -959,11 +960,13 @@
   let dragY = null;
   for (const h of [$('#dockGrab'), $('.dock-head')]) h.addEventListener('pointerdown', e => { if (!isMob() || e.target.closest('button')) return; dragY = e.clientY; dock.classList.add('is-drag'); h.setPointerCapture(e.pointerId); });
   document.addEventListener('pointermove', e => { if (dragY == null) return; dock.style.setProperty('--drag', Math.max(-120, e.clientY - dragY) + 'px'); });
-  document.addEventListener('pointerup', e => {
+  const dockDrop = e => {
     if (dragY == null) return; const dy = e.clientY - dragY; dragY = null;
     dock.classList.remove('is-drag'); dock.style.removeProperty('--drag');
+    if (e.type === 'pointercancel') return; // הדפדפן לקח את המגע — חוזרים למקום, בלי לפתוח/לסגור
     if (dy < -50) openNP(); else if (dy > 90) minDock();
-  });
+  };
+  document.addEventListener('pointerup', dockDrop); document.addEventListener('pointercancel', dockDrop);
   for (const b of [$('#barSpeed'), $('#npSpeed')]) b.addEventListener('click', () => {
     speed = SPEEDS[(SPEEDS.indexOf(speed) + 1) % SPEEDS.length]; audio.playbackRate = speed;
     $('#barSpeed span').textContent = $('#npSpeed .spd').textContent = speed + '×';
@@ -1034,6 +1037,7 @@
   // עקומה ומשך כמו גיליון של iOS (Vaul): cubic-bezier(0.32, 0.72, 0, 1), 500ms.
   const SHEET = 'transform .5s cubic-bezier(0.32, 0.72, 0, 1)';
   const buzz = () => { try { navigator.vibrate && navigator.vibrate(8); } catch {} };
+  document.addEventListener('touchstart', () => {}, { passive: true }); // בלי זה ספארי לא מראה :active — כפתור לא "נלחץ" מתחת לאצבע
   // מחווה אחת: נועלת כיוון אחרי 8px, מודדת מהירות מ-5 הנקודות האחרונות, ומבטלת את הקליק שאחרי גרירה
   function gesture(el, { ok = () => true, start, move, end }) {
     let s = null;
@@ -1069,10 +1073,15 @@
     requestAnimationFrame(() => { if (prop === 'transform') el.style.transform = value; else el.style.setProperty(prop, value); });
     let done = false;
     const fin = () => { if (done) return; done = true; el.style.transition = ''; after && after(); };
-    el.addEventListener('transitionend', fin, { once: true }); setTimeout(fin, 600);
+    // רק סוף המעבר של האלמנט עצמו — מעבר של כפתור/כריכה בפנים "מבעבע" למעלה וסגר את התנועה באמצע
+    const onEnd = e => { if (e.target === el) { el.removeEventListener('transitionend', onEnd); fin(); } };
+    el.addEventListener('transitionend', onEnd); setTimeout(fin, 600);
   }
   const noDrag = t => t.closest('button, a, input, .np-panel, .np-tools, .np-ctl');
   const forward = dx => dx < 0; // בעברית "קדימה" זה שמאלה — החלקה שמאלה = השיעור הבא
+  // אין שיעור הבא בתור: ההחלקה קדימה "נמתחת" וחוזרת, במקום לעוף החוצה ולחזור בלי שינוי
+  const noNext = dx => forward(dx) && !upNext(1).length;
+  const pull = dx => noNext(dx) ? dx * 0.25 : dx;
 
   // 1) הסרגל: החלקה למעלה פותחת את הנגן צמוד לאצבע · החלקה הצידה מחליפה שיעור · נגיעה פותחת
   const barNow = $('#barOpen');
@@ -1084,18 +1093,19 @@
     },
     move(lock, dx, dy) {
       if (lock === 'y') np.style.transform = `translateY(${Math.max(0, innerHeight + dy)}px)`;
-      else barNow.style.setProperty('--sx', dx + 'px');
+      else barNow.style.setProperty('--sx', pull(dx) + 'px');
     },
     end(lock, dx, dy, vx, vy) {
       if (lock === 'y') {
         const open = -dy > innerHeight * 0.2 || vy < -0.45;
         np.classList.remove('is-drag');
-        if (open) { buzz(); settle(np, 'transform', 'translateY(0px)', () => { np.classList.add('is-open'); np.style.transform = ''; document.body.style.overflow = 'hidden'; }); }
+        // כמו פתיחה בנגיעה: רשומה בהיסטוריה, כדי ש"חזור" בטלפון יסגור את הנגן ולא ייצא מהאתר
+        if (open) { buzz(); if (!history.state?.np) history.pushState({ np: 1 }, ''); npWant = true; settle(np, 'transform', 'translateY(0px)', () => { np.classList.add('is-open'); np.style.transform = ''; document.body.style.overflow = 'hidden'; }); }
         else settle(np, 'transform', `translateY(${innerHeight}px)`, () => { np.style.transform = ''; np.hidden = true; });
         return;
       }
       barNow.classList.remove('is-drag');
-      const go = Math.abs(dx) > 70 || Math.abs(vx) > 0.45;
+      const go = (Math.abs(dx) > 70 || Math.abs(vx) > 0.45) && !noNext(dx);
       if (!go) { settle(barNow, '--sx', '0px'); return; }
       const fwd = forward(dx); buzz();
       settle(barNow, '--sx', (fwd ? -1 : 1) * innerWidth * 0.6 + 'px', () => {
@@ -1114,7 +1124,7 @@
     end(lock, dx, dy, vx, vy) {
       np.classList.remove('is-drag');
       if (dy > innerHeight * 0.22 || vy > 0.45) {
-        buzz(); document.body.style.overflow = '';
+        buzz(); npWant = false; document.body.style.overflow = '';
         settle(np, 'transform', `translateY(${innerHeight}px)`, () => { np.classList.remove('is-open'); np.style.transform = ''; np.hidden = true; if (history.state?.np) history.back(); });
       } else settle(np, 'transform', 'translateY(0px)', () => { np.style.transform = ''; });
     },
@@ -1123,10 +1133,10 @@
   gesture(npCov, {
     ok: () => np.classList.contains('is-open'),
     start(lock) { if (lock !== 'x') return false; npCov.classList.add('is-drag'); },
-    move(lock, dx) { npCov.style.setProperty('--sx', dx + 'px'); npCov.style.opacity = String(1 - Math.min(0.5, Math.abs(dx) / innerWidth)); },
+    move(lock, dx) { npCov.style.setProperty('--sx', pull(dx) + 'px'); npCov.style.opacity = String(1 - Math.min(0.5, Math.abs(pull(dx)) / innerWidth)); },
     end(lock, dx, dy, vx) {
       npCov.classList.remove('is-drag');
-      const go = Math.abs(dx) > innerWidth * 0.25 || Math.abs(vx) > 0.45;
+      const go = (Math.abs(dx) > innerWidth * 0.25 || Math.abs(vx) > 0.45) && !noNext(dx);
       if (!go) { npCov.style.opacity = ''; settle(npCov, '--sx', '0px'); return; }
       const fwd = forward(dx); buzz();
       settle(npCov, '--sx', (fwd ? -1 : 1) * innerWidth + 'px', () => {
