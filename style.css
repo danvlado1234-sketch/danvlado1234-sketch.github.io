@@ -953,5 +953,9 @@ body.building .top{ display: none; }
 .ios-arrow .i{ width: 48px; height: 48px; stroke-width: 2.6; filter: drop-shadow(0 2px 6px oklch(0 0 0 / 0.6)); }
 @keyframes iosArrow{ 50%{ transform: translate(-50%, 8px); } }
 @media (prefers-reduced-motion: reduce){ .ios-arrow, .ios-bg{ animation: none; } }
-/* טלפון: אין מקום לשם — רק האייקון (שם מלא בתווית הנגישות) */
-@media (max-width: 479px){ .install-btn{ width: 36px; padding: 0; justify-content: center; } .install-btn span{ display: none; } .install-btn:not([hidden]) + .theme-btn{ margin-inline-start: 0; } }
+/* טלפון: המילה "התקנה" נשארת ליד האייקון, כדי שלא יתבלבל עם הורדת שיעור (דניאל, 26.10).
+   כדי ששניהם ייכנסו בשורה אחת עם השם גם ברוחב 360 — יום/לילה מוצג אז כאייקון בלבד (השם בתווית הנגישות) והרווחים קטנים */
+@media (max-width: 479px){ .install-btn{ padding: 0 8px; gap: 4px; }
+  .top:has(> .install-btn:not([hidden])){ column-gap: 8px; }
+  .install-btn:not([hidden]) + .theme-btn{ margin-inline-start: 0; width: 36px; padding: 0; justify-content: center; }
+  .install-btn:not([hidden]) + .theme-btn span{ display: none; } }

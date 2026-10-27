@@ -150,13 +150,13 @@
         <span class="over"><span>${icon('play')}</span></span>
         ${showProg ? `<span class="prog"><i style="width:${Math.round(fracOf(it.id) * 100)}%"></i></span>` : ''}
       </div>
-      <div class="cap"><span>${showProg ? `נשארו ${remain(it.id)}` : fresh > 1 ? `${fresh} משניות חדשות השבוע · האחרונה ${rel(it.date).replace('עלה ', '')}` : rel(it.date)}</span></div>
+      <div class="cap"><span>${showProg ? `נשארו ${remain(it.id)}` : fresh > 1 ? `${fresh} שיעורים חדשים השבוע · האחרונה ${rel(it.date).replace('עלה ', '')}` : rel(it.date)}</span></div>
     </a>`;
   const remain = id => { const p = prog[id]; const s = Math.max(0, (p[1] - p[0]) | 0); return s >= 60 ? `${Math.round(s / 60)} דק׳` : `${s} שנ׳`; };
   const posterCard = name => {
     const s = masechet[name];
     const art = mArt(name) || SEDER_ART[sederOf[name]];
-    const sub = s ? `${s.items.length} משניות` : 'טרם הוקלט';
+    const sub = s ? `${s.items.length} שיעורים` : 'טרם הוקלט';
     return `<a class="poster${s ? '' : ' is-empty'}" href="#/m/${encodeURIComponent(name)}" aria-label="מסכת ${esc(name)}">
       <div class="pic"><img loading="lazy" src="${IMG(art, 420, 630)}" alt="">
         ${s && days(s.last) <= 7 ? '<span class="badge">משנה חדשה</span>' : `<span class="seder">${esc(sederOf[name])}</span>`}
@@ -383,14 +383,14 @@
     const eps = s.perakim[perek] || [];
     const html = `<section class="hero"><img src="${HERO(art)}" alt="">
       <div><span class="kick">סדר ${seder} · מסכת</span><h1>${esc(name)}</h1>
-        <div class="bb-meta"><span>${total} פרקים</span><span>${s.items.length} משניות הוקלטו</span><span class="new">${rel(s.last)}</span></div>
+        <div class="bb-meta"><span>${total} פרקים</span><span>${s.items.length} שיעורים הוקלטו</span><span class="new">${rel(s.last)}</span></div>
         <p>${esc(ABOUT[name] || '')}</p>
         <div class="acts"><button class="fab" data-play="${esc(resume.id)}" aria-label="נגן">${icon('play')}</button>
           <span class="kick">${lastP ? 'המשך: ' : 'התחלה: '}${esc(epName(resume))}</span></div></div></section>
       <div class="series">
         <div class="seasons" role="tablist" aria-label="פרקים">${Array.from({ length: total }, (_, i) => i + 1).map(p =>
           `<a class="season${p === perek ? ' is-on' : ''}" role="tab" aria-selected="${p === perek}" ${s.perakim[p] ? `href="#/m/${encodeURIComponent(name)}/${p}"` : 'aria-disabled="true" tabindex="-1" title="טרם הוקלט"'}>פרק ${heb(p)}</a>`).join('')}</div>
-        <div class="ep-head"><h2>פרק ${heb(perek)}</h2><span>${eps.length} משניות הוקלטו</span></div>
+        <div class="ep-head"><h2>פרק ${heb(perek)}</h2><span>${eps.length} שיעורים הוקלטו</span></div>
         <div id="eps">${eps.map((it, k) => `
           <div class="ep${nowId === it.id ? ' is-now' : ''}" data-play="${esc(it.id)}" data-queue="${esc(name)}" role="button" tabindex="0" aria-label="נגן ${esc(fullName(it))}">
             <span class="ep-n">${it.nums.map(heb).join('–')}</span>
@@ -456,7 +456,7 @@
       const fresh = items.filter(i => i.date).sort((a, b) => b.date.localeCompare(a.date)).slice(0, 8);
       return `<section class="row" style="margin-top:0"><div class="row-head"><h2>עלו לאחרונה</h2></div><div class="results">${fresh.map(lessonRow).join('')}</div></section>
         <section class="row"><div class="row-head"><h2>או לפי סדרה — בכל עמוד יש ＋ ליד כל שיעור</h2></div>
-        <div class="results">${Object.values(masechet).map(s => `<a class="res" href="#/m/${encodeURIComponent(s.name)}"><img src="${IMG(mArt(s.name), 120, 120)}" alt=""><div><b>מסכת ${esc(s.name)}</b><span>${s.items.length} משניות</span></div></a>`).join('')}
+        <div class="results">${Object.values(masechet).map(s => `<a class="res" href="#/m/${encodeURIComponent(s.name)}"><img src="${IMG(mArt(s.name), 120, 120)}" alt=""><div><b>מסכת ${esc(s.name)}</b><span>${s.items.length} שיעורים</span></div></a>`).join('')}
         ${Object.values(groups).map(g => `<a class="res" href="#/p/${encodeURIComponent(g.title)}"><img src="${IMG(ART[g.title] || FALLBACK, 120, 120)}" alt=""><div><b>${esc(g.moed ? (MOED_NAME[g.title] || g.title) : 'פרשת ' + g.title)}</b><span>${g.items.length} שיעורים</span></div></a>`).join('')}</div></section>`;
     }
     const out = [];
@@ -482,7 +482,7 @@
       const hit = masechet[m[1]].perakim[p]?.find(i => !n || i.nums.includes(n));
       if (hit) out.push(`<a class="res res-play" href="${seriesHref(hit)}" data-play="${esc(hit.id)}"><img src="${IMG(artOf(hit), 120, 120)}" alt=""><div><b>${esc(fullName(hit))}</b><span>משנה · נגן עכשיו</span></div></a>`);
     }
-    for (const [s, ms] of SEDARIM) for (const name of ms) if (name.includes(q) || q.includes(name)) out.push(`<a class="res" href="#/m/${encodeURIComponent(name)}"><img src="${IMG(mArt(name) || SEDER_ART[s], 120, 120)}" alt=""><div><b>מסכת ${esc(name)}</b><span>סדר ${s} · ${masechet[name] ? `${masechet[name].items.length} משניות` : 'טרם הוקלט'}</span></div></a>`);
+    for (const [s, ms] of SEDARIM) for (const name of ms) if (name.includes(q) || q.includes(name)) out.push(`<a class="res" href="#/m/${encodeURIComponent(name)}"><img src="${IMG(mArt(name) || SEDER_ART[s], 120, 120)}" alt=""><div><b>מסכת ${esc(name)}</b><span>סדר ${s} · ${masechet[name] ? `${masechet[name].items.length} שיעורים` : 'טרם הוקלט'}</span></div></a>`);
     for (const g of Object.values(groups)) if (g.title.includes(q) || (MOED_NAME[g.title] || '').includes(q)) out.push(`<a class="res" href="#/p/${encodeURIComponent(g.title)}"><img src="${IMG(ART[g.title] || FALLBACK, 120, 120)}" alt=""><div><b>${esc(g.moed ? (MOED_NAME[g.title] || g.title) : 'פרשת ' + g.title)}</b><span>${g.moed ? 'מועד' : 'חומש ' + g.book} · ${g.items.length} שיעורים</span></div></a>`);
     for (const it of pItems) if (it.iyun && it.iyun.replace(/["'״׳]/g, '').includes(q)) out.push(`<a class="res" href="#/p/${encodeURIComponent(it.title)}" data-play="${esc(it.id)}"><img src="${IMG(artOf(it), 120, 120)}" alt=""><div><b>${esc(it.iyun)}</b><span>עיון · ${esc(seriesName(it))}</span></div></a>`);
     return `<div class="results">${out.join('') || `<p class="note">לא נמצא "${esc(q)}". נסו שם מסכת (ברכות), פרשה (נח) או מועד (סוכות).</p>`}</div>`;
@@ -580,7 +580,7 @@
   // ספרייה בסרגל הצד
   let libF = 'all';
   function sideList() {
-    const ms = Object.values(masechet).sort((a, b) => b.last.localeCompare(a.last)).map(s => ({ href: `#/m/${encodeURIComponent(s.name)}`, art: mArt(s.name), t: `מסכת ${s.name}`, sub: `סדר ${s.seder} · ${s.items.length} משניות`, k: 'm' }));
+    const ms = Object.values(masechet).sort((a, b) => b.last.localeCompare(a.last)).map(s => ({ href: `#/m/${encodeURIComponent(s.name)}`, art: mArt(s.name), t: `מסכת ${s.name}`, sub: `סדר ${s.seder} · ${s.items.length} שיעורים`, k: 'm' }));
     const ps = [...BOOK_ORDER.flatMap(b => PARASHA_ORDER.filter(t => groups[t]?.book === b)), ...MOED_NEXT.filter(t => groups[t])].map(t => groups[t]).map(g => ({ href: `#/p/${encodeURIComponent(g.title)}`, art: ART[g.title] || FALLBACK, t: g.moed ? (MOED_NAME[g.title] || g.title) : `פרשת ${g.title}`, sub: `${g.moed ? 'מועד' : 'חומש ' + g.book} · ${g.items.length} שיעורים`, k: 'p' }));
     const ls = lists.map((l, i) => ({ list: i, art: artOf(byId[l.ids[0]] || items[0]), t: l.name, sub: `רשימה שלך · ${l.ids.length} שיעורים`, k: 'l' }));
     $('#sideList').innerHTML = [...ls, ...ms, ...ps].filter(x => libF === 'all' || x.k === libF || x.k === 'l').map(x => `<li><a ${x.list != null ? `href="#/library" data-list="${x.list}"` : `href="${x.href}"`}><img loading="lazy" src="${IMG(x.art, 96, 96)}" alt=""><div><b>${esc(x.t)}</b><span>${esc(x.sub)}</span></div></a></li>`).join('');
@@ -677,8 +677,9 @@
   function prev() {
     if (audio.currentTime > 5 || !hist.length) { audio.currentTime = 0; return; }
     const back = hist.pop();
-    if (nowFrom === 'user') userQ.unshift(nowId); else if (nowFrom === 'cont') contQ.unshift(nowId);
-    nowFrom = 'back'; load(byId[back], true);
+    if (nowFrom === 'user') userQ.unshift(nowId);
+    // הניגון הרציף ממשיך במסכת שחזרת אליה (דניאל, 26.10)
+    nowFrom = 'back'; contQ = contFor(byId[back]); load(byId[back], true);
   }
   // ---------- לוח התור: מתנגן עכשיו · התור שלך · ניגון רציף ----------
   const qRow = (x, src) => `<li class="qrow" data-id="${esc(x.id)}"><button class="qi${src === 'now' ? ' is-now' : ''}" ${src === 'now' ? '' : `data-q="${esc(x.id)}" data-src="${src}"`}><span class="cover sm">${cover(x, 120)}</span><span><b>${esc(npTitle(x))}</b><span>${esc(npSub(x))}${src !== 'now' && x.date ? ' · ' + rel(x.date) : ''}</span></span></button>${src === 'now' || src === 'peek' ? '' :
@@ -694,7 +695,7 @@
         <button class="btn-new" data-addq>${icon('plus')}הוספה לתור</button></li>
       <li class="qsec"><div class="qsec-h"><h3>ניגון רציף</h3>${sw}</div>
         <p class="qempty">${!contOn ? 'כבוי — אחרי התור שלך הנגינה תיעצר.' : ctxM ? `ממשיך במסכת ${esc(ctxM)} לפי הסדר, ועוצר בסוף המסכת.` : 'פועל במשניות: אחרי כל משנה — הבאה בתור לפי הסדר.'}</p>
-        ${contOn && contQ.length ? `<ol class="qlist" data-ql="cont">${contQ.slice(0, CONT_SHOW).map(id => qRow(byId[id], 'cont')).join('')}</ol>${contQ.length > CONT_SHOW ? `<p class="qempty">ועוד ${contQ.length - CONT_SHOW} משניות עד סוף המסכת</p>` : ''}` : ''}</li>`;
+        ${contOn && contQ.length ? `<ol class="qlist" data-ql="cont">${contQ.slice(0, CONT_SHOW).map(id => qRow(byId[id], 'cont')).join('')}</ol>${contQ.length > CONT_SHOW ? `<p class="qempty">ועוד ${contQ.length - CONT_SHOW} שיעורים עד סוף המסכת</p>` : ''}` : ''}</li>`;
   }
   function upNext(n) { return [...userQ, ...(contOn ? contQ : [])].slice(0, n); }
   function renderQueue() {
@@ -721,9 +722,11 @@
     if (id === nowId) return; unqueue(id); userQ.unshift(id); renderQueue();
     toast(`יתנגן הבא: ${fullName(byId[id])}`);
   }
+  // שיעור שכבר ממתין בניגון הרציף לא נכנס שוב לתור — רק הודעה (דניאל, 26.10)
+  const inCont = id => contOn && contQ.includes(id);
   function addToQueue(id) {
     if (!nowId) return play(id);
-    if (id === nowId) return; unqueue(id); userQ.push(id); renderQueue();
+    if (id === nowId) return; if (inCont(id)) return toast('כבר בתור'); unqueue(id); userQ.push(id); renderQueue();
     if (!building) toast(`נוסף לתור: ${fullName(byId[id])}`);
   }
   function setCont(on) {
@@ -816,7 +819,7 @@
     const bar = $('.buildbar'); if (bar) bar.outerHTML = buildBar();
   }
   function startBuild(target = 'list') {
-    if (np.classList.contains('is-open')) closeNP(); // מהנגן המלא — סוגרים אותו כדי שהחיפוש ייראה
+    if (np.classList.contains('is-open')) { shutNP(); if (history.state?.np) history.replaceState(null, '', '#/search'); } // מהנגן המלא — סוגרים אותו כדי שהחיפוש ייראה
     building = { name: '', ids: [], target }; document.body.classList.add('building');
     if (!isMob()) openDock(target === 'queue' && nowId ? 'queue' : 'build');
     else minDock();
@@ -833,6 +836,7 @@
   function toggleAdd(id) {
     if (!building) return;
     const k = building.ids.indexOf(id);
+    if (building.target === 'queue' && k < 0 && nowId && (id === nowId || inCont(id))) { toast(id === nowId ? 'מתנגן עכשיו' : 'כבר בתור'); return; }
     if (k >= 0) building.ids.splice(k, 1); else building.ids.push(id);
     if (building.target === 'queue') { // ישר לתור, בסדר ההוספה
       if (k >= 0) { unqueue(id); renderQueue(); }
@@ -964,12 +968,19 @@
     speed = SPEEDS[(SPEEDS.indexOf(speed) + 1) % SPEEDS.length]; audio.playbackRate = speed;
     $('#barSpeed span').textContent = $('#npSpeed .spd').textContent = speed + '×';
   });
+  // "חזור" (בטלפון) סוגר קודם את הנגן המלא, והלחיצה הבאה חוזרת בדפים (דניאל, 26.10):
+  // פתיחה מוסיפה רשומה אחת להיסטוריה; סגירה בכל דרך אחרת מורידה אותה.
+  if (history.state?.np) history.replaceState(null, ''); // רענון כשהנגן היה פתוח
   function openNP(pane) {
-    np.hidden = false; requestAnimationFrame(() => np.classList.add('is-open'));
+    if (!history.state?.np) history.pushState({ np: 1 }, '');
+    np.hidden = false; npWant = true; requestAnimationFrame(() => { if (npWant) np.classList.add('is-open'); });
     setPane(pane || null);
     document.body.style.overflow = 'hidden';
   }
-  function closeNP() { np.classList.remove('is-open'); document.body.style.overflow = ''; setTimeout(() => { if (!np.classList.contains('is-open')) np.hidden = true; }, 520); }
+  let npWant = false;
+  function shutNP() { npWant = false; np.classList.remove('is-open'); document.body.style.overflow = ''; setTimeout(() => { if (!np.classList.contains('is-open')) np.hidden = true; }, 520); }
+  function closeNP() { shutNP(); if (history.state?.np) history.back(); }
+  window.addEventListener('popstate', () => { if (!history.state?.np && !np.hidden) shutNP(); });
   // pane: 'text' / 'queue' / null (נייד: null = כריכה; מחשב: הלוח תמיד פתוח, ברירת מחדל טקסט)
   let pane = null;
   function setPane(p) {
@@ -1104,7 +1115,7 @@
       np.classList.remove('is-drag');
       if (dy > innerHeight * 0.22 || vy > 0.45) {
         buzz(); document.body.style.overflow = '';
-        settle(np, 'transform', `translateY(${innerHeight}px)`, () => { np.classList.remove('is-open'); np.style.transform = ''; np.hidden = true; });
+        settle(np, 'transform', `translateY(${innerHeight}px)`, () => { np.classList.remove('is-open'); np.style.transform = ''; np.hidden = true; if (history.state?.np) history.back(); });
       } else settle(np, 'transform', 'translateY(0px)', () => { np.style.transform = ''; });
     },
   });
@@ -1233,9 +1244,14 @@
     const iosBrowser = !isIOS ? '' : /FBAN|FBAV|Instagram|Line\/|GSA\/|Twitter|LinkedInApp|Snapchat|TikTok|musical_ly|Telegram|WhatsApp/i.test(UA) ? 'inapp'
       : /CriOS/.test(UA) ? 'chrome' : /FxiOS|EdgiOS|OPiOS|OPT\/|YaBrowser|DuckDuckGo/.test(UA) ? 'other' : 'safari';
     const safariVer = +((UA.match(/Version\/(\d+)/) || [])[1] || 0);
+    // אנדרואיד כשהדפדפן לא מציע התקנה ישירה (סמסונג, פיירפוקס, בתוך אפליקציה אחרת): הכפתור פותח הדרכה (דניאל, 26.10)
+    const isAndroid = /android/i.test(UA);
+    const andBrowser = !isAndroid ? '' : /FBAN|FBAV|Instagram|Line\/|; wv\)|Telegram/i.test(UA) ? 'inapp'
+      : /SamsungBrowser/.test(UA) ? 'samsung' : /Firefox/.test(UA) ? 'firefox' : 'chrome';
     const btn = $('#installBtn');
     let evt = window.__bip || null;
-    const show = () => { btn.hidden = standalone || (!evt && !isIOS) || (isIOS && store.get(KEY, false) && !window.WANT_INSTALL); };
+    const guided = isIOS || isAndroid;
+    const show = () => { btn.hidden = standalone || (!evt && !guided) || (!evt && guided && store.get(KEY, false) && !window.WANT_INSTALL); };
     window.addEventListener('beforeinstallprompt', e => { e.preventDefault(); evt = e; show(); });
     window.addEventListener('appinstalled', () => { evt = null; btn.hidden = true; toast('האפליקציה הותקנה — "שיעורי הרב" במסך הבית'); });
     const SVG = d => `<svg class="ios-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${d}</svg>`;
@@ -1246,10 +1262,26 @@
     const nm = (he, en) => `<b>"${he}"</b> <span class="en" dir="ltr">(${en})</span>`;
     const SHARE = nm('שיתוף', 'Share'), ADDBTN = nm('הוסף', 'Add');
     const ADD = `${nm('הוספה למסך הבית', 'Add to Home Screen')} ${I_ADD}<br><small>לא רואים? גוללים למטה ברשימה, או ${nm('עוד', 'More')}</small>`;
+    const I_DOTS = SVG('<circle cx="12" cy="5" r="1.4" fill="currentColor" stroke="none"/><circle cx="12" cy="12" r="1.4" fill="currentColor" stroke="none"/><circle cx="12" cy="19" r="1.4" fill="currentColor" stroke="none"/>');
+    const I_LINES = SVG('<path d="M4 6h16M4 12h16M4 18h16"/>');
     function guide() {
       const where = isIPad ? 'בשורת הכתובת למעלה' : 'בתחתית המסך';
       let steps, lead = '', note = '', copy = false;
-      if (iosBrowser === 'safari' && safariVer >= 26) {
+      if (isAndroid) {
+        const INSTALL = `${nm('התקנת אפליקציה', 'Install app')} או ${nm('הוספה למסך הבית', 'Add to Home screen')}`;
+        if (andBrowser === 'samsung') {
+          steps = [`לוחצים על ${I_LINES} (שלושה קווים) בתחתית המסך`, `בוחרים ${nm('הוסף דף אל', 'Add page to')} ← ${nm('מסך הבית', 'Home screen')}`, `לוחצים ${nm('הוסף', 'Add')}`];
+        } else if (andBrowser === 'firefox') {
+          steps = [`לוחצים על ${I_DOTS} (שלוש נקודות) ליד שורת הכתובת`, `בוחרים ${INSTALL}`, `לוחצים ${nm('הוסף', 'Add')}`];
+        } else if (andBrowser === 'inapp') {
+          lead = 'האתר נפתח בתוך אפליקציה אחרת, ומשם אי אפשר להתקין. צריך לפתוח אותו ב<b>כרום</b> (Chrome):';
+          steps = [`לוחצים על ${I_DOTS} בפינה למעלה ובוחרים ${nm('פתיחה בדפדפן', 'Open in browser')}`, `בכרום: ${I_DOTS} ← ${INSTALL}`];
+          note = 'אם אין אפשרות כזו — מעתיקים את הקישור בכפתור למטה ופותחים אותו בכרום.'; copy = true;
+        } else {
+          steps = [`לוחצים על ${I_DOTS} (שלוש נקודות) בפינה למעלה`, `בוחרים ${INSTALL}`, `לוחצים ${nm('התקנה', 'Install')}`];
+          note = `אם בתפריט כתוב ${nm('פתיחה באפליקציה', 'Open in app')} — האפליקציה כבר מותקנת אצלכם.`;
+        }
+      } else if (iosBrowser === 'safari' && safariVer >= 26) {
         steps = [`לוחצים על ${I_MORE} (שלוש נקודות) ליד שורת הכתובת ${where}, ובוחרים ${SHARE} ${I_SHARE}`, `בוחרים ${ADD}`,
           `מוודאים ש-${nm('פתיחה כאפליקציית רשת', 'Open as Web App')} דולק, ולוחצים ${ADDBTN}`];
         note = 'אם כפתור השיתוף מופיע ישר בשורת הכתובת — אפשר ללחוץ עליו מיד.';
@@ -1268,8 +1300,8 @@
       }
       const arrow = iosBrowser === 'safari' && safariVer < 26 && !isIPad;
       return `<div class="ios-bg${arrow ? ' to-top' : ''}" id="iosBg"><div class="ios-sh" role="dialog" aria-modal="true" aria-labelledby="iosT">
-        <div class="ios-hd"><img src="/icons/icon-192.png" alt=""><div><div class="ios-t" id="iosT">התקנת האפליקציה באייפון</div>
-          <div class="ios-sub" dir="ltr">Install on iPhone</div></div><button class="ios-x" id="iosX" aria-label="סגור">${icon('x')}</button></div>
+        <div class="ios-hd"><img src="/icons/icon-192.png" alt=""><div><div class="ios-t" id="iosT">התקנת האפליקציה ${isAndroid ? 'בטלפון' : 'באייפון'}</div>
+          <div class="ios-sub" dir="ltr">Install on ${isAndroid ? 'Android' : 'iPhone'}</div></div><button class="ios-x" id="iosX" aria-label="סגור">${icon('x')}</button></div>
         ${lead ? `<p class="ios-lead">${lead}</p>` : ''}
         <ol class="ios-steps">${steps.map((s, i) => `<li><i>${i + 1}</i><span>${s}</span></li>`).join('')}</ol>
         ${note ? `<p class="ios-note">${note}</p>` : ''}
@@ -1290,7 +1322,7 @@
     document.addEventListener('keydown', e => { if (e.key === 'Escape') closeGuide(); });
     btn.addEventListener('click', () => {
       if (evt) { evt.prompt(); evt.userChoice.finally(() => { evt = null; window.__bip = null; show(); }); }
-      else if (isIOS) openGuide();
+      else if (guided) openGuide();
     });
     show();
     if (window.WANT_INSTALL && isIOS && !standalone) openGuide();
