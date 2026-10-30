@@ -446,8 +446,8 @@
   function searchPage(q = '') {
     const toQ = building && building.target === 'queue';
     return `<h1 class="page-title">${building ? (toQ ? 'הוספה לתור' : 'הוספת שיעורים לרשימה') : 'חיפוש'}</h1>
-      ${building ? `<p class="note" style="margin-top:-8px">חפשו מסכת, פרק, פרשה או מועד — ולחצו ＋ ליד כל שיעור. ${toQ ? 'הוא ייכנס לתור מיד אחרי מה שמתנגן.' : 'הרשימה נבנית בצד.'}</p><br>` : ''}
-      <div class="searchbox">${icon('search')}<input id="q" type="search" dir="auto" placeholder="מסכת, פרשה, מועד או נושא — למשל: ערכין ד ג" value="${esc(q)}" autocomplete="off"></div>
+      ${building ? `<p class="note" style="margin-top:-8px">לחצו ＋ ליד כל שיעור${toQ ? ' — הוא ייכנס לתור מיד אחרי מה שמתנגן.' : isMob() ? '.' : ' — הרשימה נבנית בצד.'}</p><br>` : ''}
+      <div class="searchbox">${icon('search')}<input id="q" type="search" dir="rtl" placeholder="${isMob() ? 'מסכת, פרשה, מועד או נושא' : 'מסכת, פרשה, מועד או נושא — למשל: ערכין ד ג'}" value="${esc(q)}" autocomplete="off"></div>
       <div id="res"></div>`;
   }
   // חיפוש במצב בניית רשימה: מחזיר שיעורים בודדים עם ＋
@@ -811,7 +811,8 @@
     if (building.target === 'queue') return `<div class="buildbar"><span><b>מוסיפים לתור</b> · ${n === 1 ? 'נוסף שיעור אחד' : n ? `נוספו ${n} שיעורים` : 'לחצו ＋ ליד שיעור'}</span>
       <button class="lnk show-mob" data-bopen>לתור</button><button class="btn-save" data-bsave>סיום</button></div>`;
     return `<div class="buildbar"><span><b>${esc(building.name || 'רשימה חדשה')}</b> · ${n ? `${n} שיעורים` : 'עוד ריקה'}</span>
-      <button class="lnk show-mob" data-bopen>לרשימה</button><button class="btn-save" data-bsave ${n ? '' : 'disabled'}>סיום ושמירה</button></div>`;
+      <button class="lnk show-mob" data-bopen>לרשימה</button><button class="btn-save" data-bsave ${n ? '' : 'disabled'}>${isMob() ? 'שמירה' : 'סיום ושמירה'}</button>
+      <button class="ib bx" data-bcancel aria-label="ביטול — יציאה בלי לשמור" title="ביטול">${icon('x')}</button></div>`;
   }
   function buildPanel() {
     const its = building.ids.map(id => byId[id]);
@@ -857,7 +858,7 @@
     const ad = e.target.closest('[data-addl]'); if (ad) { e.preventDefault(); e.stopPropagation(); toggleAdd(ad.dataset.addl); return; }
     const rm = e.target.closest('#dockB [data-rm]'); if (rm) { toggleAdd(rm.dataset.rm); return; }
     if (e.target.closest('[data-bsave]')) { endBuild(true); return; }
-    if (e.target.closest('[data-bcancel]')) { endBuild(false); return; }
+    if (e.target.closest('[data-bcancel]')) { if (building.target !== 'queue' && building.ids.length && !confirm('לצאת בלי לשמור את הרשימה?')) return; endBuild(false); return; }
     if (e.target.closest('[data-bopen]')) { openDock('build'); return; }
   }, true);
   document.addEventListener('input', e => { if (e.target.id === 'bName' && building) { building.name = e.target.value; const b = $('.buildbar b'); if (b) b.textContent = building.name || 'רשימה חדשה'; } });
