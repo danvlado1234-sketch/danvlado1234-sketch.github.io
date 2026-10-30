@@ -835,7 +835,8 @@
     if (b.target === 'queue') { if (nowId) openDock('queue'); if (b.ids.length) toast(`נוספו ${b.ids.length} שיעורים לתור`); route(); return; }
     if (save && b.ids.length) saveList(b.name, b.ids);
     minDock(); // הלוח נפתח רק מלחיצה
-    if (save && b.ids.length) location.hash = '#/library'; else route();
+    // שמירה וגם ביטול (X) חוזרים לדף הרשימות (דניאל, 30.10)
+    if (location.hash === '#/library') route(); else location.hash = '#/library';
   }
   function toggleAdd(id) {
     if (!building) return;
