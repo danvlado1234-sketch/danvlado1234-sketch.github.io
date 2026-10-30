@@ -485,6 +485,7 @@ input[type=range]::-moz-range-thumb{ width: 13px; height: 13px; border: 0; borde
 
 /* כניסה — רגע אחד, מחובר לניווט */
 .view-in{ animation: viewIn .5s var(--ease) both; }
+.view-in.no-in{ animation: none; }
 @keyframes viewIn{ from{ opacity: 0; transform: translateY(10px); } to{ opacity: 1; transform: none; } }
 @media (prefers-reduced-motion: reduce){
   *, *::before, *::after{ animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }

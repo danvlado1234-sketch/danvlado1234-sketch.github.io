@@ -105,7 +105,8 @@
   for (const s of Object.values(masechet)) s.last = s.items.reduce((m, i) => (i.date || '') > m ? i.date : m, '');
   const pItems = items.filter(i => i.kind === 'p');
   const groups = {};
-  for (const it of pItems) (groups[it.title] ||= { title: it.title, moed: it.moed, book: it.book, items: [] }).items.push(it);
+  // שיעורי עיון לא נכנסים לדף המועד/הפרשה — יש להם מדור משלו, #/iyun (דניאל, 30.10)
+  for (const it of pItems) if (!it.iyun) (groups[it.title] ||= { title: it.title, moed: it.moed, book: it.book, items: [] }).items.push(it);
   for (const g of Object.values(groups)) g.items.sort((a, b) => b.year.localeCompare(a.year) || (a.iyun ? 1 : 0) - (b.iyun ? 1 : 0) || a.tag.localeCompare(b.tag));
 
   const seriesName = it => it.kind === 'm' ? it.masechet : it.moed ? (MOED_NAME[it.title] || it.title) : `פרשת ${it.title}`;
@@ -115,7 +116,7 @@
     return [it.year, it.tag].filter(Boolean).join(' · ');
   };
   const fullName = it => it.kind === 'm' ? `${it.masechet} ${heb(it.perek)}, ${it.nums.map(heb).join('–')}` : (it.iyun ? `${seriesName(it)}: ${it.iyun}` : `${seriesName(it)} ${epName(it)}`);
-  const seriesHref = it => it.kind === 'm' ? `#/m/${encodeURIComponent(it.masechet)}/${it.perek}` : `#/p/${encodeURIComponent(it.title)}`;
+  const seriesHref = it => it.kind === 'm' ? `#/m/${encodeURIComponent(it.masechet)}/${it.perek}` : it.iyun ? '#/iyun' : `#/p/${encodeURIComponent(it.title)}`;
 
   // ---------- תאריכים ----------
   const today = new Date(); today.setHours(0, 0, 0, 0);
@@ -175,7 +176,7 @@
   };
   // עיון: שני פרמטרים — המועד (הקשר, צבע) והנושא (הכותרת, התמונה)
   const MOED_TINT = { 'סוכות': 'oklch(0.62 0.13 120)', 'שמחת תורה': 'oklch(0.6 0.12 250)', 'תשעה באב': 'oklch(0.55 0.05 300)', 'חנוכה': 'oklch(0.7 0.13 80)', 'פסח': 'oklch(0.6 0.12 40)' };
-  const iyunCard = it => `<a class="iyun" href="#/p/${encodeURIComponent(it.title)}" data-play="${esc(it.id)}" style="--mt:${MOED_TINT[it.title] || 'var(--accent)'}">
+  const iyunCard = it => `<a class="iyun" href="#/iyun" data-play="${esc(it.id)}" style="--mt:${MOED_TINT[it.title] || 'var(--accent)'}">
       <img loading="lazy" src="${IMG(artOf(it), 700, 700)}" alt="">
       <span class="iy-tag">${esc(seriesName(it))} · עיון</span>
       <q>${esc(it.iyun)}</q>
@@ -203,9 +204,9 @@
   // זהה ל-$MOADIM ב-upload.ps1 (שיעורי פרשה). מועד שלא כאן — לא יופיע ברשימת המועדים.
   const ALL_MOADIM = ['ראש השנה','יום כיפור','סוכות','שמחת תורה','חנוכה','עשרה בטבת','טו בשבט','תענית אסתר','פורים','פסח','לג בעומר','שבועות','שבעה עשר בתמוז','תשעה באב'];
   const bookTiles = () => `<div class="tiles">${Object.entries(CHUMASH).map(([b, ps]) => {
-    const n = pItems.filter(i => !i.moed && i.book === b).length;
+    const n = pItems.filter(i => !i.moed && !i.iyun && i.book === b).length;
     return tile(`#/book/${encodeURIComponent(b)}`, `חומש ${b}`, n ? `${n} שיעורים` : 'טרם הוקלט', BOOK_TINT[b], ART[ps.find(p => ART[p] && ART[p].startsWith('gen:')) || ps[0]] || FALLBACK);
-  }).join('')}${tile('#/moadim', 'מועדים', `${pItems.filter(i => i.moed).length} שיעורים`, 'oklch(0.48 0.1 75)', ART['חנוכה'] || FALLBACK)}${tile('#/iyun', 'עיון · סוגיות', `${pItems.filter(i => i.iyun).length} שיעורים`, 'oklch(0.42 0.07 170)', ART['סוכות'] || FALLBACK)}</div>`;
+  }).join('')}${tile('#/moadim', 'מועדים', `${pItems.filter(i => i.moed && !i.iyun).length} שיעורים`, 'oklch(0.48 0.1 75)', ART['חנוכה'] || FALLBACK)}${tile('#/iyun', 'עיון · סוגיות', `${pItems.filter(i => i.iyun).length} שיעורים`, 'oklch(0.42 0.07 170)', ART['סוכות'] || FALLBACK)}</div>`;
   const ghostSq = (name, title) => `<div class="sq-wrap"><div class="sq is-empty"><div class="pic"><img loading="lazy" src="${IMG(ART[name] || FALLBACK, 400, 400)}" alt=""><span class="pic-title">${esc(name)}</span></div><div class="cap"><b>${esc(title)}</b><span>טרם הוקלט</span></div></div></div>`;
 
   // ---------- תצוגות ----------
@@ -235,7 +236,7 @@
     const covers = [...new Set(Object.values(ART).filter(v => v.startsWith('gen:')))];
     const wall = [];
     while (covers.length && wall.length < 48) wall.push(...covers);
-    const nM = mItems.length, nP = pItems.filter(i => !i.moed).length, nH = pItems.filter(i => i.moed).length, nI = pItems.filter(i => i.iyun).length;
+    const nM = mItems.length, nP = pItems.filter(i => !i.moed && !i.iyun).length, nH = pItems.filter(i => i.moed && !i.iyun).length, nI = pItems.filter(i => i.iyun).length;
     const door = (attrs, title, sub, tint) => `<a class="door" ${attrs} style="--t:${tint}"><b>${title}</b><span>${sub}</span>${icon('next')}</a>`;
     return `<section class="sys${HERO_PHOTO ? ' has-photo' : ''}">
       ${HERO_PHOTO ? `<img class="sys-photo" src="${HERO_PHOTO}" alt="">` : `<div class="wall" aria-hidden="true"><div class="wall-in">${wall.slice(0, 48).map(v => `<img src="${IMG(v, 300, 300)}" alt="" loading="lazy">`).join('')}</div></div>`}
@@ -265,7 +266,7 @@
 
   // לשוניות למעלה (דניאל, 15.10): לא שיעור אחרון בגדול — אלא המבנה של כל חלק
   const chumashTiles = () => `<div class="tiles">${Object.entries(CHUMASH).map(([b, ps]) => {
-    const n = pItems.filter(i => !i.moed && i.book === b).length;
+    const n = pItems.filter(i => !i.moed && !i.iyun && i.book === b).length;
     return tile(`#/book/${encodeURIComponent(b)}`, `חומש ${b}`, n ? `${n} שיעורים` : 'טרם הוקלט', BOOK_TINT[b], ART[ps.find(p => ART[p] && ART[p].startsWith('gen:')) || ps[0]] || FALLBACK);
   }).join('')}</div>`;
   // פרשת השבוע לפי הלוח, ארץ ישראל: תאריך|מפתח באתר[|השם באותה שבת, כשפרשה מחוברת נקראת לבד]. נוצר מ-Hebcal (15.10.2026),
@@ -299,10 +300,10 @@
       return h;
     }
     if (f === 'p') {
-      let h = head('פרשת השבוע', `חמשת חומשי תורה · ${pItems.filter(i => !i.moed).length} שיעורים`);
+      let h = head('פרשת השבוע', `חמשת חומשי תורה · ${pItems.filter(i => !i.moed && !i.iyun).length} שיעורים`);
       h += weekCard();
       h += `<section class="row"><div class="row-head"><h2>חמשת חומשי תורה</h2></div>${chumashTiles()}</section>`;
-      h += cont(i => i.kind === 'p' && !i.moed);
+      h += cont(i => i.kind === 'p' && !i.moed && !i.iyun);
       // החומש של השבוע ראשון; כל הפרשות בשורה (גם שלא הוקלטו), כדי שהשורה לא תהיה חצי ריקה
       const wb = Object.keys(CHUMASH).find(b => CHUMASH[b].includes(weekParasha.name));
       for (const b of [wb, ...BOOK_ORDER.filter(x => x !== wb)]) { if (!b || !CHUMASH[b].some(t => groups[t])) continue;
@@ -311,7 +312,7 @@
     }
     if (f === 'h') {
       let h = head('מועדים', 'מועדי השנה לפי הסדר — הקרוב ראשון');
-      h += cont(i => i.moed);
+      h += cont(i => i.moed && !i.iyun);
       h += `<div class="grid sq-grid" style="margin-top:8px">${[...MOED_NEXT, ...ALL_MOADIM.filter(m => !MOED_NEXT.includes(m))].map(t => groups[t] ? squareCard(groups[t]) : ghostSq(t, MOED_NAME[t] || t)).join('')}</div>`;
       return h;
     }
@@ -323,29 +324,29 @@
   }
 
   function home() {
-    const latestP = pItems.filter(i => !i.moed).sort((a, b) => (b.date || '').localeCompare(a.date || ''))[0];
+    const latestP = pItems.filter(i => !i.moed && !i.iyun).sort((a, b) => (b.date || '').localeCompare(a.date || ''))[0];
     const latestM = [...mItems].sort((a, b) => (b.date || '').localeCompare(a.date || '') || b.perek - a.perek || b.nums[0] - a.nums[0])[0];
     const iyuns = pItems.filter(i => i.iyun).sort((a, b) => (b.date || '').localeCompare(a.date || ''));
     const fresh = items.filter(isNew).sort((a, b) => b.date.localeCompare(a.date) || (b.perek || 0) - (a.perek || 0) || (b.nums?.[0] || 0) - (a.nums?.[0] || 0));
     const cont = inProgress();
     const recorded = Object.values(masechet).sort((a, b) => b.last.localeCompare(a.last)).map(s => s.name);
-    const books = BOOK_ORDER.filter(b => pItems.some(i => !i.moed && i.book === b));
+    const books = BOOK_ORDER.filter(b => pItems.some(i => !i.moed && !i.iyun && i.book === b));
     const moadim = MOED_NEXT.filter(t => groups[t]).map(t => groups[t]);
     const want = k => filter === 'all' || filter === k;
     if (filter !== 'all') return sectionPage(filter, { latestP, latestM, iyuns, books, moadim });
     let html = '';
     html += systemHero(latestP, latestM);
-    html += row('המשך האזנה', cont.filter(i => filter === 'all' || (filter === 'm' ? i.kind === 'm' : filter === 'i' ? i.iyun : i.kind === 'p')).map(i => wideCard(i, { showProg: true })));
+    html += row('המשך האזנה', cont.filter(i => filter === 'all' || (filter === 'm' ? i.kind === 'm' : filter === 'i' ? i.iyun : i.kind === 'p' && !i.iyun)).map(i => wideCard(i, { showProg: true })));
     // סדרה אחת = כרטיס אחד (כמו "פרקים חדשים" בנטפליקס), עם מספר החדשים
     const seen = {}, freshCards = [];
-    for (const i of fresh.filter(i => filter === 'all' || (filter === 'm' ? i.kind === 'm' : filter === 'i' ? i.iyun : i.kind === 'p'))) {
+    for (const i of fresh.filter(i => filter === 'all' || (filter === 'm' ? i.kind === 'm' : filter === 'i' ? i.iyun : i.kind === 'p' && !i.iyun))) {
       const k = i.kind === 'm' ? i.masechet : i.id;
       if (seen[k]) { seen[k].n++; continue; }
       freshCards.push(seen[k] = { it: i, n: 1 });
     }
     html += row('חדש השבוע', freshCards.map(({ it, n }) => wideCard(it, { fresh: n })));
     if (want('m')) html += row('סדרות המשנה', recorded.map(posterCard), ['כל ששת הסדרים', '#/search']);
-    if (want('p')) for (const b of [...books].sort((x, y) => { const last = k => pItems.filter(i => !i.moed && i.book === k).reduce((m, i) => (i.date || '') > m ? i.date : m, ''); return last(y).localeCompare(last(x)); })) {
+    if (want('p')) for (const b of [...books].sort((x, y) => { const last = k => pItems.filter(i => !i.moed && !i.iyun && i.book === k).reduce((m, i) => (i.date || '') > m ? i.date : m, ''); return last(y).localeCompare(last(x)); })) {
       const gs = PARASHA_ORDER.filter(t => groups[t] && groups[t].book === b).map(t => groups[t]);
       html += row(`חומש ${b}`, gs.map(squareCard));
     }
@@ -484,7 +485,7 @@
     }
     for (const [s, ms] of SEDARIM) for (const name of ms) if (name.includes(q) || q.includes(name)) out.push(`<a class="res" href="#/m/${encodeURIComponent(name)}"><img src="${IMG(mArt(name) || SEDER_ART[s], 120, 120)}" alt=""><div><b>מסכת ${esc(name)}</b><span>סדר ${s} · ${masechet[name] ? `${masechet[name].items.length} שיעורים` : 'טרם הוקלט'}</span></div></a>`);
     for (const g of Object.values(groups)) if (g.title.includes(q) || (MOED_NAME[g.title] || '').includes(q)) out.push(`<a class="res" href="#/p/${encodeURIComponent(g.title)}"><img src="${IMG(ART[g.title] || FALLBACK, 120, 120)}" alt=""><div><b>${esc(g.moed ? (MOED_NAME[g.title] || g.title) : 'פרשת ' + g.title)}</b><span>${g.moed ? 'מועד' : 'חומש ' + g.book} · ${g.items.length} שיעורים</span></div></a>`);
-    for (const it of pItems) if (it.iyun && it.iyun.replace(/["'״׳]/g, '').includes(q)) out.push(`<a class="res" href="#/p/${encodeURIComponent(it.title)}" data-play="${esc(it.id)}"><img src="${IMG(artOf(it), 120, 120)}" alt=""><div><b>${esc(it.iyun)}</b><span>עיון · ${esc(seriesName(it))}</span></div></a>`);
+    for (const it of pItems) if (it.iyun && it.iyun.replace(/["'״׳]/g, '').includes(q)) out.push(`<a class="res" href="#/iyun" data-play="${esc(it.id)}"><img src="${IMG(artOf(it), 120, 120)}" alt=""><div><b>${esc(it.iyun)}</b><span>עיון · ${esc(seriesName(it))}</span></div></a>`);
     return `<div class="results">${out.join('') || `<p class="note">לא נמצא "${esc(q)}". נסו שם מסכת (ברכות), פרשה (נח) או מועד (סוכות).</p>`}</div>`;
   }
 
@@ -525,6 +526,7 @@
 
   // ---------- ניתוב ----------
   const top = $('#top');
+  let lastKey = '';
   function route() {
     let a, b, c, bad = false;
     try { [, a, b, c] = location.hash.split('/').map(decodeURIComponent); } catch { bad = true; a = 'x'; } // קידוד משובש בכתובת
@@ -544,12 +546,15 @@
     else if (a === 'library') { html = libraryPage(); nav = 'library'; }
     else if (a === 'l') { html = listPage(b); nav = 'library'; }
     else html = notFound();
-    view.innerHTML = `${building ? buildBar() : ''}<div class="view-in">${html}</div>`;
+    const key = bad ? '' : `${a}/${b}`, keep = a === 'm' && key === lastKey; lastKey = key;
+    const sc = matchMedia('(min-width:1024px)').matches ? $('#main') : document.scrollingElement, y = sc.scrollTop, sx = $('.seasons')?.scrollLeft;
+    view.innerHTML = `${building ? buildBar() : ''}<div class="view-in${keep ? ' no-in' : ''}">${html}</div>`;
     setPageBg(a, b);
     top.classList.toggle('is-flat', flat);
     $$('[data-nav]').forEach(x => x.classList.toggle('is-on', x.dataset.nav === nav));
     if (a === 'search') { const q = $('#q'); $('#res').innerHTML = searchResults(''); q.addEventListener('input', () => { $('#res').innerHTML = searchResults(q.value); }); if (matchMedia('(hover:hover)').matches) q.focus(); }
-    (matchMedia('(min-width:1024px)').matches ? $('#main') : document.scrollingElement).scrollTop = 0;
+    sc.scrollTop = keep ? y : 0;
+    if (keep && sx != null && $('.seasons')) $('.seasons').scrollLeft = sx;
     onScroll();
     if (typeof syncPlayBtns === 'function' && nowId) syncPlayBtns();
   }
@@ -633,7 +638,7 @@
 
   function queueFor(it) {
     if (it.kind === 'm') return masechet[it.masechet].items;
-    return groups[it.title].items;
+    return it.iyun ? pItems.filter(i => i.iyun) : groups[it.title].items;
   }
   // כריכה מעוצבת: צילום + שם הסדרה בגדול + שורת משנה (כמו כריכת אלבום / כרטיס נטפליקס)
   function cover(it, w = 600) {
