@@ -620,12 +620,14 @@
   }
   const npTitle = it => it.kind === 'm' ? `משנה ${it.nums.map(heb).join('–')}` : (it.iyun || seriesName(it));
   const npSub = it => it.kind === 'm' ? `${it.masechet} · פרק ${heb(it.perek)}` : it.iyun ? `עיון · ${seriesName(it)} · ${it.year}` : `${it.moed ? 'ווארט לחג' : 'ווארט על הפרשה'} · ${it.year}${it.tag ? ' · ' + it.tag : ''}`;
-  function play(id) {
+  // open: לחיצה על שיעור פותחת ישר את הנגן המלא, כמו יוטיוב מיוזיק (דניאל, 30.10).
+  // בלי open (תור, בניית רשימה) — רק הסרגל הקטן.
+  function play(id, open = false) {
     const it = byId[id]; if (!it) return;
     if (nowId === id) { toggle(); return; }
     if (nowId) hist.push(nowId);
     nowFrom = 'direct'; contQ = contFor(it); load(it, true);
-    // רק הסרגל הקטן — הנגן המלא (נייד) או הלוח בצד (מחשב) נפתחים רק מנגיעה (דניאל, 15.10)
+    if (open && !building) openNP();
   }
   function load(it, autoplay) {
     nowId = it.id;
@@ -750,7 +752,7 @@
   }
   function playList(i) {
     const ids = lists[i].ids.filter(id => byId[id]); if (!ids.length) return;
-    play(ids[0]); userQ = ids.slice(1); renderQueue();
+    play(ids[0], true); userQ = ids.slice(1); renderQueue();
   }
   for (const box of [$('#npQueue'), $('#dockQ'), $('#dockQueue')]) box.addEventListener('click', e => {
     if (e.target.closest('.qh')) return;
@@ -1271,10 +1273,10 @@
     // תוצאת חיפוש מדויקת ("נגן עכשיו", .res-play) — מנגנת, כמו שכתוב עליה
     const onCard = p.matches('.wide, .res:not(.res-play)');
     if (onCard && !e.target.closest('.over, .playbtn') && !e.metaKey) return; // לחיצה על הכרטיס — פותחת את הסדרה
-    e.preventDefault(); play(p.dataset.play);
+    e.preventDefault(); play(p.dataset.play, true);
   });
   document.addEventListener('keydown', e => {
-    if (e.key === 'Enter' && e.target.matches('.ep')) play(e.target.dataset.play);
+    if (e.key === 'Enter' && e.target.matches('.ep')) play(e.target.dataset.play, true);
     if (e.key === ' ' && !e.target.matches('input, textarea, button, a, [role=button]')) { e.preventDefault(); toggle(); }
     if (e.key === 'Escape' && np.classList.contains('is-open')) closeNP();
   });
