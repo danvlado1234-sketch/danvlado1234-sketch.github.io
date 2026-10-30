@@ -490,15 +490,36 @@
 
   function libraryPage() {
     const cont = inProgress();
-    const lc = (l, i) => { const f = byId[l.ids[0]]; return `<div class="sq-wrap"><a class="sq" href="#/library" data-list="${i}" aria-label="נגן את ${esc(l.name)}">
+    // רשימה = תיקייה: הכרטיס פותח את דף הרשימה, העיגול ▶ מנגן אותה (דניאל, 30.10)
+    const lc = l => { const f = byId[l.ids[0]]; return `<div class="sq-wrap"><a class="sq" href="#/l/${l.at}" aria-label="${esc(l.name)}">
       <div class="pic">${f ? `<img loading="lazy" src="${IMG(artOf(f), 400, 400)}" alt="">` : ''}<span class="pic-title">${esc(l.name)}</span>
-        <span class="fabmini">${icon('play')}</span></div>
+        ${l.ids.length ? `<span class="fabmini" data-list="${l.at}" role="button" aria-label="נגן את ${esc(l.name)}">${icon('play')}</span>` : ''}</div>
       <div class="cap"><b>${esc(l.name)}</b><span>${l.ids.length} שיעורים</span></div></a></div>`; };
     return `<h1 class="page-title">הספרייה שלי</h1>
       <div style="padding:0 var(--gutter)"><button class="btn-new" data-newlist style="width:auto;padding:0 22px">${icon('plus')}רשימה חדשה</button></div>
       ${lists.length ? row('הרשימות שלי', lists.map(lc)) : '<p class="note" style="margin-top:14px">כאן יופיעו הרשימות שלך — "רשימה חדשה", מחפשים שיעורים ולוחצים ＋.</p>'}
       ${cont.length ? row('המשך האזנה', cont.map(i => wideCard(i, { showProg: true }))) : '<p class="note">כאן יופיעו השיעורים שהתחלתם לשמוע — ממשיכים בדיוק מאיפה שעצרתם, גם אחרי סגירת הדפדפן.</p>'}
       ${row('המסכתות שלי', [...new Set(cont.filter(i => i.kind === 'm').map(i => i.masechet))].map(posterCard))}`;
+  }
+  function listPage(at) {
+    const l = listBy(at); if (!l) return notFound();
+    const its = l.ids.map(id => byId[id]).filter(Boolean), f = its[0];
+    const art = f ? artOf(f) : FALLBACK;
+    return `<section class="hero"><img src="${HERO(art)}" alt="">
+      <div><span class="kick">${l.fav ? 'שמורים' : 'רשימה שלך'}</span><h1>${esc(l.name)}</h1>
+        <div class="bb-meta"><span>${its.length === 1 ? 'שיעור אחד' : `${its.length} שיעורים`}</span></div>
+        <div class="acts lacts">${its.length ? `<button class="fab" data-list="${l.at}" aria-label="נגן את הרשימה">${icon('play')}</button>` : ''}
+          <button class="btn btn-ghost" data-ladd>${icon('plus')}הוספת שיעורים</button>
+          <button class="ib" data-lren aria-label="שינוי שם" title="שינוי שם">${icon('edit')}</button>
+          <button class="ib" data-ldel aria-label="מחיקת הרשימה" title="מחיקת הרשימה">${icon('trash')}</button></div></div></section>
+      <div class="series" data-lat="${l.at}"><div class="ep-head"><h2>השיעורים</h2><span>${its.length}</span></div>
+      ${its.map((it, k) => `<div class="ep${nowId === it.id ? ' is-now' : ''}" data-play="${esc(it.id)}" data-lk="${k}" role="button" tabindex="0" aria-label="נגן ${esc(fullName(it))}">
+          <span class="ep-n" style="font-size:1.6rem">${heb(k + 1)}</span>
+          <div class="pic"><img loading="lazy" src="${IMG(artOf(it), 400, 225)}" alt=""><span class="over"><span>${icon('play')}</span></span>${fracOf(it.id) > 0.02 ? `<span class="prog"><i style="width:${Math.round(fracOf(it.id) * 100)}%"></i></span>` : ''}</div>
+          <div class="ep-body"><b>${esc(it.kind === 'm' ? fullName(it) : (it.iyun || seriesName(it)))}<span>${it.date ? rel(it.date) : esc(it.year)}</span></b>
+            <p class="wait">${esc(it.kind === 'm' ? `מסכת ${it.masechet} · סדר ${it.seder}` : `${seriesName(it)} · ${it.year}`)}</p></div>
+          <button class="more" data-lrm="${esc(it.id)}" aria-label="הסרה מהרשימה: ${esc(fullName(it))}" title="הסרה מהרשימה">${icon('x')}</button></div>`).join('')
+        || '<p class="note">הרשימה ריקה — "הוספת שיעורים", מחפשים ולוחצים ＋.</p>'}</div>`;
   }
   const notFound = () => `<h1 class="page-title">לא נמצא</h1><p class="note"><a href="#/" style="text-decoration:underline">חזרה לדף הבית</a></p>`;
 
@@ -521,6 +542,7 @@
       <div class="grid iy-grid">${pItems.filter(i => i.iyun).map(iyunCard).join('')}</div>`;
     else if (a === 'search') { html = searchPage(); nav = 'search'; }
     else if (a === 'library') { html = libraryPage(); nav = 'library'; }
+    else if (a === 'l') { html = listPage(b); nav = 'library'; }
     else html = notFound();
     view.innerHTML = `${building ? buildBar() : ''}<div class="view-in">${html}</div>`;
     setPageBg(a, b);
@@ -542,6 +564,7 @@
     if (a === 'book') return firstGen(CHUMASH[b] || []);
     if (a === 'moadim') return firstGen(MOED_NEXT);
     if (a === 'iyun') return ART['סוכות'];
+    if (a === 'l') { const f = byId[listBy(b)?.ids[0]]; return f ? artOf(f) : null; }
     return null; // בית, חיפוש, ספרייה — רקע הבית
   }
   function setPageBg(a, b) {
@@ -582,8 +605,8 @@
   function sideList() {
     const ms = Object.values(masechet).sort((a, b) => b.last.localeCompare(a.last)).map(s => ({ href: `#/m/${encodeURIComponent(s.name)}`, art: mArt(s.name), t: `מסכת ${s.name}`, sub: `סדר ${s.seder} · ${s.items.length} שיעורים`, k: 'm' }));
     const ps = [...BOOK_ORDER.flatMap(b => PARASHA_ORDER.filter(t => groups[t]?.book === b)), ...MOED_NEXT.filter(t => groups[t])].map(t => groups[t]).map(g => ({ href: `#/p/${encodeURIComponent(g.title)}`, art: ART[g.title] || FALLBACK, t: g.moed ? (MOED_NAME[g.title] || g.title) : `פרשת ${g.title}`, sub: `${g.moed ? 'מועד' : 'חומש ' + g.book} · ${g.items.length} שיעורים`, k: 'p' }));
-    const ls = lists.map((l, i) => ({ list: i, art: artOf(byId[l.ids[0]] || items[0]), t: l.name, sub: `רשימה שלך · ${l.ids.length} שיעורים`, k: 'l' }));
-    $('#sideList').innerHTML = [...ls, ...ms, ...ps].filter(x => libF === 'all' || x.k === libF || x.k === 'l').map(x => `<li><a ${x.list != null ? `href="#/library" data-list="${x.list}"` : `href="${x.href}"`}><img loading="lazy" src="${IMG(x.art, 96, 96)}" alt=""><div><b>${esc(x.t)}</b><span>${esc(x.sub)}</span></div></a></li>`).join('');
+    const ls = lists.map(l => ({ href: `#/l/${l.at}`, art: artOf(byId[l.ids[0]] || items[0]), t: l.name, sub: `רשימה שלך · ${l.ids.length} שיעורים`, k: 'l' }));
+    $('#sideList').innerHTML = [...ls, ...ms, ...ps].filter(x => libF === 'all' || x.k === libF || x.k === 'l').map(x => `<li><a href="${x.href}"><img loading="lazy" src="${IMG(x.art, 96, 96)}" alt=""><div><b>${esc(x.t)}</b><span>${esc(x.sub)}</span></div></a></li>`).join('');
   }
   $('.side-chips').addEventListener('click', e => { const b = e.target.closest('[data-lib]'); if (!b) return; libF = b.dataset.lib; $$('.side-chips .chip').forEach(x => x.classList.toggle('is-on', x === b)); sideList(); });
 
@@ -739,9 +762,12 @@
   }
   // רשימות השמעה — נשמרות במכשיר (בלי הרשמה)
   let lists = store.get('lists', []);
+  { const seen = new Set(); for (const l of lists) { while (!l.at || seen.has(l.at)) l.at = (l.at || Date.now()) + 1; seen.add(l.at); } }
+  const listBy = at => lists.find(l => String(l.at) === String(at));
+  const saveLists = () => { store.set('lists', lists); sideList(); };
   function saveList(name, ids) {
     name = (name || '').trim() || `הרשימה שלי ${lists.length + 1}`;
-    lists.unshift({ name, ids, at: Date.now() }); store.set('lists', lists); sideList();
+    lists.unshift({ name, ids, at: Math.max(Date.now(), ...lists.map(l => l.at + 1)) }); saveLists();
     toast(`נשמרה הרשימה "${name}" · בספרייה`);
   }
   function saveToFav(id) {
@@ -750,10 +776,25 @@
     if (!fav.ids.includes(id)) fav.ids.push(id);
     store.set('lists', lists); sideList(); toast(`נשמר ב"השמורים שלי"`);
   }
-  function playList(i) {
-    const ids = lists[i].ids.filter(id => byId[id]); if (!ids.length) return;
-    play(ids[0], true); userQ = ids.slice(1); renderQueue();
+  function playList(at, k = 0) {
+    const l = listBy(at); if (!l) return;
+    const ids = l.ids.filter(id => byId[id]); if (!ids[k]) return;
+    if (ids[k] === nowId) { if (audio.paused) toggle(); } else play(ids[k]);
+    userQ = ids.slice(k + 1); renderQueue();
+    if (!building) openNP();
   }
+  // ניהול רשימה מהדף שלה: ניגון משיעור, הסרת שיעור, הוספה, שינוי שם, מחיקה
+  document.addEventListener('click', e => {
+    const box = e.target.closest('.view-in'); const at = box && $('[data-lat]', box)?.dataset.lat; if (!at) return;
+    const l = listBy(at); if (!l) return;
+    const rm = e.target.closest('[data-lrm]');
+    if (rm) { e.stopPropagation(); l.ids = l.ids.filter(x => x !== rm.dataset.lrm); saveLists(); route(); toast('הוסר מהרשימה'); return; }
+    if (e.target.closest('[data-ladd]')) { startBuild('list', l); return; }
+    if (e.target.closest('[data-lren]')) { const n = prompt('שם הרשימה', l.name); if (n && n.trim()) { l.name = n.trim(); saveLists(); route(); } return; }
+    if (e.target.closest('[data-ldel]')) { if (!confirm(`למחוק את הרשימה "${l.name}"?`)) return; lists = lists.filter(x => x !== l); saveLists(); toast('הרשימה נמחקה'); location.hash = '#/library'; return; }
+    const row = e.target.closest('[data-lk]');
+    if (row && !e.target.closest('button')) { e.preventDefault(); e.stopPropagation(); playList(at, +row.dataset.lk); }
+  }, true);
   for (const box of [$('#npQueue'), $('#dockQ'), $('#dockQueue')]) box.addEventListener('click', e => {
     if (e.target.closest('.qh')) return;
     const rm = e.target.closest('[data-rm]');
@@ -803,7 +844,7 @@
     const again = $(`${scope} .qrow[data-id="${CSS.escape(id)}"] .qh`); if (again) again.focus();
   });
 
-  document.addEventListener('click', e => { const a = e.target.closest('[data-list]'); if (!a) return; e.preventDefault(); playList(+a.dataset.list); });
+  document.addEventListener('click', e => { const a = e.target.closest('[data-list]'); if (!a) return; e.preventDefault(); playList(a.dataset.list); });
 
   // ---------- בניית רשימה: "הוספת שיעורים" → האתר עם ＋ ליד כל שיעור, והרשימה נבנית בלוח בצד ----------
   function buildBar() {
@@ -822,9 +863,9 @@
       <div class="bact"><button class="btn-save" data-bsave ${its.length ? '' : 'disabled'}>שמירת הרשימה</button><button class="lnk" data-bcancel>ביטול</button></div>`;
     const bar = $('.buildbar'); if (bar) bar.outerHTML = buildBar();
   }
-  function startBuild(target = 'list') {
+  function startBuild(target = 'list', edit = null) {
     if (np.classList.contains('is-open')) { shutNP(); if (history.state?.np) history.replaceState(null, '', '#/search'); } // מהנגן המלא — סוגרים אותו כדי שהחיפוש ייראה
-    building = { name: '', ids: [], target }; document.body.classList.add('building');
+    building = edit ? { name: edit.name, ids: [...edit.ids], target, at: edit.at } : { name: '', ids: [], target }; document.body.classList.add('building');
     if (!isMob()) openDock(target === 'queue' && nowId ? 'queue' : 'build');
     else minDock();
     buildPanel();
@@ -833,10 +874,13 @@
   function endBuild(save) {
     const b = building; building = null; document.body.classList.remove('building');
     if (b.target === 'queue') { if (nowId) openDock('queue'); if (b.ids.length) toast(`נוספו ${b.ids.length} שיעורים לתור`); route(); return; }
-    if (save && b.ids.length) saveList(b.name, b.ids);
+    const l = b.at && listBy(b.at);
+    if (save && l) { l.ids = b.ids; l.name = (b.name || '').trim() || l.name; saveLists(); toast('הרשימה עודכנה'); }
+    else if (save && b.ids.length) saveList(b.name, b.ids);
     minDock(); // הלוח נפתח רק מלחיצה
-    // שמירה וגם ביטול (X) חוזרים לדף הרשימות (דניאל, 30.10)
-    if (location.hash === '#/library') route(); else location.hash = '#/library';
+    // שמירה וגם ביטול (X) חוזרים לדף הרשימות — או לרשימה שהוסיפו אליה (דניאל, 30.10)
+    const to = l ? `#/l/${l.at}` : '#/library';
+    if (location.hash === to) route(); else location.hash = to;
   }
   function toggleAdd(id) {
     if (!building) return;
@@ -859,7 +903,7 @@
     const ad = e.target.closest('[data-addl]'); if (ad) { e.preventDefault(); e.stopPropagation(); toggleAdd(ad.dataset.addl); return; }
     const rm = e.target.closest('#dockB [data-rm]'); if (rm) { toggleAdd(rm.dataset.rm); return; }
     if (e.target.closest('[data-bsave]')) { endBuild(true); return; }
-    if (e.target.closest('[data-bcancel]')) { if (building.target !== 'queue' && building.ids.length && !confirm('לצאת בלי לשמור את הרשימה?')) return; endBuild(false); return; }
+    if (e.target.closest('[data-bcancel]')) { const was = building.at ? listBy(building.at)?.ids.join() : ''; if (building.target !== 'queue' && building.ids.join() !== was && building.ids.length && !confirm('לצאת בלי לשמור את הרשימה?')) return; endBuild(false); return; }
     if (e.target.closest('[data-bopen]')) { openDock('build'); return; }
   }, true);
   document.addEventListener('input', e => { if (e.target.id === 'bName' && building) { building.name = e.target.value; const b = $('.buildbar b'); if (b) b.textContent = building.name || 'רשימה חדשה'; } });
@@ -1285,7 +1329,7 @@
     e.preventDefault(); tapPlay(p);
   });
   document.addEventListener('keydown', e => {
-    if (e.key === 'Enter' && e.target.matches('.ep')) tapPlay(e.target);
+    if (e.key === 'Enter' && e.target.matches('.ep')) { const at = e.target.closest('[data-lat]')?.dataset.lat; if (at) playList(at, +e.target.dataset.lk); else tapPlay(e.target); }
     if (e.key === ' ' && !e.target.matches('input, textarea, button, a, [role=button]')) { e.preventDefault(); toggle(); }
     if (e.key === 'Escape' && np.classList.contains('is-open')) closeNP();
   });
