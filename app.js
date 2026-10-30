@@ -1266,6 +1266,13 @@
     img.src = src;
   }
 
+  // השיעור שכבר מתנגן: כפתור עם סימן ניגון/השהיה — משהה; שורה או כרטיס — פותחים את הנגן המלא
+  // (ואם היה מושהה — ממשיכים), כמו יוטיוב מיוזיק (דניאל, 30.10)
+  function tapPlay(p) {
+    const id = p.dataset.play, isBtn = !!p.querySelector(':scope > svg > use[href="#i-play"], :scope > svg > use[href="#i-pause"]');
+    if (id === nowId && !isBtn && !building) { if (audio.paused) toggle(); openNP(); return; }
+    play(id, true);
+  }
   // לחיצה על כל דבר עם data-play
   document.addEventListener('click', e => {
     const p = e.target.closest('[data-play]'); if (!p) return;
@@ -1273,10 +1280,10 @@
     // תוצאת חיפוש מדויקת ("נגן עכשיו", .res-play) — מנגנת, כמו שכתוב עליה
     const onCard = p.matches('.wide, .res:not(.res-play)');
     if (onCard && !e.target.closest('.over, .playbtn') && !e.metaKey) return; // לחיצה על הכרטיס — פותחת את הסדרה
-    e.preventDefault(); play(p.dataset.play, true);
+    e.preventDefault(); tapPlay(p);
   });
   document.addEventListener('keydown', e => {
-    if (e.key === 'Enter' && e.target.matches('.ep')) play(e.target.dataset.play, true);
+    if (e.key === 'Enter' && e.target.matches('.ep')) tapPlay(e.target);
     if (e.key === ' ' && !e.target.matches('input, textarea, button, a, [role=button]')) { e.preventDefault(); toggle(); }
     if (e.key === 'Escape' && np.classList.contains('is-open')) closeNP();
   });
