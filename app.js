@@ -169,14 +169,17 @@
     const name = g.moed ? (MOED_NAME[g.title] || g.title) : `פרשת ${g.title}`;
     const sub = g.moed ? `${MOED_MONTH[g.title] || ''} · ${its.length === 1 ? 'שיעור אחד' : `${its.length} שיעורים`}` : `${it.year}${its.length > 1 ? ` · ${its.length} שיעורים` : ''}`;
     return `<div class="sq-wrap"><a class="sq" href="#/${iy ? 'iyun' : 'p'}/${encodeURIComponent(g.title)}" aria-label="${esc(name)}">
-      <div class="pic"><img loading="lazy" src="${IMG(ART[g.title] || FALLBACK, 400, 400)}" alt="">
+      <div class="pic"><img loading="lazy" src="${IMG((iy ? iyArt(g.title) : ART[g.title]) || FALLBACK, 400, 400)}" alt="">
         ${!g.moed && g.title === weekParasha.name ? '<span class="badge">השבוע</span>' : its.some(isNew) ? '<span class="badge">חדש</span>' : ''}
         <span class="pic-title">${esc(g.moed ? name : g.title)}</span>
         <button class="fabmini" data-play="${esc(it.id)}" aria-label="נגן ${esc(name)}">${icon('play')}</button></div>
       <div class="cap"><b>${esc(name)}</b><span>${esc(sub)}</span></div></a></div>`;
   };
   // עיון — בדיוק כמו המועדים, רק עיון (דניאל, 1.11): אריח לכל מועד לפי סדר השנה, הקרוב ראשון; רק מועדים שיש בהם עיון
-  const hasIyun = t => groups[t] && groups[t].items.some(i => i.iyun);
+  // כריכה משלו לעיון (gen.js: "עיון:<מועד>" — גמרא פתוחה + סמל החג). מועד בלי כריכת עיון — לא מוצג בכלל,
+  // לא כריכת המועד ולא אריח ריק (דניאל, 1.11)
+  const iyArt = t => ART['עיון:' + t];
+  const hasIyun = t => !!(groups[t] && iyArt(t) && groups[t].items.some(i => i.iyun));
   const iyunSq = g => squareCard(g, true);
   const iyunGrid = () => `<div class="grid sq-grid">${[...MOED_NEXT, ...ALL_MOADIM.filter(m => !MOED_NEXT.includes(m))].filter(hasIyun).map(t => iyunSq(groups[t])).join('')}</div>`;
   const row = (title, cards, more) => cards.length ? `
@@ -421,7 +424,7 @@
     if (!g0 || (iy && !hasIyun(title))) return notFound();
     const g = iy ? { ...g0, items: g0.items.filter(i => i.iyun) } : g0;
     const name = g.moed ? (MOED_NAME[title] || title) : `פרשת ${title}`;
-    const art = ART[title] || FALLBACK;
+    const art = (iy ? iyArt(title) : ART[title]) || FALLBACK;
     return `<section class="hero"><img src="${HERO(art)}" alt="">
       <div><span class="kick">${iy ? `עיון · ${MOED_MONTH[title] || ''}` : g.moed ? `מועדים · ${MOED_MONTH[title] || ''}` : `חומש ${g.book}`}</span><h1>${esc(name)}</h1>
         <div class="bb-meta"><span>${g.items.length === 1 ? 'שיעור אחד' : `${g.items.length} שיעורים`}</span>${g.items.some(i => i.pdf) ? '<span>עם סיכום כתוב</span>' : ''}</div>
@@ -539,7 +542,7 @@
     if (a === 'seder') return SEDER_ART[b];
     if (a === 'book') return firstGen(CHUMASH[b] || []);
     if (a === 'moadim') return firstGen(MOED_NEXT);
-    if (a === 'iyun') return b ? ART[b] : firstGen(MOED_NEXT);
+    if (a === 'iyun') return b ? iyArt(b) : iyArt(MOED_NEXT.find(hasIyun));
     return null; // בית, חיפוש, ספרייה — רקע הבית
   }
   function setPageBg(a, b) {
