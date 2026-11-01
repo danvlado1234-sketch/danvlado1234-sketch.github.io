@@ -624,6 +624,7 @@ body.building .top{ display: none; }
 .dock-b{ display: none; flex-direction: column; min-height: 0; flex: 1; padding-bottom: 16px; }
 .dock.mode-build .dock-scroll, .dock.mode-build .dock-q{ display: none; }
 .dock.mode-build .dock-b{ display: flex; }
+.dock.mode-build #dockExpand{ display: none; } /* ברשימה בבנייה אין נגן להגדיל */
 .bname{ height: 48px; border: 0; border-radius: 10px; padding: 0 14px; background: oklch(1 0 0 / 0.1); color: var(--text); font: inherit; font-size: 1.15rem; font-weight: 600; }
 .bname::placeholder{ color: oklch(1 0 0 / 0.5); font-weight: 400; }
 .bhint{ margin: 10px 2px; font-size: var(--fs-small); color: oklch(1 0 0 / 0.7); }

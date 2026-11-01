@@ -856,14 +856,14 @@
     const n = building.ids.length;
     if (building.target === 'queue') return `<div class="buildbar"><span><b>מוסיפים לתור</b> · ${n === 1 ? 'נוסף שיעור אחד' : n ? `נוספו ${n} שיעורים` : 'לחצו ＋ ליד שיעור'}</span>
       <button class="lnk show-mob" data-bopen>לתור</button><button class="btn-save" data-bsave>סיום</button></div>`;
-    return `<div class="buildbar"><span><b>${esc(building.name || 'רשימה חדשה')}</b> · ${n ? `${n} שיעורים` : 'עוד ריקה'}</span>
-      <button class="lnk show-mob" data-bopen>לרשימה</button><button class="btn-save" data-bsave ${n ? '' : 'disabled'}>${isMob() ? 'שמירה' : 'סיום ושמירה'}</button>
+    return `<div class="buildbar"><span><b>${esc(building.name || 'רשימה חדשה')}</b>${n && isMob() ? '' : ` · ${n ? `${n} שיעורים` : 'עוד ריקה'}`}</span>
+      ${n ? `<button class="lnk show-mob" data-bopen>הרשימה (${n})</button>` : ''}<button class="btn-save" data-bsave ${n ? '' : 'disabled'}>${isMob() ? 'שמירה' : 'סיום ושמירה'}</button>
       <button class="ib bx" data-bcancel aria-label="ביטול — יציאה בלי לשמור" title="ביטול">${icon('x')}</button></div>`;
   }
   function buildPanel() {
     const its = building.ids.map(id => byId[id]);
     $('#dockB').innerHTML = `<input class="bname" id="bName" dir="auto" value="${esc(building.name)}" placeholder="שם הרשימה, למשל: לנסיעה" aria-label="שם הרשימה">
-      <p class="bhint">${its.length ? `${its.length} שיעורים` : 'חפשו שיעורים מימין ולחצו ＋ — הם יופיעו כאן.'}</p>
+      <p class="bhint">${its.length ? `${its.length} שיעורים` : `חפשו שיעורים${isMob() ? '' : ' מימין'} ולחצו ＋ — הם יופיעו כאן.`}</p>
       <div class="blist">${its.map(x => qRow(x, 'build')).join('')}</div>
       <div class="bact"><button class="btn-save" data-bsave ${its.length ? '' : 'disabled'}>שמירת הרשימה</button><button class="lnk" data-bcancel>ביטול</button></div>`;
     const bar = $('.buildbar'); if (bar) bar.outerHTML = buildBar();
