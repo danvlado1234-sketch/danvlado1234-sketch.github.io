@@ -177,9 +177,9 @@
   };
   // עיון — בדיוק כמו המועדים, רק עיון (דניאל, 1.11): אריח לכל מועד לפי סדר השנה, הקרוב ראשון; רק מועדים שיש בהם עיון
   // לכל שיעור עיון תמונה משלו (gen.js: window.GENL, לפי נתיב הקובץ). שיעור בלי תמונה — לא מוצג בעיון, ומועד בלי
-  // שיעור כזה — לא מוצג בכלל: לא כריכת המועד ולא אריח ריק (דניאל, 1.11). אריח המועד — התמונה של השיעור האחרון
+  // שיעור כזה — לא מוצג בכלל (דניאל, 1.11). אריח המועד ודף המועד בעיון — כריכה נפרדת: הכריכה הרגילה של המועד
   const iyItems = t => groups[t] ? groups[t].items.filter(i => i.iyun && (window.GENL || {})[i.id]) : [];
-  const iyArt = t => { const it = iyItems(t)[0]; return it && artOf(it); };
+  const iyArt = t => ART[t];
   const hasIyun = t => iyItems(t).length > 0;
   const iyunSq = g => squareCard(g, true);
   const iyunGrid = () => `<div class="grid sq-grid">${[...MOED_NEXT, ...ALL_MOADIM.filter(m => !MOED_NEXT.includes(m))].filter(hasIyun).map(t => iyunSq(groups[t])).join('')}</div>`;
