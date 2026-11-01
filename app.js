@@ -182,7 +182,13 @@
   const iyArt = t => ART[t];
   const hasIyun = t => iyItems(t).length > 0;
   const iyunSq = g => squareCard(g, true);
-  const iyunGrid = () => `<div class="grid sq-grid">${[...MOED_NEXT, ...ALL_MOADIM.filter(m => !MOED_NEXT.includes(m))].filter(hasIyun).map(t => iyunSq(groups[t])).join('')}</div>`;
+  const iyunMoadim = () => [...MOED_NEXT, ...ALL_MOADIM.filter(m => !MOED_NEXT.includes(m))].filter(hasIyun);
+  const iyunGrid = () => `<div class="grid sq-grid">${iyunMoadim().map(t => iyunSq(groups[t])).join('')}</div>`;
+  // דף הבית: כרטיס גדול לכל שיעור עיון, בתמונה שלו — גודל אחר משורות האריחים, כמו בנטפליקס (דניאל, 1.11). לחיצה — מנגנת
+  const iyunCard = it => `<a class="iyun" href="#/iyun/${encodeURIComponent(it.title)}" data-play="${esc(it.id)}" aria-label="נגן ${esc(fullName(it))}">
+      <img loading="lazy" src="${IMG(artOf(it), 700, 700)}" alt="">
+      <q>${esc(it.iyun)}</q>
+      <span class="meta"><span>${esc([seriesName(it), it.year].join(' · '))}${it.pdf ? '<br>עם סיכום כתוב' : ''}</span><span class="playbtn" aria-hidden="true">${icon('play')}</span></span></a>`;
   const row = (title, cards, more) => cards.length ? `
     <section class="row"><div class="row-head"><h2>${title}</h2>${more ? `<a href="${more[1]}">${more[0]}</a>` : ''}</div>
       <button class="row-nav prev" data-dir="1" aria-label="הקודמים">${icon('prev')}</button>
@@ -350,7 +356,7 @@
       html += row(`חומש ${b}`, gs.map(squareCard));
     }
     if (want('p')) html += row('מועדי השנה — הקרוב ראשון', moadim.map(squareCard));
-    if (want('p') || want('i')) html += row('עיון — הקרוב ראשון', MOED_NEXT.filter(hasIyun).map(t => iyunSq(groups[t])), ['כל המועדים', '#/iyun']);
+    if (want('p') || want('i')) html += row('עיון — הקרוב ראשון', iyunMoadim().flatMap(iyItems).map(iyunCard), ['כל המועדים', '#/iyun']);
     if (filter === 'm') for (const [s, ms] of SEDARIM) { const r = ms.filter(m => masechet[m]); if (r.length) html += row(`סדר ${s}`, ms.map(posterCard)); }
     if (want('m')) html += `<section class="row"><div class="row-head"><h2>ששת סדרי משנה</h2></div>${tiles()}</section>`;
     return html;

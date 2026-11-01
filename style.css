@@ -768,7 +768,7 @@ body.building .top{ display: none; }
   --accent: oklch(0.6 0.13 72);
   --accent-ink: oklch(0.99 0.01 85);
 }
-:root[data-theme="day"] :is(.np, .dock, .billboard, .hero, .menu){
+:root[data-theme="day"] :is(.np, .dock, .billboard, .hero, .menu, .iyun){
   color-scheme: dark;
   --bg: oklch(0.135 0.006 60); --page-bg: oklch(0.135 0.006 60);
   --surface: oklch(0.175 0.007 60); --surface-2: oklch(0.21 0.008 60); --hover: oklch(0.25 0.009 60);
@@ -916,6 +916,14 @@ body.building .top{ display: none; }
 @media (hover: hover){ .plain-tiles .tile:hover{ filter: brightness(1.08); } }
 .plain-tiles .tile small{ order: 2; }
 
+
+/* עיון בדף הבית — כרטיס גדול לכל שיעור, בתמונה שלו (1.11): שם השיעור בגדול, מתחת שורת טקסט רגילה — בלי תגית */
+.iyun{ width: clamp(270px, 26vw, 360px); aspect-ratio: 4 / 3; border-radius: var(--r-card); padding: 18px 18px 16px; display: flex; flex-direction: column; justify-content: flex-end; gap: 8px; position: relative; overflow: hidden; isolation: isolate; }
+.iyun img{ position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; z-index: -2; }
+.iyun::after{ content: ""; position: absolute; inset: 0; z-index: -1; background: linear-gradient(to top, oklch(0 0 0 / 0.85) 10%, oklch(0 0 0 / 0.3) 55%, oklch(0 0 0 / 0.1) 100%); }
+.iyun q{ quotes: none; font-family: var(--f-title); font-weight: 700; font-size: 1.5rem; line-height: 1.25; text-wrap: balance; color: #fff; }
+.iyun .meta{ display: flex; align-items: center; justify-content: space-between; gap: 10px; font-size: var(--fs-small); color: oklch(1 0 0 / 0.82); }
+.iyun .meta .playbtn{ flex: none; width: 40px; height: 40px; background: var(--accent); color: var(--accent-ink); }
 
 /* פרשת השבוע — כרטיס רחב ונמוך (לא שלט מסך מלא) */
 .week{ position: relative; isolation: isolate; overflow: hidden; margin: 14px var(--gutter) 6px; border-radius: 16px; min-height: 230px; display: flex; align-items: flex-end; color: #fff; box-shadow: 0 20px 50px -20px oklch(0 0 0 / 0.6); }
