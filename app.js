@@ -165,7 +165,7 @@
   // iy === true — אריח המועד בעיון: רק שיעורי העיון שלו, ומוביל לדף העיון של המועד
   const squareCard = (g, iy) => {
     iy = iy === true;
-    const its = iy ? g.items.filter(i => i.iyun) : g.items, it = its[0];
+    const its = iy ? iyItems(g.title) : g.items, it = its[0];
     const name = g.moed ? (MOED_NAME[g.title] || g.title) : `פרשת ${g.title}`;
     const sub = g.moed ? `${MOED_MONTH[g.title] || ''} · ${its.length === 1 ? 'שיעור אחד' : `${its.length} שיעורים`}` : `${it.year}${its.length > 1 ? ` · ${its.length} שיעורים` : ''}`;
     return `<div class="sq-wrap"><a class="sq" href="#/${iy ? 'iyun' : 'p'}/${encodeURIComponent(g.title)}" aria-label="${esc(name)}">
@@ -176,10 +176,11 @@
       <div class="cap"><b>${esc(name)}</b><span>${esc(sub)}</span></div></a></div>`;
   };
   // עיון — בדיוק כמו המועדים, רק עיון (דניאל, 1.11): אריח לכל מועד לפי סדר השנה, הקרוב ראשון; רק מועדים שיש בהם עיון
-  // כריכה משלו לעיון (gen.js: "עיון:<מועד>" — גמרא פתוחה + סמל החג). מועד בלי כריכת עיון — לא מוצג בכלל,
-  // לא כריכת המועד ולא אריח ריק (דניאל, 1.11)
-  const iyArt = t => ART['עיון:' + t];
-  const hasIyun = t => !!(groups[t] && iyArt(t) && groups[t].items.some(i => i.iyun));
+  // לכל שיעור עיון תמונה משלו (gen.js: window.GENL, לפי נתיב הקובץ). שיעור בלי תמונה — לא מוצג בעיון, ומועד בלי
+  // שיעור כזה — לא מוצג בכלל: לא כריכת המועד ולא אריח ריק (דניאל, 1.11). אריח המועד — התמונה של השיעור האחרון
+  const iyItems = t => groups[t] ? groups[t].items.filter(i => i.iyun && (window.GENL || {})[i.id]) : [];
+  const iyArt = t => { const it = iyItems(t)[0]; return it && artOf(it); };
+  const hasIyun = t => iyItems(t).length > 0;
   const iyunSq = g => squareCard(g, true);
   const iyunGrid = () => `<div class="grid sq-grid">${[...MOED_NEXT, ...ALL_MOADIM.filter(m => !MOED_NEXT.includes(m))].filter(hasIyun).map(t => iyunSq(groups[t])).join('')}</div>`;
   const row = (title, cards, more) => cards.length ? `
@@ -422,7 +423,7 @@
   function groupPage(title, iy) {
     const g0 = groups[title];
     if (!g0 || (iy && !hasIyun(title))) return notFound();
-    const g = iy ? { ...g0, items: g0.items.filter(i => i.iyun) } : g0;
+    const g = iy ? { ...g0, items: iyItems(title) } : g0;
     const name = g.moed ? (MOED_NAME[title] || title) : `פרשת ${title}`;
     const art = (iy ? iyArt(title) : ART[title]) || FALLBACK;
     return `<section class="hero"><img src="${HERO(art)}" alt="">
@@ -433,7 +434,7 @@
       <div class="series"><div class="ep-head"><h2>השיעורים</h2><span>${g.items.length}</span></div>
       ${g.items.map((it, k) => `<div class="ep${nowId === it.id ? ' is-now' : ''}" data-play="${esc(it.id)}" role="button" tabindex="0" aria-label="נגן ${esc(fullName(it))}">
           <span class="ep-n" style="font-size:1.6rem">${heb(k + 1)}</span>
-          <div class="pic"><img loading="lazy" src="${IMG(art, 400, 225)}" alt="" style="object-position:${(k * 41) % 100}% 50%"><span class="over"><span>${icon('play')}</span></span>${fracOf(it.id) > 0.02 ? `<span class="prog"><i style="width:${Math.round(fracOf(it.id) * 100)}%"></i></span>` : ''}</div>
+          <div class="pic"><img loading="lazy" src="${IMG(iy ? artOf(it) : art, 400, 225)}" alt="" style="object-position:${iy ? 50 : (k * 41) % 100}% 50%"><span class="over"><span>${icon('play')}</span></span>${fracOf(it.id) > 0.02 ? `<span class="prog"><i style="width:${Math.round(fracOf(it.id) * 100)}%"></i></span>` : ''}</div>
           <div class="ep-body"><b>${esc(it.iyun ? (iy ? it.iyun : 'עיון · ' + it.iyun) : [it.year, it.tag].filter(Boolean).join(' · '))}<span>${it.date ? rel(it.date) : esc(it.year)}</span></b>
             <p class="wait">${it.iyun ? (iy ? esc(it.year) : `${esc(it.year)} · שיעור עיון`) : g.moed ? 'ווארט לחג' : 'ווארט על הפרשה'}${it.pdf ? ' · יש סיכום כתוב' : ''}</p></div>${moreBtn(it)}</div>`).join('')}</div>`;
   }
