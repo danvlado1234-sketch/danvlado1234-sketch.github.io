@@ -105,8 +105,12 @@
   for (const s of Object.values(masechet)) s.last = s.items.reduce((m, i) => (i.date || '') > m ? i.date : m, '');
   const pItems = items.filter(i => i.kind === 'p');
   const groups = {};
-  for (const it of pItems) (groups[it.title] ||= { title: it.title, moed: it.moed, book: it.book, items: [] }).items.push(it);
-  for (const g of Object.values(groups)) g.items.sort((a, b) => b.year.localeCompare(a.year) || (a.iyun ? 1 : 0) - (b.iyun ? 1 : 0) || a.tag.localeCompare(b.tag));
+  // שיעורי עיון לא נכנסים לדף המועד/הפרשה — יש להם מדור משלו, #/iyun (דניאל, 30.10)
+  for (const it of pItems) if (!it.iyun) (groups[it.title] ||= { title: it.title, moed: it.moed, book: it.book, items: [] }).items.push(it);
+  // ...ולעיון — קבוצות משלו לפי המועד, לדפי העיון (#/iyun/<מועד>)
+  const iyGroups = {};
+  for (const it of pItems) if (it.iyun) (iyGroups[it.title] ||= { title: it.title, moed: it.moed, book: it.book, items: [] }).items.push(it);
+  for (const g of [...Object.values(groups), ...Object.values(iyGroups)]) g.items.sort((a, b) => b.year.localeCompare(a.year) || (a.iyun ? 1 : 0) - (b.iyun ? 1 : 0) || a.tag.localeCompare(b.tag));
 
   const seriesName = it => it.kind === 'm' ? it.masechet : it.moed ? (MOED_NAME[it.title] || it.title) : `פרשת ${it.title}`;
   const epName = it => {
@@ -115,7 +119,7 @@
     return [it.year, it.tag].filter(Boolean).join(' · ');
   };
   const fullName = it => it.kind === 'm' ? `${it.masechet} ${heb(it.perek)}, ${it.nums.map(heb).join('–')}` : (it.iyun ? `${seriesName(it)}: ${it.iyun}` : `${seriesName(it)} ${epName(it)}`);
-  const seriesHref = it => it.kind === 'm' ? `#/m/${encodeURIComponent(it.masechet)}/${it.perek}` : `#/p/${encodeURIComponent(it.title)}`;
+  const seriesHref = it => it.kind === 'm' ? `#/m/${encodeURIComponent(it.masechet)}/${it.perek}` : it.iyun ? '#/iyun' : `#/p/${encodeURIComponent(it.title)}`;
 
   // ---------- תאריכים ----------
   const today = new Date(); today.setHours(0, 0, 0, 0);
@@ -178,12 +182,12 @@
   // עיון — בדיוק כמו המועדים, רק עיון (דניאל, 1.11): אריח לכל מועד לפי סדר השנה, הקרוב ראשון; רק מועדים שיש בהם עיון
   // לכל שיעור עיון תמונה משלו (gen.js: window.GENL, לפי נתיב הקובץ). שיעור בלי תמונה — לא מוצג בעיון, ומועד בלי
   // שיעור כזה — לא מוצג בכלל (דניאל, 1.11). אריח המועד ודף המועד בעיון — כריכה נפרדת: הכריכה הרגילה של המועד
-  const iyItems = t => groups[t] ? groups[t].items.filter(i => i.iyun && (window.GENL || {})[i.id]) : [];
+  const iyItems = t => iyGroups[t] ? iyGroups[t].items.filter(i => (window.GENL || {})[i.id]) : [];
   const iyArt = t => ART[t];
   const hasIyun = t => iyItems(t).length > 0;
   const iyunSq = g => squareCard(g, true);
   const iyunMoadim = () => [...MOED_NEXT, ...ALL_MOADIM.filter(m => !MOED_NEXT.includes(m))].filter(hasIyun);
-  const iyunGrid = () => `<div class="grid sq-grid">${iyunMoadim().map(t => iyunSq(groups[t])).join('')}</div>`;
+  const iyunGrid = () => `<div class="grid sq-grid">${iyunMoadim().map(t => iyunSq(iyGroups[t])).join('')}</div>`;
   // דף הבית: כרטיס גדול לכל שיעור עיון, בתמונה שלו — גודל אחר משורות האריחים, כמו בנטפליקס (דניאל, 1.11). לחיצה — מנגנת
   const iyunCard = it => `<a class="iyun" href="#/iyun/${encodeURIComponent(it.title)}" data-play="${esc(it.id)}" aria-label="נגן ${esc(fullName(it))}">
       <img loading="lazy" src="${IMG(artOf(it), 700, 700)}" alt="">
@@ -212,9 +216,9 @@
   // זהה ל-$MOADIM ב-upload.ps1 (שיעורי פרשה). מועד שלא כאן — לא יופיע ברשימת המועדים.
   const ALL_MOADIM = ['ראש השנה','יום כיפור','סוכות','שמחת תורה','חנוכה','עשרה בטבת','טו בשבט','תענית אסתר','פורים','פסח','לג בעומר','שבועות','שבעה עשר בתמוז','תשעה באב'];
   const bookTiles = () => `<div class="tiles">${Object.entries(CHUMASH).map(([b, ps]) => {
-    const n = pItems.filter(i => !i.moed && i.book === b).length;
+    const n = pItems.filter(i => !i.moed && !i.iyun && i.book === b).length;
     return tile(`#/book/${encodeURIComponent(b)}`, `חומש ${b}`, n ? `${n} שיעורים` : 'טרם הוקלט', BOOK_TINT[b], ART[ps.find(p => ART[p] && ART[p].startsWith('gen:')) || ps[0]] || FALLBACK);
-  }).join('')}${tile('#/moadim', 'מועדים', `${pItems.filter(i => i.moed).length} שיעורים`, 'oklch(0.48 0.1 75)', ART['חנוכה'] || FALLBACK)}${tile('#/iyun', 'עיון · סוגיות', `${pItems.filter(i => i.iyun).length} שיעורים`, 'oklch(0.42 0.07 170)', ART['סוכות'] || FALLBACK)}</div>`;
+  }).join('')}${tile('#/moadim', 'מועדים', `${pItems.filter(i => i.moed && !i.iyun).length} שיעורים`, 'oklch(0.48 0.1 75)', ART['חנוכה'] || FALLBACK)}${tile('#/iyun', 'עיון · סוגיות', `${pItems.filter(i => i.iyun).length} שיעורים`, 'oklch(0.42 0.07 170)', ART['סוכות'] || FALLBACK)}</div>`;
   const ghostSq = (name, title) => `<div class="sq-wrap"><div class="sq is-empty"><div class="pic"><img loading="lazy" src="${IMG(ART[name] || FALLBACK, 400, 400)}" alt=""><span class="pic-title">${esc(name)}</span></div><div class="cap"><b>${esc(title)}</b><span>טרם הוקלט</span></div></div></div>`;
 
   // ---------- תצוגות ----------
@@ -244,7 +248,7 @@
     const covers = [...new Set(Object.values(ART).filter(v => v.startsWith('gen:')))];
     const wall = [];
     while (covers.length && wall.length < 48) wall.push(...covers);
-    const nM = mItems.length, nP = pItems.filter(i => !i.moed).length, nH = pItems.filter(i => i.moed).length, nI = pItems.filter(i => i.iyun).length;
+    const nM = mItems.length, nP = pItems.filter(i => !i.moed && !i.iyun).length, nH = pItems.filter(i => i.moed && !i.iyun).length, nI = pItems.filter(i => i.iyun).length;
     const door = (attrs, title, sub, tint) => `<a class="door" ${attrs} style="--t:${tint}"><b>${title}</b><span>${sub}</span>${icon('next')}</a>`;
     return `<section class="sys${HERO_PHOTO ? ' has-photo' : ''}">
       ${HERO_PHOTO ? `<img class="sys-photo" src="${HERO_PHOTO}" alt="">` : `<div class="wall" aria-hidden="true"><div class="wall-in">${wall.slice(0, 48).map(v => `<img src="${IMG(v, 300, 300)}" alt="" loading="lazy">`).join('')}</div></div>`}
@@ -274,7 +278,7 @@
 
   // לשוניות למעלה (דניאל, 15.10): לא שיעור אחרון בגדול — אלא המבנה של כל חלק
   const chumashTiles = () => `<div class="tiles">${Object.entries(CHUMASH).map(([b, ps]) => {
-    const n = pItems.filter(i => !i.moed && i.book === b).length;
+    const n = pItems.filter(i => !i.moed && !i.iyun && i.book === b).length;
     return tile(`#/book/${encodeURIComponent(b)}`, `חומש ${b}`, n ? `${n} שיעורים` : 'טרם הוקלט', BOOK_TINT[b], ART[ps.find(p => ART[p] && ART[p].startsWith('gen:')) || ps[0]] || FALLBACK);
   }).join('')}</div>`;
   // פרשת השבוע לפי הלוח, ארץ ישראל: תאריך|מפתח באתר[|השם באותה שבת, כשפרשה מחוברת נקראת לבד]. נוצר מ-Hebcal (15.10.2026),
@@ -308,10 +312,10 @@
       return h;
     }
     if (f === 'p') {
-      let h = head('פרשת השבוע', `חמשת חומשי תורה · ${pItems.filter(i => !i.moed).length} שיעורים`);
+      let h = head('פרשת השבוע', `חמשת חומשי תורה · ${pItems.filter(i => !i.moed && !i.iyun).length} שיעורים`);
       h += weekCard();
       h += `<section class="row"><div class="row-head"><h2>חמשת חומשי תורה</h2></div>${chumashTiles()}</section>`;
-      h += cont(i => i.kind === 'p' && !i.moed);
+      h += cont(i => i.kind === 'p' && !i.moed && !i.iyun);
       // החומש של השבוע ראשון; כל הפרשות בשורה (גם שלא הוקלטו), כדי שהשורה לא תהיה חצי ריקה
       const wb = Object.keys(CHUMASH).find(b => CHUMASH[b].includes(weekParasha.name));
       for (const b of [wb, ...BOOK_ORDER.filter(x => x !== wb)]) { if (!b || !CHUMASH[b].some(t => groups[t])) continue;
@@ -320,7 +324,7 @@
     }
     if (f === 'h') {
       let h = head('מועדים', 'מועדי השנה לפי הסדר — הקרוב ראשון');
-      h += cont(i => i.moed);
+      h += cont(i => i.moed && !i.iyun);
       h += `<div class="grid sq-grid" style="margin-top:8px">${[...MOED_NEXT, ...ALL_MOADIM.filter(m => !MOED_NEXT.includes(m))].map(t => groups[t] ? squareCard(groups[t]) : ghostSq(t, MOED_NAME[t] || t)).join('')}</div>`;
       return h;
     }
@@ -330,28 +334,28 @@
   }
 
   function home() {
-    const latestP = pItems.filter(i => !i.moed).sort((a, b) => (b.date || '').localeCompare(a.date || ''))[0];
+    const latestP = pItems.filter(i => !i.moed && !i.iyun).sort((a, b) => (b.date || '').localeCompare(a.date || ''))[0];
     const latestM = [...mItems].sort((a, b) => (b.date || '').localeCompare(a.date || '') || b.perek - a.perek || b.nums[0] - a.nums[0])[0];
     const fresh = items.filter(isNew).sort((a, b) => b.date.localeCompare(a.date) || (b.perek || 0) - (a.perek || 0) || (b.nums?.[0] || 0) - (a.nums?.[0] || 0));
     const cont = inProgress();
     const recorded = Object.values(masechet).sort((a, b) => b.last.localeCompare(a.last)).map(s => s.name);
-    const books = BOOK_ORDER.filter(b => pItems.some(i => !i.moed && i.book === b));
+    const books = BOOK_ORDER.filter(b => pItems.some(i => !i.moed && !i.iyun && i.book === b));
     const moadim = MOED_NEXT.filter(t => groups[t]).map(t => groups[t]);
     const want = k => filter === 'all' || filter === k;
     if (filter !== 'all') return sectionPage(filter);
     let html = '';
     html += systemHero(latestP, latestM);
-    html += row('המשך האזנה', cont.filter(i => filter === 'all' || (filter === 'm' ? i.kind === 'm' : filter === 'i' ? i.iyun : i.kind === 'p')).map(i => wideCard(i, { showProg: true })));
+    html += row('המשך האזנה', cont.filter(i => filter === 'all' || (filter === 'm' ? i.kind === 'm' : filter === 'i' ? i.iyun : i.kind === 'p' && !i.iyun)).map(i => wideCard(i, { showProg: true })));
     // סדרה אחת = כרטיס אחד (כמו "פרקים חדשים" בנטפליקס), עם מספר החדשים
     const seen = {}, freshCards = [];
-    for (const i of fresh.filter(i => filter === 'all' || (filter === 'm' ? i.kind === 'm' : filter === 'i' ? i.iyun : i.kind === 'p'))) {
+    for (const i of fresh.filter(i => filter === 'all' || (filter === 'm' ? i.kind === 'm' : filter === 'i' ? i.iyun : i.kind === 'p' && !i.iyun))) {
       const k = i.kind === 'm' ? i.masechet : i.id;
       if (seen[k]) { seen[k].n++; continue; }
       freshCards.push(seen[k] = { it: i, n: 1 });
     }
     html += row('חדש השבוע', freshCards.map(({ it, n }) => wideCard(it, { fresh: n })));
     if (want('m')) html += row('סדרות המשנה', recorded.map(posterCard), ['כל ששת הסדרים', '#/search']);
-    if (want('p')) for (const b of [...books].sort((x, y) => { const last = k => pItems.filter(i => !i.moed && i.book === k).reduce((m, i) => (i.date || '') > m ? i.date : m, ''); return last(y).localeCompare(last(x)); })) {
+    if (want('p')) for (const b of [...books].sort((x, y) => { const last = k => pItems.filter(i => !i.moed && !i.iyun && i.book === k).reduce((m, i) => (i.date || '') > m ? i.date : m, ''); return last(y).localeCompare(last(x)); })) {
       const gs = PARASHA_ORDER.filter(t => groups[t] && groups[t].book === b).map(t => groups[t]);
       html += row(`חומש ${b}`, gs.map(squareCard));
     }
@@ -427,7 +431,7 @@
 
   // iy — דף העיון של המועד: רק שיעורי העיון שלו (#/iyun/<מועד>)
   function groupPage(title, iy) {
-    const g0 = groups[title];
+    const g0 = (iy ? iyGroups : groups)[title];
     if (!g0 || (iy && !hasIyun(title))) return notFound();
     const g = iy ? { ...g0, items: iyItems(title) } : g0;
     const name = g.moed ? (MOED_NAME[title] || title) : `פרשת ${title}`;
@@ -435,7 +439,7 @@
     return `<section class="hero"><img src="${HERO(art)}" alt="">
       <div><span class="kick">${iy ? `עיון · ${MOED_MONTH[title] || ''}` : g.moed ? `מועדים · ${MOED_MONTH[title] || ''}` : `חומש ${g.book}`}</span><h1>${esc(name)}</h1>
         <div class="bb-meta"><span>${g.items.length === 1 ? 'שיעור אחד' : `${g.items.length} שיעורים`}</span>${g.items.some(i => i.pdf) ? '<span>עם סיכום כתוב</span>' : ''}</div>
-        <p>${iy ? `שיעורי העיון של הרב ל${esc(name)} — סוגיות ההלכה של החג, מהחדש לישן.` : g.moed ? `שיעורי הרב ל${esc(name)} — הוורט, ושיעורי עיון בסוגיות ההלכה של החג.` : `השיעורים על ${esc(name)} מכל השנים, מהחדש לישן.`}</p>
+        <p>${iy ? `שיעורי העיון של הרב ל${esc(name)} — סוגיות ההלכה של החג, מהחדש לישן.` : g.moed ? `שיעורי הרב ל${esc(name)} — הוורט לחג, מהחדש לישן. שיעורי העיון — במדור העיון.` : `השיעורים על ${esc(name)} מכל השנים, מהחדש לישן.`}</p>
         <div class="acts"><button class="fab" data-play="${esc(g.items[0].id)}" aria-label="נגן">${icon('play')}</button><span class="kick">${esc(epName(g.items[0]) || g.items[0].year)}</span></div></div></section>
       <div class="series"><div class="ep-head"><h2>השיעורים</h2><span>${g.items.length}</span></div>
       ${g.items.map((it, k) => `<div class="ep${nowId === it.id ? ' is-now' : ''}" data-play="${esc(it.id)}" role="button" tabindex="0" aria-label="נגן ${esc(fullName(it))}">
@@ -454,8 +458,8 @@
   function searchPage(q = '') {
     const toQ = building && building.target === 'queue';
     return `<h1 class="page-title">${building ? (toQ ? 'הוספה לתור' : 'הוספת שיעורים לרשימה') : 'חיפוש'}</h1>
-      ${building ? `<p class="note" style="margin-top:-8px">חפשו מסכת, פרק, פרשה או מועד — ולחצו ＋ ליד כל שיעור. ${toQ ? 'הוא ייכנס לתור מיד אחרי מה שמתנגן.' : 'הרשימה נבנית בצד.'}</p><br>` : ''}
-      <div class="searchbox">${icon('search')}<input id="q" type="search" dir="auto" placeholder="מסכת, פרשה, מועד או נושא — למשל: ערכין ד ג" value="${esc(q)}" autocomplete="off"></div>
+      ${building ? `<p class="note" style="margin-top:-8px">לחצו ＋ ליד כל שיעור${toQ ? ' — הוא ייכנס לתור מיד אחרי מה שמתנגן.' : isMob() ? '.' : ' — הרשימה נבנית בצד.'}</p><br>` : ''}
+      <div class="searchbox">${icon('search')}<input id="q" type="search" dir="rtl" placeholder="${isMob() ? 'מסכת, פרשה, מועד או נושא' : 'מסכת, פרשה, מועד או נושא — למשל: ערכין ד ג'}" value="${esc(q)}" autocomplete="off"></div>
       <div id="res"></div>`;
   }
   // חיפוש במצב בניית רשימה: מחזיר שיעורים בודדים עם ＋
@@ -498,9 +502,10 @@
 
   function libraryPage() {
     const cont = inProgress();
-    const lc = (l, i) => { const f = byId[l.ids[0]]; return `<div class="sq-wrap"><a class="sq" href="#/library" data-list="${i}" aria-label="נגן את ${esc(l.name)}">
+    // רשימה = תיקייה: הכרטיס פותח את דף הרשימה, העיגול ▶ מנגן אותה (דניאל, 30.10)
+    const lc = l => { const f = byId[l.ids[0]]; return `<div class="sq-wrap"><a class="sq" href="#/l/${l.at}" aria-label="${esc(l.name)}">
       <div class="pic">${f ? `<img loading="lazy" src="${IMG(artOf(f), 400, 400)}" alt="">` : ''}<span class="pic-title">${esc(l.name)}</span>
-        <span class="fabmini">${icon('play')}</span></div>
+        ${l.ids.length ? `<span class="fabmini" data-list="${l.at}" role="button" aria-label="נגן את ${esc(l.name)}">${icon('play')}</span>` : ''}</div>
       <div class="cap"><b>${esc(l.name)}</b><span>${l.ids.length} שיעורים</span></div></a></div>`; };
     return `<h1 class="page-title">הספרייה שלי</h1>
       <div style="padding:0 var(--gutter)"><button class="btn-new" data-newlist style="width:auto;padding:0 22px">${icon('plus')}רשימה חדשה</button></div>
@@ -508,10 +513,31 @@
       ${cont.length ? row('המשך האזנה', cont.map(i => wideCard(i, { showProg: true }))) : '<p class="note">כאן יופיעו השיעורים שהתחלתם לשמוע — ממשיכים בדיוק מאיפה שעצרתם, גם אחרי סגירת הדפדפן.</p>'}
       ${row('המסכתות שלי', [...new Set(cont.filter(i => i.kind === 'm').map(i => i.masechet))].map(posterCard))}`;
   }
+  function listPage(at) {
+    const l = listBy(at); if (!l) return notFound();
+    const its = l.ids.map(id => byId[id]).filter(Boolean), f = its[0];
+    const art = f ? artOf(f) : FALLBACK;
+    return `<section class="hero"><img src="${HERO(art)}" alt="">
+      <div><span class="kick">${l.fav ? 'שמורים' : 'רשימה שלך'}</span><h1>${esc(l.name)}</h1>
+        <div class="bb-meta"><span>${its.length === 1 ? 'שיעור אחד' : `${its.length} שיעורים`}</span></div>
+        <div class="acts lacts">${its.length ? `<button class="fab" data-list="${l.at}" aria-label="נגן את הרשימה">${icon('play')}</button>` : ''}
+          <button class="btn btn-ghost" data-ladd>${icon('plus')}הוספת שיעורים</button>
+          <button class="ib" data-lren aria-label="שינוי שם" title="שינוי שם">${icon('edit')}</button>
+          <button class="ib" data-ldel aria-label="מחיקת הרשימה" title="מחיקת הרשימה">${icon('trash')}</button></div></div></section>
+      <div class="series" data-lat="${l.at}"><div class="ep-head"><h2>השיעורים</h2><span>${its.length}</span></div>
+      ${its.map((it, k) => `<div class="ep${nowId === it.id ? ' is-now' : ''}" data-play="${esc(it.id)}" data-lk="${k}" role="button" tabindex="0" aria-label="נגן ${esc(fullName(it))}">
+          <span class="ep-n" style="font-size:1.6rem">${heb(k + 1)}</span>
+          <div class="pic"><img loading="lazy" src="${IMG(artOf(it), 400, 225)}" alt=""><span class="over"><span>${icon('play')}</span></span>${fracOf(it.id) > 0.02 ? `<span class="prog"><i style="width:${Math.round(fracOf(it.id) * 100)}%"></i></span>` : ''}</div>
+          <div class="ep-body"><b>${esc(it.kind === 'm' ? fullName(it) : (it.iyun || seriesName(it)))}<span>${it.date ? rel(it.date) : esc(it.year)}</span></b>
+            <p class="wait">${esc(it.kind === 'm' ? `מסכת ${it.masechet} · סדר ${it.seder}` : `${seriesName(it)} · ${it.year}`)}</p></div>
+          <button class="more" data-lrm="${esc(it.id)}" aria-label="הסרה מהרשימה: ${esc(fullName(it))}" title="הסרה מהרשימה">${icon('x')}</button></div>`).join('')
+        || '<p class="note">הרשימה ריקה — "הוספת שיעורים", מחפשים ולוחצים ＋.</p>'}</div>`;
+  }
   const notFound = () => `<h1 class="page-title">לא נמצא</h1><p class="note"><a href="#/" style="text-decoration:underline">חזרה לדף הבית</a></p>`;
 
   // ---------- ניתוב ----------
   const top = $('#top');
+  let lastKey = '';
   function route() {
     let a, b, c, bad = false;
     try { [, a, b, c] = location.hash.split('/').map(decodeURIComponent); } catch { bad = true; a = 'x'; } // קידוד משובש בכתובת
@@ -529,13 +555,17 @@
     else if (a === 'iyun') html = `<h1 class="page-title">עיון</h1><p class="note">לפי סדר השנה, מהקרוב.</p><br>${iyunGrid()}`;
     else if (a === 'search') { html = searchPage(); nav = 'search'; }
     else if (a === 'library') { html = libraryPage(); nav = 'library'; }
+    else if (a === 'l') { html = listPage(b); nav = 'library'; }
     else html = notFound();
-    view.innerHTML = `${building ? buildBar() : ''}<div class="view-in">${html}</div>`;
+    const key = bad ? '' : `${a}/${b}`, keep = a === 'm' && key === lastKey; lastKey = key;
+    const sc = matchMedia('(min-width:1024px)').matches ? $('#main') : document.scrollingElement, y = sc.scrollTop, sx = $('.seasons')?.scrollLeft;
+    view.innerHTML = `${building ? buildBar() : ''}<div class="view-in${keep ? ' no-in' : ''}">${html}</div>`;
     setPageBg(a, b);
     top.classList.toggle('is-flat', flat);
     $$('[data-nav]').forEach(x => x.classList.toggle('is-on', x.dataset.nav === nav));
     if (a === 'search') { const q = $('#q'); $('#res').innerHTML = searchResults(''); q.addEventListener('input', () => { $('#res').innerHTML = searchResults(q.value); }); if (matchMedia('(hover:hover)').matches) q.focus(); }
-    (matchMedia('(min-width:1024px)').matches ? $('#main') : document.scrollingElement).scrollTop = 0;
+    sc.scrollTop = keep ? y : 0;
+    if (keep && sx != null && $('.seasons')) $('.seasons').scrollLeft = sx;
     onScroll();
     if (typeof syncPlayBtns === 'function' && nowId) syncPlayBtns();
   }
@@ -550,6 +580,7 @@
     if (a === 'book') return firstGen(CHUMASH[b] || []);
     if (a === 'moadim') return firstGen(MOED_NEXT);
     if (a === 'iyun') return b ? iyArt(b) : iyArt(MOED_NEXT.find(hasIyun));
+    if (a === 'l') { const f = byId[listBy(b)?.ids[0]]; return f ? artOf(f) : null; }
     return null; // בית, חיפוש, ספרייה — רקע הבית
   }
   function setPageBg(a, b) {
@@ -590,8 +621,8 @@
   function sideList() {
     const ms = Object.values(masechet).sort((a, b) => b.last.localeCompare(a.last)).map(s => ({ href: `#/m/${encodeURIComponent(s.name)}`, art: mArt(s.name), t: `מסכת ${s.name}`, sub: `סדר ${s.seder} · ${s.items.length} שיעורים`, k: 'm' }));
     const ps = [...BOOK_ORDER.flatMap(b => PARASHA_ORDER.filter(t => groups[t]?.book === b)), ...MOED_NEXT.filter(t => groups[t])].map(t => groups[t]).map(g => ({ href: `#/p/${encodeURIComponent(g.title)}`, art: ART[g.title] || FALLBACK, t: g.moed ? (MOED_NAME[g.title] || g.title) : `פרשת ${g.title}`, sub: `${g.moed ? 'מועד' : 'חומש ' + g.book} · ${g.items.length} שיעורים`, k: 'p' }));
-    const ls = lists.map((l, i) => ({ list: i, art: artOf(byId[l.ids[0]] || items[0]), t: l.name, sub: `רשימה שלך · ${l.ids.length} שיעורים`, k: 'l' }));
-    $('#sideList').innerHTML = [...ls, ...ms, ...ps].filter(x => libF === 'all' || x.k === libF || x.k === 'l').map(x => `<li><a ${x.list != null ? `href="#/library" data-list="${x.list}"` : `href="${x.href}"`}><img loading="lazy" src="${IMG(x.art, 96, 96)}" alt=""><div><b>${esc(x.t)}</b><span>${esc(x.sub)}</span></div></a></li>`).join('');
+    const ls = lists.map(l => ({ href: `#/l/${l.at}`, art: artOf(byId[l.ids[0]] || items[0]), t: l.name, sub: `רשימה שלך · ${l.ids.length} שיעורים`, k: 'l' }));
+    $('#sideList').innerHTML = [...ls, ...ms, ...ps].filter(x => libF === 'all' || x.k === libF || x.k === 'l').map(x => `<li><a href="${x.href}"><img loading="lazy" src="${IMG(x.art, 96, 96)}" alt=""><div><b>${esc(x.t)}</b><span>${esc(x.sub)}</span></div></a></li>`).join('');
   }
   $('.side-chips').addEventListener('click', e => { const b = e.target.closest('[data-lib]'); if (!b) return; libF = b.dataset.lib; $$('.side-chips .chip').forEach(x => x.classList.toggle('is-on', x === b)); sideList(); });
 
@@ -618,7 +649,7 @@
 
   function queueFor(it) {
     if (it.kind === 'm') return masechet[it.masechet].items;
-    return groups[it.title].items;
+    return it.iyun ? pItems.filter(i => i.iyun) : groups[it.title].items;
   }
   // כריכה מעוצבת: צילום + שם הסדרה בגדול + שורת משנה (כמו כריכת אלבום / כרטיס נטפליקס)
   function cover(it, w = 600) {
@@ -747,9 +778,12 @@
   }
   // רשימות השמעה — נשמרות במכשיר (בלי הרשמה)
   let lists = store.get('lists', []);
+  { const seen = new Set(); for (const l of lists) { while (!l.at || seen.has(l.at)) l.at = (l.at || Date.now()) + 1; seen.add(l.at); } }
+  const listBy = at => lists.find(l => String(l.at) === String(at));
+  const saveLists = () => { store.set('lists', lists); sideList(); };
   function saveList(name, ids) {
     name = (name || '').trim() || `הרשימה שלי ${lists.length + 1}`;
-    lists.unshift({ name, ids, at: Date.now() }); store.set('lists', lists); sideList();
+    lists.unshift({ name, ids, at: Math.max(Date.now(), ...lists.map(l => l.at + 1)) }); saveLists();
     toast(`נשמרה הרשימה "${name}" · בספרייה`);
   }
   function saveToFav(id) {
@@ -758,10 +792,25 @@
     if (!fav.ids.includes(id)) fav.ids.push(id);
     store.set('lists', lists); sideList(); toast(`נשמר ב"השמורים שלי"`);
   }
-  function playList(i) {
-    const ids = lists[i].ids.filter(id => byId[id]); if (!ids.length) return;
-    play(ids[0], true); userQ = ids.slice(1); renderQueue();
+  function playList(at, k = 0) {
+    const l = listBy(at); if (!l) return;
+    const ids = l.ids.filter(id => byId[id]); if (!ids[k]) return;
+    if (ids[k] === nowId) { if (audio.paused) toggle(); } else play(ids[k]);
+    userQ = ids.slice(k + 1); renderQueue();
+    if (!building) openNP();
   }
+  // ניהול רשימה מהדף שלה: ניגון משיעור, הסרת שיעור, הוספה, שינוי שם, מחיקה
+  document.addEventListener('click', e => {
+    const box = e.target.closest('.view-in'); const at = box && $('[data-lat]', box)?.dataset.lat; if (!at) return;
+    const l = listBy(at); if (!l) return;
+    const rm = e.target.closest('[data-lrm]');
+    if (rm) { e.stopPropagation(); l.ids = l.ids.filter(x => x !== rm.dataset.lrm); saveLists(); route(); toast('הוסר מהרשימה'); return; }
+    if (e.target.closest('[data-ladd]')) { startBuild('list', l); return; }
+    if (e.target.closest('[data-lren]')) { const n = prompt('שם הרשימה', l.name); if (n && n.trim()) { l.name = n.trim(); saveLists(); route(); } return; }
+    if (e.target.closest('[data-ldel]')) { if (!confirm(`למחוק את הרשימה "${l.name}"?`)) return; lists = lists.filter(x => x !== l); saveLists(); toast('הרשימה נמחקה'); location.hash = '#/library'; return; }
+    const row = e.target.closest('[data-lk]');
+    if (row && !e.target.closest('button')) { e.preventDefault(); e.stopPropagation(); playList(at, +row.dataset.lk); }
+  }, true);
   for (const box of [$('#npQueue'), $('#dockQ'), $('#dockQueue')]) box.addEventListener('click', e => {
     if (e.target.closest('.qh')) return;
     const rm = e.target.closest('[data-rm]');
@@ -811,27 +860,28 @@
     const again = $(`${scope} .qrow[data-id="${CSS.escape(id)}"] .qh`); if (again) again.focus();
   });
 
-  document.addEventListener('click', e => { const a = e.target.closest('[data-list]'); if (!a) return; e.preventDefault(); playList(+a.dataset.list); });
+  document.addEventListener('click', e => { const a = e.target.closest('[data-list]'); if (!a) return; e.preventDefault(); playList(a.dataset.list); });
 
   // ---------- בניית רשימה: "הוספת שיעורים" → האתר עם ＋ ליד כל שיעור, והרשימה נבנית בלוח בצד ----------
   function buildBar() {
     const n = building.ids.length;
     if (building.target === 'queue') return `<div class="buildbar"><span><b>מוסיפים לתור</b> · ${n === 1 ? 'נוסף שיעור אחד' : n ? `נוספו ${n} שיעורים` : 'לחצו ＋ ליד שיעור'}</span>
       <button class="lnk show-mob" data-bopen>לתור</button><button class="btn-save" data-bsave>סיום</button></div>`;
-    return `<div class="buildbar"><span><b>${esc(building.name || 'רשימה חדשה')}</b> · ${n ? `${n} שיעורים` : 'עוד ריקה'}</span>
-      <button class="lnk show-mob" data-bopen>לרשימה</button><button class="btn-save" data-bsave ${n ? '' : 'disabled'}>סיום ושמירה</button></div>`;
+    return `<div class="buildbar"><span><b>${esc(building.name || 'רשימה חדשה')}</b>${n && isMob() ? '' : ` · ${n ? `${n} שיעורים` : 'עוד ריקה'}`}</span>
+      ${n ? `<button class="lnk show-mob" data-bopen>הרשימה (${n})</button>` : ''}<button class="btn-save" data-bsave ${n ? '' : 'disabled'}>${isMob() ? 'שמירה' : 'סיום ושמירה'}</button>
+      <button class="ib bx" data-bcancel aria-label="ביטול — יציאה בלי לשמור" title="ביטול">${icon('x')}</button></div>`;
   }
   function buildPanel() {
     const its = building.ids.map(id => byId[id]);
     $('#dockB').innerHTML = `<input class="bname" id="bName" dir="auto" value="${esc(building.name)}" placeholder="שם הרשימה, למשל: לנסיעה" aria-label="שם הרשימה">
-      <p class="bhint">${its.length ? `${its.length} שיעורים` : 'חפשו שיעורים מימין ולחצו ＋ — הם יופיעו כאן.'}</p>
+      <p class="bhint">${its.length ? `${its.length} שיעורים` : `חפשו שיעורים${isMob() ? '' : ' מימין'} ולחצו ＋ — הם יופיעו כאן.`}</p>
       <div class="blist">${its.map(x => qRow(x, 'build')).join('')}</div>
       <div class="bact"><button class="btn-save" data-bsave ${its.length ? '' : 'disabled'}>שמירת הרשימה</button><button class="lnk" data-bcancel>ביטול</button></div>`;
     const bar = $('.buildbar'); if (bar) bar.outerHTML = buildBar();
   }
-  function startBuild(target = 'list') {
+  function startBuild(target = 'list', edit = null) {
     if (np.classList.contains('is-open')) { shutNP(); if (history.state?.np) history.replaceState(null, '', '#/search'); } // מהנגן המלא — סוגרים אותו כדי שהחיפוש ייראה
-    building = { name: '', ids: [], target }; document.body.classList.add('building');
+    building = edit ? { name: edit.name, ids: [...edit.ids], target, at: edit.at } : { name: '', ids: [], target }; document.body.classList.add('building');
     if (!isMob()) openDock(target === 'queue' && nowId ? 'queue' : 'build');
     else minDock();
     buildPanel();
@@ -840,9 +890,13 @@
   function endBuild(save) {
     const b = building; building = null; document.body.classList.remove('building');
     if (b.target === 'queue') { if (nowId) openDock('queue'); if (b.ids.length) toast(`נוספו ${b.ids.length} שיעורים לתור`); route(); return; }
-    if (save && b.ids.length) saveList(b.name, b.ids);
+    const l = b.at && listBy(b.at);
+    if (save && l) { l.ids = b.ids; l.name = (b.name || '').trim() || l.name; saveLists(); toast('הרשימה עודכנה'); }
+    else if (save && b.ids.length) saveList(b.name, b.ids);
     minDock(); // הלוח נפתח רק מלחיצה
-    if (save && b.ids.length) location.hash = '#/library'; else route();
+    // שמירה וגם ביטול (X) חוזרים לדף הרשימות — או לרשימה שהוסיפו אליה (דניאל, 30.10)
+    const to = l ? `#/l/${l.at}` : '#/library';
+    if (location.hash === to) route(); else location.hash = to;
   }
   function toggleAdd(id) {
     if (!building) return;
@@ -865,7 +919,7 @@
     const ad = e.target.closest('[data-addl]'); if (ad) { e.preventDefault(); e.stopPropagation(); toggleAdd(ad.dataset.addl); return; }
     const rm = e.target.closest('#dockB [data-rm]'); if (rm) { toggleAdd(rm.dataset.rm); return; }
     if (e.target.closest('[data-bsave]')) { endBuild(true); return; }
-    if (e.target.closest('[data-bcancel]')) { endBuild(false); return; }
+    if (e.target.closest('[data-bcancel]')) { const was = building.at ? listBy(building.at)?.ids.join() : ''; if (building.target !== 'queue' && building.ids.join() !== was && building.ids.length && !confirm('לצאת בלי לשמור את הרשימה?')) return; endBuild(false); return; }
     if (e.target.closest('[data-bopen]')) { openDock('build'); return; }
   }, true);
   document.addEventListener('input', e => { if (e.target.id === 'bName' && building) { building.name = e.target.value; const b = $('.buildbar b'); if (b) b.textContent = building.name || 'רשימה חדשה'; } });
@@ -1291,7 +1345,7 @@
     e.preventDefault(); tapPlay(p);
   });
   document.addEventListener('keydown', e => {
-    if (e.key === 'Enter' && e.target.matches('.ep')) tapPlay(e.target);
+    if (e.key === 'Enter' && e.target.matches('.ep')) { const at = e.target.closest('[data-lat]')?.dataset.lat; if (at) playList(at, +e.target.dataset.lk); else tapPlay(e.target); }
     if (e.key === ' ' && !e.target.matches('input, textarea, button, a, [role=button]')) { e.preventDefault(); toggle(); }
     if (e.key === 'Escape' && np.classList.contains('is-open')) closeNP();
   });
