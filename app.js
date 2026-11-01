@@ -175,10 +175,10 @@
         <button class="fabmini" data-play="${esc(it.id)}" aria-label="נגן ${esc(name)}">${icon('play')}</button></div>
       <div class="cap"><b>${esc(name)}</b><span>${esc(sub)}</span></div></a></div>`;
   };
-  // עיון — בדיוק כמו המועדים, רק עיון (דניאל, 1.11): אריח לכל מועד לפי סדר השנה, הקרוב ראשון; מועד בלי עיון — "טרם הוקלט"
+  // עיון — בדיוק כמו המועדים, רק עיון (דניאל, 1.11): אריח לכל מועד לפי סדר השנה, הקרוב ראשון; רק מועדים שיש בהם עיון
   const hasIyun = t => groups[t] && groups[t].items.some(i => i.iyun);
   const iyunSq = g => squareCard(g, true);
-  const iyunGrid = () => `<div class="grid sq-grid">${[...MOED_NEXT, ...ALL_MOADIM.filter(m => !MOED_NEXT.includes(m))].map(t => hasIyun(t) ? iyunSq(groups[t]) : ghostSq(t, MOED_NAME[t] || t)).join('')}</div>`;
+  const iyunGrid = () => `<div class="grid sq-grid">${[...MOED_NEXT, ...ALL_MOADIM.filter(m => !MOED_NEXT.includes(m))].filter(hasIyun).map(t => iyunSq(groups[t])).join('')}</div>`;
   const row = (title, cards, more) => cards.length ? `
     <section class="row"><div class="row-head"><h2>${title}</h2>${more ? `<a href="${more[1]}">${more[0]}</a>` : ''}</div>
       <button class="row-nav prev" data-dir="1" aria-label="הקודמים">${icon('prev')}</button>
