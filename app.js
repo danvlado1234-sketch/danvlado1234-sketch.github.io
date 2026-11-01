@@ -162,24 +162,23 @@
         ${s && days(s.last) <= 7 ? '<span class="badge">משנה חדשה</span>' : `<span class="seder">${esc(sederOf[name])}</span>`}
         <span class="pic-title">${esc(name)}<small>${sub}</small></span></div></a>`;
   };
-  const squareCard = g => {
-    const it = g.items[0];
+  // iy === true — אריח המועד בעיון: רק שיעורי העיון שלו, ומוביל לדף העיון של המועד
+  const squareCard = (g, iy) => {
+    iy = iy === true;
+    const its = iy ? g.items.filter(i => i.iyun) : g.items, it = its[0];
     const name = g.moed ? (MOED_NAME[g.title] || g.title) : `פרשת ${g.title}`;
-    const sub = g.moed ? `${MOED_MONTH[g.title] || ''} · ${g.items.length === 1 ? 'שיעור אחד' : `${g.items.length} שיעורים`}` : `${it.year}${g.items.length > 1 ? ` · ${g.items.length} שיעורים` : ''}`;
-    return `<div class="sq-wrap"><a class="sq" href="#/p/${encodeURIComponent(g.title)}" aria-label="${esc(name)}">
+    const sub = g.moed ? `${MOED_MONTH[g.title] || ''} · ${its.length === 1 ? 'שיעור אחד' : `${its.length} שיעורים`}` : `${it.year}${its.length > 1 ? ` · ${its.length} שיעורים` : ''}`;
+    return `<div class="sq-wrap"><a class="sq" href="#/${iy ? 'iyun' : 'p'}/${encodeURIComponent(g.title)}" aria-label="${esc(name)}">
       <div class="pic"><img loading="lazy" src="${IMG(ART[g.title] || FALLBACK, 400, 400)}" alt="">
-        ${!g.moed && g.title === weekParasha.name ? '<span class="badge">השבוע</span>' : g.items.some(isNew) ? '<span class="badge">חדש</span>' : ''}
+        ${!g.moed && g.title === weekParasha.name ? '<span class="badge">השבוע</span>' : its.some(isNew) ? '<span class="badge">חדש</span>' : ''}
         <span class="pic-title">${esc(g.moed ? name : g.title)}</span>
         <button class="fabmini" data-play="${esc(it.id)}" aria-label="נגן ${esc(name)}">${icon('play')}</button></div>
       <div class="cap"><b>${esc(name)}</b><span>${esc(sub)}</span></div></a></div>`;
   };
-  // עיון: שני פרמטרים — המועד (הקשר, צבע) והנושא (הכותרת, התמונה)
-  const MOED_TINT = { 'סוכות': 'oklch(0.62 0.13 120)', 'שמחת תורה': 'oklch(0.6 0.12 250)', 'תשעה באב': 'oklch(0.55 0.05 300)', 'חנוכה': 'oklch(0.7 0.13 80)', 'פסח': 'oklch(0.6 0.12 40)' };
-  const iyunCard = it => `<a class="iyun" href="#/p/${encodeURIComponent(it.title)}" data-play="${esc(it.id)}" style="--mt:${MOED_TINT[it.title] || 'var(--accent)'}">
-      <img loading="lazy" src="${IMG(artOf(it), 700, 700)}" alt="">
-      <span class="iy-tag">${esc(seriesName(it))} · עיון</span>
-      <q>${esc(it.iyun)}</q>
-      <span class="meta"><span>${esc(it.year)}${it.pdf ? ' · עם סיכום כתוב' : ''}</span><span class="playbtn" aria-hidden="true">${icon('play')}</span></span></a>`;
+  // עיון — בדיוק כמו המועדים, רק עיון (דניאל, 1.11): אריח לכל מועד לפי סדר השנה, הקרוב ראשון; מועד בלי עיון — "טרם הוקלט"
+  const hasIyun = t => groups[t] && groups[t].items.some(i => i.iyun);
+  const iyunSq = g => squareCard(g, true);
+  const iyunGrid = () => `<div class="grid sq-grid">${[...MOED_NEXT, ...ALL_MOADIM.filter(m => !MOED_NEXT.includes(m))].map(t => hasIyun(t) ? iyunSq(groups[t]) : ghostSq(t, MOED_NAME[t] || t)).join('')}</div>`;
   const row = (title, cards, more) => cards.length ? `
     <section class="row"><div class="row-head"><h2>${title}</h2>${more ? `<a href="${more[1]}">${more[0]}</a>` : ''}</div>
       <button class="row-nav prev" data-dir="1" aria-label="הקודמים">${icon('prev')}</button>
@@ -288,7 +287,7 @@
         <div class="week-acts">${g ? `<button class="btn btn-play" data-play="${esc(last.id)}">${icon('play')}להאזנה</button><a class="btn btn-ghost" href="#/p/${encodeURIComponent(w.name)}">לכל השיעורים</a>` : `<a class="btn btn-ghost" href="#/book/${encodeURIComponent(Object.keys(CHUMASH).find(b => CHUMASH[b].includes(w.name)) || 'בראשית')}">לחומש</a>`}</div>
       </div></section>`;
   }
-  function sectionPage(f, { iyuns, books, moadim }) {
+  function sectionPage(f) {
     const head = (t, sub) => `<header class="sec-head"><h1 class="page-title">${t}</h1><p class="note">${sub}</p></header>`;
     const cont = (pred) => row('המשך האזנה', inProgress().filter(pred).map(i => wideCard(i, { showProg: true })));
     if (f === 'm') {
@@ -315,24 +314,21 @@
       h += `<div class="grid sq-grid" style="margin-top:8px">${[...MOED_NEXT, ...ALL_MOADIM.filter(m => !MOED_NEXT.includes(m))].map(t => groups[t] ? squareCard(groups[t]) : ghostSq(t, MOED_NAME[t] || t)).join('')}</div>`;
       return h;
     }
-    // עיון — הגדרה נפרדת תבוא; בינתיים: כל הסוגיות
-    let h = head('עיון', `סוגיות בהלכה, לעומק · ${iyuns.length} שיעורים`);
+    let h = head('עיון', 'שיעורי העיון לפי מועדי השנה — הקרוב ראשון');
     h += cont(i => i.iyun);
-    h += `<div class="grid iy-grid" style="margin-top:8px">${iyuns.map(iyunCard).join('')}</div>`;
-    return h;
+    return h + `<div style="margin-top:8px">${iyunGrid()}</div>`;
   }
 
   function home() {
     const latestP = pItems.filter(i => !i.moed).sort((a, b) => (b.date || '').localeCompare(a.date || ''))[0];
     const latestM = [...mItems].sort((a, b) => (b.date || '').localeCompare(a.date || '') || b.perek - a.perek || b.nums[0] - a.nums[0])[0];
-    const iyuns = pItems.filter(i => i.iyun).sort((a, b) => (b.date || '').localeCompare(a.date || ''));
     const fresh = items.filter(isNew).sort((a, b) => b.date.localeCompare(a.date) || (b.perek || 0) - (a.perek || 0) || (b.nums?.[0] || 0) - (a.nums?.[0] || 0));
     const cont = inProgress();
     const recorded = Object.values(masechet).sort((a, b) => b.last.localeCompare(a.last)).map(s => s.name);
     const books = BOOK_ORDER.filter(b => pItems.some(i => !i.moed && i.book === b));
     const moadim = MOED_NEXT.filter(t => groups[t]).map(t => groups[t]);
     const want = k => filter === 'all' || filter === k;
-    if (filter !== 'all') return sectionPage(filter, { latestP, latestM, iyuns, books, moadim });
+    if (filter !== 'all') return sectionPage(filter);
     let html = '';
     html += systemHero(latestP, latestM);
     html += row('המשך האזנה', cont.filter(i => filter === 'all' || (filter === 'm' ? i.kind === 'm' : filter === 'i' ? i.iyun : i.kind === 'p')).map(i => wideCard(i, { showProg: true })));
@@ -350,7 +346,7 @@
       html += row(`חומש ${b}`, gs.map(squareCard));
     }
     if (want('p')) html += row('מועדי השנה — הקרוב ראשון', moadim.map(squareCard));
-    if (want('p') || want('i')) html += row('עיון · סוגיות בהלכה', iyuns.map(iyunCard));
+    if (want('p') || want('i')) html += row('עיון — הקרוב ראשון', MOED_NEXT.filter(hasIyun).map(t => iyunSq(groups[t])), ['כל המועדים', '#/iyun']);
     if (filter === 'm') for (const [s, ms] of SEDARIM) { const r = ms.filter(m => masechet[m]); if (r.length) html += row(`סדר ${s}`, ms.map(posterCard)); }
     if (want('m')) html += `<section class="row"><div class="row-head"><h2>ששת סדרי משנה</h2></div>${tiles()}</section>`;
     return html;
@@ -419,22 +415,24 @@
   const lessonRow = it => `<div class="res res-l"><img src="${IMG(artOf(it), 120, 120)}" alt=""><div><b>${esc(it.kind === 'm' ? fullName(it) : (it.iyun || seriesName(it)))}</b><span>${esc(it.kind === 'm' ? `מסכת ${it.masechet} · ${rel(it.date)}` : `${seriesName(it)} · ${it.year}${it.tag ? ' · ' + it.tag : ''}`)}</span></div>${addBtn(it)}</div>`;
   const moreBtn = it => building ? addBtn(it) : `<button class="more" data-more="${esc(it.id)}" aria-label="אפשרויות ל${esc(fullName(it))}" title="נגן הבא · הוסף לתור · שמירה לרשימה">${icon('more')}</button>`;
 
-  function groupPage(title) {
-    const g = groups[title];
-    if (!g) return notFound();
+  // iy — דף העיון של המועד: רק שיעורי העיון שלו (#/iyun/<מועד>)
+  function groupPage(title, iy) {
+    const g0 = groups[title];
+    if (!g0 || (iy && !hasIyun(title))) return notFound();
+    const g = iy ? { ...g0, items: g0.items.filter(i => i.iyun) } : g0;
     const name = g.moed ? (MOED_NAME[title] || title) : `פרשת ${title}`;
     const art = ART[title] || FALLBACK;
     return `<section class="hero"><img src="${HERO(art)}" alt="">
-      <div><span class="kick">${g.moed ? `מועדים · ${MOED_MONTH[title] || ''}` : `חומש ${g.book}`}</span><h1>${esc(name)}</h1>
+      <div><span class="kick">${iy ? `עיון · ${MOED_MONTH[title] || ''}` : g.moed ? `מועדים · ${MOED_MONTH[title] || ''}` : `חומש ${g.book}`}</span><h1>${esc(name)}</h1>
         <div class="bb-meta"><span>${g.items.length === 1 ? 'שיעור אחד' : `${g.items.length} שיעורים`}</span>${g.items.some(i => i.pdf) ? '<span>עם סיכום כתוב</span>' : ''}</div>
-        <p>${g.moed ? `שיעורי הרב ל${esc(name)} — הוורט, ושיעורי עיון בסוגיות ההלכה של החג.` : `השיעורים על ${esc(name)} מכל השנים, מהחדש לישן.`}</p>
+        <p>${iy ? `שיעורי העיון של הרב ל${esc(name)} — סוגיות ההלכה של החג, מהחדש לישן.` : g.moed ? `שיעורי הרב ל${esc(name)} — הוורט, ושיעורי עיון בסוגיות ההלכה של החג.` : `השיעורים על ${esc(name)} מכל השנים, מהחדש לישן.`}</p>
         <div class="acts"><button class="fab" data-play="${esc(g.items[0].id)}" aria-label="נגן">${icon('play')}</button><span class="kick">${esc(epName(g.items[0]) || g.items[0].year)}</span></div></div></section>
       <div class="series"><div class="ep-head"><h2>השיעורים</h2><span>${g.items.length}</span></div>
       ${g.items.map((it, k) => `<div class="ep${nowId === it.id ? ' is-now' : ''}" data-play="${esc(it.id)}" role="button" tabindex="0" aria-label="נגן ${esc(fullName(it))}">
           <span class="ep-n" style="font-size:1.6rem">${heb(k + 1)}</span>
           <div class="pic"><img loading="lazy" src="${IMG(art, 400, 225)}" alt="" style="object-position:${(k * 41) % 100}% 50%"><span class="over"><span>${icon('play')}</span></span>${fracOf(it.id) > 0.02 ? `<span class="prog"><i style="width:${Math.round(fracOf(it.id) * 100)}%"></i></span>` : ''}</div>
-          <div class="ep-body"><b>${esc(it.iyun ? 'עיון · ' + it.iyun : [it.year, it.tag].filter(Boolean).join(' · '))}<span>${it.date ? rel(it.date) : esc(it.year)}</span></b>
-            <p class="wait">${it.iyun ? `${esc(it.year)} · שיעור עיון` : g.moed ? 'ווארט לחג' : 'ווארט על הפרשה'}${it.pdf ? ' · יש סיכום כתוב' : ''}</p></div>${moreBtn(it)}</div>`).join('')}</div>`;
+          <div class="ep-body"><b>${esc(it.iyun ? (iy ? it.iyun : 'עיון · ' + it.iyun) : [it.year, it.tag].filter(Boolean).join(' · '))}<span>${it.date ? rel(it.date) : esc(it.year)}</span></b>
+            <p class="wait">${it.iyun ? (iy ? esc(it.year) : `${esc(it.year)} · שיעור עיון`) : g.moed ? 'ווארט לחג' : 'ווארט על הפרשה'}${it.pdf ? ' · יש סיכום כתוב' : ''}</p></div>${moreBtn(it)}</div>`).join('')}</div>`;
   }
 
   function sederPage(s) {
@@ -484,7 +482,7 @@
     }
     for (const [s, ms] of SEDARIM) for (const name of ms) if (name.includes(q) || q.includes(name)) out.push(`<a class="res" href="#/m/${encodeURIComponent(name)}"><img src="${IMG(mArt(name) || SEDER_ART[s], 120, 120)}" alt=""><div><b>מסכת ${esc(name)}</b><span>סדר ${s} · ${masechet[name] ? `${masechet[name].items.length} שיעורים` : 'טרם הוקלט'}</span></div></a>`);
     for (const g of Object.values(groups)) if (g.title.includes(q) || (MOED_NAME[g.title] || '').includes(q)) out.push(`<a class="res" href="#/p/${encodeURIComponent(g.title)}"><img src="${IMG(ART[g.title] || FALLBACK, 120, 120)}" alt=""><div><b>${esc(g.moed ? (MOED_NAME[g.title] || g.title) : 'פרשת ' + g.title)}</b><span>${g.moed ? 'מועד' : 'חומש ' + g.book} · ${g.items.length} שיעורים</span></div></a>`);
-    for (const it of pItems) if (it.iyun && it.iyun.replace(/["'״׳]/g, '').includes(q)) out.push(`<a class="res" href="#/p/${encodeURIComponent(it.title)}" data-play="${esc(it.id)}"><img src="${IMG(artOf(it), 120, 120)}" alt=""><div><b>${esc(it.iyun)}</b><span>עיון · ${esc(seriesName(it))}</span></div></a>`);
+    for (const it of pItems) if (it.iyun && it.iyun.replace(/["'״׳]/g, '').includes(q)) out.push(`<a class="res" href="#/iyun/${encodeURIComponent(it.title)}" data-play="${esc(it.id)}"><img src="${IMG(artOf(it), 120, 120)}" alt=""><div><b>${esc(it.iyun)}</b><span>עיון · ${esc(seriesName(it))}</span></div></a>`);
     return `<div class="results">${out.join('') || `<p class="note">לא נמצא "${esc(q)}". נסו שם מסכת (ברכות), פרשה (נח) או מועד (סוכות).</p>`}</div>`;
   }
 
@@ -517,8 +515,8 @@
       <div class="grid sq-grid">${CHUMASH[b].map(t => groups[t] ? squareCard(groups[t]) : ghostSq(t, `פרשת ${t}`)).join('')}</div>`;
     else if (a === 'moadim') html = `<h1 class="page-title">מועדים</h1><p class="note">לפי סדר השנה, מהקרוב.</p><br>
       <div class="grid sq-grid">${[...MOED_NEXT, ...ALL_MOADIM.filter(m => !MOED_NEXT.includes(m))].map(t => groups[t] ? squareCard(groups[t]) : ghostSq(t, MOED_NAME[t] || t)).join('')}</div>`;
-    else if (a === 'iyun') html = `<h1 class="page-title">עיון · סוגיות בהלכה</h1><p class="note">שיעורי עיון בסוגיות של החגים, לעומק, עם סיכום כתוב.</p><br>
-      <div class="grid iy-grid">${pItems.filter(i => i.iyun).map(iyunCard).join('')}</div>`;
+    else if (a === 'iyun' && b) html = groupPage(b, true);
+    else if (a === 'iyun') html = `<h1 class="page-title">עיון</h1><p class="note">לפי סדר השנה, מהקרוב.</p><br>${iyunGrid()}`;
     else if (a === 'search') { html = searchPage(); nav = 'search'; }
     else if (a === 'library') { html = libraryPage(); nav = 'library'; }
     else html = notFound();
@@ -541,7 +539,7 @@
     if (a === 'seder') return SEDER_ART[b];
     if (a === 'book') return firstGen(CHUMASH[b] || []);
     if (a === 'moadim') return firstGen(MOED_NEXT);
-    if (a === 'iyun') return ART['סוכות'];
+    if (a === 'iyun') return b ? ART[b] : firstGen(MOED_NEXT);
     return null; // בית, חיפוש, ספרייה — רקע הבית
   }
   function setPageBg(a, b) {
