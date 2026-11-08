@@ -93,7 +93,7 @@
   const SNAP = window.SNAP;
   const items = [];
   for (const x of SNAP.mishna) items.push({ kind: 'm', id: x.f, masechet: x.m, seder: sederOf[x.m], perek: x.p, nums: x.n, date: x.d, url: `${MBASE}/${enc(x.f)}` });
-  for (const x of SNAP.parasha) items.push({ kind: 'p', id: x.f, title: x.t, moed: x.moed, book: x.book, year: x.y, tag: x.tag, iyun: x.iyun, date: x.d, pdf: x.pdf ? `${PBASE}/${enc(x.pdf)}${x.pv ? '?v=' + x.pv : ''}` : null, url: `${PBASE}/${enc(x.f)}` });
+  for (const x of SNAP.parasha) items.push({ kind: 'p', id: x.f, title: x.t, moed: x.moed, book: x.book, year: x.y, tag: x.tag, iyun: x.iyun, date: x.d, pdf: x.pdf ? `${PBASE}/${enc(x.pdf)}${x.pv ? '?v=' + encodeURIComponent(x.pv) : ''}` : null, url: `${PBASE}/${enc(x.f)}` });
   const byId = Object.fromEntries(items.map(i => [i.id, i]));
   const mItems = items.filter(i => i.kind === 'm').sort((a, b) => a.masechet === b.masechet ? (a.perek - b.perek || a.nums[0] - b.nums[0]) : 0);
   const masechet = {};
@@ -503,7 +503,7 @@
   function libraryPage() {
     const cont = inProgress();
     // רשימה = תיקייה: הכרטיס פותח את דף הרשימה, העיגול ▶ מנגן אותה (דניאל, 30.10)
-    const lc = l => { const f = byId[l.ids[0]]; return `<div class="sq-wrap"><a class="sq" href="#/l/${l.at}" aria-label="${esc(l.name)}">
+    const lc = l => { const f = l.ids.map(id => byId[id]).find(Boolean); return `<div class="sq-wrap"><a class="sq" href="#/l/${l.at}" aria-label="${esc(l.name)}">
       <div class="pic">${f ? `<img loading="lazy" src="${IMG(artOf(f), 400, 400)}" alt="">` : ''}<span class="pic-title">${esc(l.name)}</span>
         ${l.ids.length ? `<span class="fabmini" data-list="${l.at}" role="button" aria-label="נגן את ${esc(l.name)}">${icon('play')}</span>` : ''}</div>
       <div class="cap"><b>${esc(l.name)}</b><span>${l.ids.length} שיעורים</span></div></a></div>`; };
@@ -872,7 +872,7 @@
       <button class="ib bx" data-bcancel aria-label="ביטול — יציאה בלי לשמור" title="ביטול">${icon('x')}</button></div>`;
   }
   function buildPanel() {
-    const its = building.ids.map(id => byId[id]);
+    const its = building.ids.map(id => byId[id]).filter(Boolean);
     $('#dockB').innerHTML = `<input class="bname" id="bName" dir="auto" value="${esc(building.name)}" placeholder="שם הרשימה, למשל: לנסיעה" aria-label="שם הרשימה">
       <p class="bhint">${its.length ? `${its.length} שיעורים` : `חפשו שיעורים${isMob() ? '' : ' מימין'} ולחצו ＋ — הם יופיעו כאן.`}</p>
       <div class="blist">${its.map(x => qRow(x, 'build')).join('')}</div>
@@ -1289,7 +1289,7 @@
     const box = $('#npText'), dbox = $('#dockText');
     if (it.kind === 'p') {
       box.innerHTML = `<span class="ln-n">${esc(npSub(it))}</span><p class="ln">${esc(it.iyun ? it.iyun : seriesName(it))}</p>
-        ${it.pdf ? `<p class="src">לשיעור יש סיכום כתוב — עיקרי הדברים, לקריאה ולהדפסה.</p><a class="pdf" href="${it.pdf}" target="_blank" rel="noopener">${icon('file')}פתיחת הסיכום</a>` : '<p class="src">לשיעור הזה אין סיכום כתוב.</p>'}`;
+        ${it.pdf ? `<p class="src">לשיעור יש סיכום כתוב — עיקרי הדברים, לקריאה ולהדפסה.</p><a class="pdf" href="${esc(it.pdf)}" target="_blank" rel="noopener">${icon('file')}פתיחת הסיכום</a>` : '<p class="src">לשיעור הזה אין סיכום כתוב.</p>'}`;
       dbox.innerHTML = `${esc(it.iyun ? it.iyun : seriesName(it))}<br><span class="src">${it.pdf ? 'יש סיכום כתוב לשיעור — בכפתור "סיכום" למעלה' : 'לשיעור הזה אין סיכום כתוב'}</span>`;
       return;
     }

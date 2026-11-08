@@ -2,7 +2,16 @@
    זה הפענוח של שמות הקבצים באתר (מה שהיה parseFilename ב-index.html של האתרים הקודמים) — חייב להתאים
    ל-upload.ps1 בשני הריפואים. רשימת המועדים — ALL_MOADIM ב-app.js, זהה ל-$MOADIM ב-upload.ps1. */
 (async () => {
-  const ROOT = new URLSearchParams(location.search).get('root') || '/'; // ?root= לבדיקה מקומית
+  // מקור חלופי הוא כלי לפיתוח מקומי בלבד, ותמיד מאותו שרת.
+  const ROOT = (() => {
+    if (!['localhost', '127.0.0.1', '[::1]'].includes(location.hostname)) return '/';
+    const root = new URLSearchParams(location.search).get('root');
+    if (!root) return '/';
+    try {
+      const url = new URL(root, location.href);
+      return url.origin === location.origin ? url.pathname.replace(/\/?$/, '/') : '/';
+    } catch { return '/'; }
+  })();
   // כל רשימה נטענת בנפרד: כשל באחת (רשת חלשה) לא עוצר את כל האתר — ממשיכים עם מה שיש
   const failed = [];
   const get = p => fetch(ROOT + p, { cache: 'no-cache' }).then(r => { if (!r.ok) throw r.status; return r.json(); })
@@ -24,9 +33,12 @@
     if (!/\.(m4a|mp3)$/.test(path)) continue;
     const name = path.split('/').pop().replace(/\.[^.]+$/, '').replace(/^_+|_+$/g, '');
     const m = name.match(/^(.+?)_פרק_([א-ת]+)_משנה_(.+)$/);
-    if (!m) continue;
-    const nums = m[3].split(/[,_]+/).filter(Boolean).map(hebNum).filter(Boolean);
-    mishna.push({ m: m[1].replace(/_/g, ' '), p: hebNum(m[2]), n: nums, f: path, d: mUp[path] || null });
+    const legacy = !m && name.match(/^(.+?)_(\d+)_(\d+)(?:_.*)?$/);
+    if (!m && !legacy) continue;
+    const nums = (m ? m[3].split(/[,_-]+/).filter(Boolean).map(hebNum) : [+legacy[3]]).filter(n => n > 0);
+    const perek = m ? hebNum(m[2]) : +legacy[2];
+    if (!perek || !nums.length) continue;
+    mishna.push({ m: (m || legacy)[1].replace(/_/g, ' '), p: perek, n: nums, f: path, d: mUp[path] || null });
   }
 
   // פרשה שנקראת לבד בשנה פשוטה (ויקהל) — באותו דף כמו המחוברת (ויקהל פקודי). זהה ל-$PAIRS ב-upload.ps1.
@@ -40,12 +52,13 @@
     if (!/\.(m4a|mp3)$/.test(path)) continue;
     const parts = path.split('/'), moed = parts[0] === 'מועדים';
     let toks = parts[parts.length - 1].replace(/\.[^.]+$/, '').split('_');
-    if (!moed) toks = toks.slice(1);
-    const yi = toks.findIndex(t => /^תש[פ-ת][א-ט]?$/.test(t));
+    if (toks[0] === 'פרשת' || toks[0] === 'מועד') toks = toks.slice(1);
+    // השנה באה אחרי שם השיעור; "תשעה" ב"תשעה באב" אינה שנה.
+    const yi = toks.findIndex((t, i) => i > 0 && /^תש[א-ת]{0,3}$/.test(t));
     if (yi < 0) continue;
     let rest = toks.slice(yi + 1), iyun = null;
     const k = rest.indexOf('עיון');
-    if (k >= 0) { iyun = rest.slice(k + 1).join(' ').replace(/''/g, '"'); rest = rest.slice(0, k); }
+    if (k >= 0) { iyun = rest.slice(k + 1).join(' ').replace(/''/g, '"') || 'שיעור עיון'; rest = rest.slice(0, k); }
     const y = toks[yi], t0 = toks.slice(0, yi).join(' '), t = SPELL[t0] || t0, key = moed ? t : pageKey(t);
     // pv = גרסת ה-PDF (pdf-versions.json, מ-upload.ps1) — נכנסת לקישור, כדי שסיכום שהוחלף לא ייפתח מהמטמון
     const pdf = path.replace(/\.[^.]+$/, '.pdf');
