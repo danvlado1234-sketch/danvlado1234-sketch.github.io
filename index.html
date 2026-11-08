@@ -34,9 +34,9 @@
 <meta name="apple-mobile-web-app-title" content="שיעורי הרב">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <script>
-  // גרסת הקבצים — בכל עדכון של app.js / style.css / live.js / gen.js מחליפים את כל המופעים של 20261108a בקובץ הזה
+  // גרסת הקבצים — בכל עדכון של app.js / style.css / live.js / gen.js מחליפים את כל המופעים של 20261108b בקובץ הזה
   // (ה-SW שומר קבצים לפי הכתובת המלאה, אז גרסה חדשה = כתובת חדשה = הקובץ החדש מיד)
-  window.APP_V = '20261108a';
+  window.APP_V = '20261108b';
   // כרום שולח את הצעת ההתקנה מוקדם — שומרים אותה עד ש-app.js נטען (כפתור "התקנה")
   window.addEventListener('beforeinstallprompt', e => { e.preventDefault(); window.__bip = e; });
   // קישורים מהאתרים הקודמים (/shiurim-parasha/?parasha=נח, /Shiurim-mishnhyot/?m=ברכות&p=2, המייל) — לכתובת החדשה
@@ -57,7 +57,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Frank+Ruhl+Libre:wght@500;700;900&family=Rubik:wght@400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="style.css?v=20261108a">
+<link rel="stylesheet" href="style.css?v=20261108b">
 </head>
 <body>
 <div class="shell">
@@ -69,6 +69,7 @@
         <a href="#/" data-nav="home"><svg class="i"><use href="#i-home"/></svg>בית</a>
         <a href="#/search" data-nav="search"><svg class="i"><use href="#i-search"/></svg>חיפוש</a>
         <a href="#/library" data-nav="library"><svg class="i"><use href="#i-library"/></svg>הספרייה שלי</a>
+        <a href="https://wa.me/972552562033" data-contact target="_blank" rel="noopener noreferrer"><svg class="i"><use href="#i-message"/></svg>יצירת קשר</a>
       </nav>
     </div>
     <div class="side-lib">
@@ -126,6 +127,7 @@
         <button class="act" data-act="download"><svg class="i"><use href="#i-download"/></svg><span>הורדה</span></button>
         <button class="act" data-act="loop" data-loop aria-pressed="false"><svg class="i"><use href="#i-repeat1"/></svg><span>חזרה</span></button>
         <button class="act" data-act="share"><svg class="i"><use href="#i-share"/></svg><span>שיתוף</span></button>
+        <button class="act" data-feedback aria-label="הארות והערות על השיעור"><svg class="i"><use href="#i-message"/></svg><span>הערה</span></button>
       </div>
       <section class="dock-card" id="dockTextCard">
         <header><h4 id="dockTextTitle">טקסט המשנה</h4><button data-full="text">לימוד עם טקסט</button></header>
@@ -172,6 +174,7 @@
   <a href="#/" data-nav="home"><svg class="i"><use href="#i-home"/></svg>בית</a>
   <a href="#/search" data-nav="search"><svg class="i"><use href="#i-search"/></svg>חיפוש</a>
   <a href="#/library" data-nav="library"><svg class="i"><use href="#i-library"/></svg>הספרייה</a>
+  <a href="https://wa.me/972552562033" data-contact target="_blank" rel="noopener noreferrer"><svg class="i"><use href="#i-message"/></svg>יצירת קשר</a>
 </nav>
 
 <!-- נגן מלא — אפל מיוזיק: כריכה, צבע מהתמונה, טקסט והבא בתור -->
@@ -209,6 +212,7 @@
           <button class="tool" id="npQueueBtn" data-pane="queue" aria-pressed="false"><svg class="i"><use href="#i-queue"/></svg><span>הבא בתור</span></button>
           <a class="tool" id="npSefaria" target="_blank" rel="noopener"><svg class="i"><use href="#i-book"/></svg><span id="npSefariaLbl">ספריא</span></a>
           <button class="tool" id="npDownload"><svg class="i"><use href="#i-download"/></svg><span id="npDlLbl">הורדה</span></button>
+          <button class="tool" data-feedback aria-label="הארות והערות על השיעור"><svg class="i"><use href="#i-message"/></svg><span>הערה</span></button>
         </div>
       </div>
       <aside class="np-panel" aria-label="טקסט והבא בתור">
@@ -227,6 +231,20 @@
   <button role="menuitem" data-m="next"><svg class="i"><use href="#i-play-next"/></svg>נגן הבא</button>
   <button role="menuitem" data-m="queue"><svg class="i"><use href="#i-queue"/></svg>הוסף לתור</button>
   <button role="menuitem" data-m="fav"><svg class="i"><use href="#i-plus"/></svg>שמירה ב"השמורים שלי"</button>
+  <button role="menuitem" data-m="feedback"><svg class="i"><use href="#i-message"/></svg>הארות והערות</button>
+</div>
+
+<div class="feedback-layer" id="feedback" role="dialog" aria-modal="true" aria-labelledby="feedbackTitle" aria-describedby="feedbackContext" hidden>
+  <section class="feedback-panel">
+    <header class="feedback-head"><h2 id="feedbackTitle">הארות והערות</h2><button class="ib" id="feedbackClose" aria-label="סגירת חלונית ההערה"><svg class="i"><use href="#i-x"/></svg></button></header>
+    <p class="feedback-context" id="feedbackContext"></p>
+    <form id="feedbackForm">
+      <label class="feedback-field">סוג הפנייה<select id="feedbackType"><option>הארה על השיעור</option><option>טעות בסיכום</option><option>תקלה בהקלטה</option><option>אחר</option></select></label>
+      <label class="feedback-field">מה תרצו לשתף?<textarea id="feedbackText" rows="5" maxlength="1500" required placeholder="כתבו כאן את ההארה, ההערה או פרטי התקלה"></textarea></label>
+      <p class="feedback-hint">הפנייה מגיעה לדניאל, מנהל האתר. ההודעה תיפתח בווטסאפ ותישלח רק לאחר שתלחצו שם על שליחה.</p>
+      <a class="btn feedback-send" id="feedbackSend" href="https://wa.me/972552562033" target="_blank" rel="noopener noreferrer"><svg class="i"><use href="#i-message"/></svg>המשך לווטסאפ</a>
+    </form>
+  </section>
 </div>
 
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
@@ -257,6 +275,7 @@
     <symbol id="i-grip" viewBox="0 0 24 24"><path d="M5 8h14"/><path d="M5 12h14"/><path d="M5 16h14"/></symbol>
     <symbol id="i-cont" viewBox="0 0 24 24"><path d="m17 2 4 4-4 4"/><path d="M3 11v-1a4 4 0 0 1 4-4h14"/><path d="m7 22-4-4 4-4"/><path d="M21 13v1a4 4 0 0 1-4 4H3"/></symbol>
     <symbol id="i-more" viewBox="0 0 24 24"><circle cx="12" cy="5" r="1.6" fill="currentColor"/><circle cx="12" cy="12" r="1.6" fill="currentColor"/><circle cx="12" cy="19" r="1.6" fill="currentColor"/></symbol>
+    <symbol id="i-message" viewBox="0 0 24 24"><path d="M21 11.5a8.4 8.4 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.4 8.4 0 0 1-3.8-.9L3 21l1.9-5.7a8.4 8.4 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.4 8.4 0 0 1 3.8-.9h.5a8.5 8.5 0 0 1 8 8v.5Z"/><path d="M8 10h8M8 14h5"/></symbol>
     <symbol id="i-panel" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2.5"/><path d="M9.5 4v16"/><rect x="4.8" y="8" width="2.6" height="2.6" rx=".6" fill="currentColor" stroke="none"/></symbol>
     <symbol id="i-play-next" viewBox="0 0 24 24"><path d="M3 6h10"/><path d="M3 12h6"/><path d="M3 18h6"/><path d="M14 10.5v9l7-4.5z" fill="currentColor"/></symbol>
     <symbol id="i-download" viewBox="0 0 24 24"><path d="M12 15V3"/><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m7 10 5 5 5-5"/></symbol>
@@ -270,8 +289,8 @@
   </defs>
 </svg>
 
-<script src="gen.js?v=20261108a" onerror="window.GEN={}"></script>
-<script src="live.js?v=20261108a"></script>
+<script src="gen.js?v=20261108b" onerror="window.GEN={}"></script>
+<script src="live.js?v=20261108b"></script>
 <script>if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js').catch(() => {});</script>
 </body>
 </html>

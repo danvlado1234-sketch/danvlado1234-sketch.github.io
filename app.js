@@ -427,7 +427,7 @@
   // במצב "בניית רשימה" — במקום ⋮ מופיע ＋ (✓ כשכבר ברשימה)
   const addBtn = it => { const on = !!building && building.ids.includes(it.id); return `<button class="addb${on ? ' is-on' : ''}" data-addl="${esc(it.id)}" aria-pressed="${on}" aria-label="${on ? 'הסרה מהרשימה' : 'הוספה לרשימה'}: ${esc(fullName(it))}">${icon(on ? 'check' : 'plus')}</button>`; };
   const lessonRow = it => `<div class="res res-l"><img src="${IMG(artOf(it), 120, 120)}" alt=""><div><b>${esc(it.kind === 'm' ? fullName(it) : (it.iyun || seriesName(it)))}</b><span>${esc(it.kind === 'm' ? `מסכת ${it.masechet} · ${rel(it.date)}` : `${seriesName(it)} · ${it.year}${it.tag ? ' · ' + it.tag : ''}`)}</span></div>${addBtn(it)}</div>`;
-  const moreBtn = it => building ? addBtn(it) : `<button class="more" data-more="${esc(it.id)}" aria-label="אפשרויות ל${esc(fullName(it))}" title="נגן הבא · הוסף לתור · שמירה לרשימה">${icon('more')}</button>`;
+  const moreBtn = it => building ? addBtn(it) : `<button class="more" data-more="${esc(it.id)}" aria-label="אפשרויות ל${esc(fullName(it))}" title="נגן הבא · הוסף לתור · שמירה לרשימה · הארות והערות">${icon('more')}</button>`;
 
   // iy — דף העיון של המועד: רק שיעורי העיון שלו (#/iyun/<מועד>)
   function groupPage(title, iy) {
@@ -925,12 +925,12 @@
   document.addEventListener('input', e => { if (e.target.id === 'bName' && building) { building.name = e.target.value; const b = $('.buildbar b'); if (b) b.textContent = building.name || 'רשימה חדשה'; } });
 
   // תפריט "עוד" (⋮) לכל שיעור
-  const menu = $('#menu'); let menuFor = null;
+  const menu = $('#menu'); let menuFor = null, menuAnchor = null;
   document.addEventListener('click', e => {
     const b = e.target.closest('[data-more]');
     if (b) {
       e.preventDefault(); e.stopPropagation();
-      menuFor = b.dataset.more; menu.hidden = false;
+      menuFor = b.dataset.more; menuAnchor = b; menu.hidden = false;
       const r = b.getBoundingClientRect(), mw = menu.offsetWidth, mh = menu.offsetHeight;
       menu.style.left = Math.max(8, Math.min(innerWidth - mw - 8, r.left)) + 'px';
       menu.style.top = (r.bottom + mh + 8 > innerHeight ? r.top - mh - 6 : r.bottom + 6) + 'px';
@@ -938,9 +938,49 @@
       return;
     }
     const a = e.target.closest('#menu [data-m]');
-    if (a) { const id = menuFor; menu.hidden = true; e.stopPropagation(); ({ next: playNext, queue: addToQueue, fav: saveToFav })[a.dataset.m](id); return; }
+    if (a) { const id = menuFor; menu.hidden = true; e.stopPropagation(); ({ next: playNext, queue: addToQueue, fav: saveToFav, feedback: id => openFeedback(id, menuAnchor) })[a.dataset.m](id); return; }
     if (!menu.hidden && !e.target.closest('#menu')) menu.hidden = true;
   }, true);
+
+  // קשר עם מנהל האתר: הכנת הודעה בלבד; השליחה נעשית בידי הגולש בווטסאפ.
+  const CONTACT_PHONE = '972552562033';
+  const whatsappLink = text => `https://wa.me/${CONTACT_PHONE}?text=${encodeURIComponent(text)}`;
+  $$('[data-contact]').forEach(a => { a.href = whatsappLink('שלום דניאל, פנייה בעניין אתר שיעורי הרב ולדומירסקי:'); });
+  const feedback = $('#feedback'), feedbackForm = $('#feedbackForm'), feedbackText = $('#feedbackText');
+  let feedbackItem = null, feedbackReturn = null;
+  function openFeedback(id, trigger) {
+    const it = byId[id]; if (!it) return;
+    if (!feedbackItem || feedbackItem.id !== id) feedbackForm.reset();
+    feedbackItem = it; feedbackReturn = trigger || document.activeElement;
+    feedbackText.setCustomValidity('');
+    $('#feedbackContext').textContent = fullName(it);
+    feedback.hidden = false; document.body.classList.add('feedback-open');
+    $('#feedbackType').focus();
+  }
+  function closeFeedback() {
+    feedback.hidden = true; document.body.classList.remove('feedback-open');
+    if (feedbackReturn && feedbackReturn.isConnected) feedbackReturn.focus();
+  }
+  $('#feedbackClose').addEventListener('click', closeFeedback);
+  feedback.addEventListener('click', e => { if (e.target === feedback) closeFeedback(); });
+  feedback.addEventListener('keydown', e => {
+    if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); closeFeedback(); }
+    if (e.key !== 'Tab') return;
+    const controls = [...feedback.querySelectorAll('button, select, textarea, a[href]')], first = controls[0], last = controls[controls.length - 1];
+    if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+    else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+  });
+  feedbackForm.addEventListener('submit', e => e.preventDefault());
+  feedbackText.addEventListener('input', () => feedbackText.setCustomValidity(''));
+  $('#feedbackSend').addEventListener('click', e => {
+    feedbackText.setCustomValidity(feedbackText.value.trim() ? '' : 'נא לכתוב את תוכן הפנייה.');
+    if (!feedbackForm.reportValidity() || !feedbackItem) { e.preventDefault(); return; }
+    const it = feedbackItem;
+    const text = `שלום דניאל, ${$('#feedbackType').value} באתר שיעורי הרב.\n\nשיעור: ${fullName(it)}\nקובץ: ${it.id.split('/').pop()}\nקישור: https://danvlado1234-sketch.github.io/${seriesHref(it)}\n\n${feedbackText.value.trim()}`;
+    e.currentTarget.href = whatsappLink(text);
+  });
+  $$('[data-feedback]').forEach(b => b.addEventListener('click', () => openFeedback(nowId, b)));
+
   function toggle() { if (!nowId) return; audio.paused ? audio.play().catch(() => {}) : audio.pause(); }
   function skip(s) { audio.currentTime = Math.max(0, Math.min((audio.duration || 0), audio.currentTime + s)); }
   function setPlayIcons() {
@@ -1345,6 +1385,7 @@
     e.preventDefault(); tapPlay(p);
   });
   document.addEventListener('keydown', e => {
+    if (!feedback.hidden) return;
     if (e.key === 'Enter' && e.target.matches('.ep')) { const at = e.target.closest('[data-lat]')?.dataset.lat; if (at) playList(at, +e.target.dataset.lk); else tapPlay(e.target); }
     if (e.key === ' ' && !e.target.matches('input, textarea, button, a, [role=button]')) { e.preventDefault(); toggle(); }
     if (e.key === 'Escape' && np.classList.contains('is-open')) closeNP();
