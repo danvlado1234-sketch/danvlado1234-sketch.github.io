@@ -557,6 +557,7 @@
     else if (a === 'library') { html = libraryPage(); nav = 'library'; }
     else if (a === 'l') { html = listPage(b); nav = 'library'; }
     else html = notFound();
+    $('#contactOpen').hidden = nav !== 'home';
     const key = bad ? '' : `${a}/${b}`, keep = a === 'm' && key === lastKey; lastKey = key;
     const sc = matchMedia('(min-width:1024px)').matches ? $('#main') : document.scrollingElement, y = sc.scrollTop, sx = $('.seasons')?.scrollLeft;
     view.innerHTML = `${building ? buildBar() : ''}<div class="view-in${keep ? ' no-in' : ''}">${html}</div>`;
