@@ -34,9 +34,9 @@
 <meta name="apple-mobile-web-app-title" content="שיעורי הרב">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <script>
-  // גרסת הקבצים — בכל עדכון של app.js / style.css / live.js / gen.js מחליפים את כל המופעים של 20261109c בקובץ הזה
+  // גרסת הקבצים — בכל עדכון של app.js / style.css / live.js / gen.js מחליפים את כל המופעים של 20261109d בקובץ הזה
   // (ה-SW שומר קבצים לפי הכתובת המלאה, אז גרסה חדשה = כתובת חדשה = הקובץ החדש מיד)
-  window.APP_V = '20261109c';
+  window.APP_V = '20261109d';
   // כרום שולח את הצעת ההתקנה מוקדם — שומרים אותה עד ש-app.js נטען (כפתור "התקנה")
   window.addEventListener('beforeinstallprompt', e => { e.preventDefault(); window.__bip = e; });
   // קישורים מהאתרים הקודמים (/shiurim-parasha/?parasha=נח, /Shiurim-mishnhyot/?m=ברכות&p=2, המייל) — לכתובת החדשה
@@ -57,7 +57,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Frank+Ruhl+Libre:wght@500;700;900&family=Rubik:wght@400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="style.css?v=20261109c">
+<link rel="stylesheet" href="style.css?v=20261109d">
 </head>
 <body>
 <div class="shell">
@@ -93,6 +93,9 @@
         <button class="chip" data-f="h">מועדים</button>
         <button class="chip" data-f="i">עיון</button>
       </div>
+      <button class="contact-trigger" id="contactOpen" aria-haspopup="dialog" aria-controls="feedback" hidden>
+        <span class="wa-mark"><svg class="i" aria-hidden="true"><use href="#i-whatsapp"/></svg></span><span>יצירת קשר</span>
+      </button>
       <button class="theme-btn install-btn" id="installBtn" hidden aria-label="התקנת האפליקציה"><svg class="i"><use href="#i-download"/></svg><span>התקנה</span></button>
       <button class="theme-btn" id="themeBtn" aria-pressed="false" aria-label="מצב יום / לילה"><svg class="i"><use href="#i-moon"/></svg><span>לילה</span></button>
     </header>
@@ -232,10 +235,6 @@
   <button role="menuitem" data-m="feedback"><svg class="i"><use href="#i-message"/></svg>הארות והערות</button>
 </div>
 
-<button class="wa-float" id="contactOpen" aria-haspopup="dialog" aria-controls="feedback" hidden>
-  <span class="wa-mark"><svg class="i" aria-hidden="true"><use href="#i-whatsapp"/></svg></span><span>יצירת קשר</span>
-</button>
-
 <div class="feedback-layer" id="feedback" role="dialog" aria-modal="true" aria-labelledby="feedbackTitle" aria-describedby="feedbackContext" hidden>
   <section class="feedback-panel">
     <header class="feedback-head"><h2 id="feedbackTitle">הארות והערות</h2><button class="ib" id="feedbackClose" aria-label="סגירת חלונית ההערה"><svg class="i"><use href="#i-x"/></svg></button></header>
@@ -300,8 +299,8 @@
   </defs>
 </svg>
 
-<script src="gen.js?v=20261109c" onerror="window.GEN={}"></script>
-<script src="live.js?v=20261109c"></script>
+<script src="gen.js?v=20261109d" onerror="window.GEN={}"></script>
+<script src="live.js?v=20261109d"></script>
 <script>if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js').catch(() => {});</script>
 </body>
 </html>
