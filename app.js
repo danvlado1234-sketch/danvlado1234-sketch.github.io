@@ -557,7 +557,6 @@
     else if (a === 'library') { html = libraryPage(); nav = 'library'; }
     else if (a === 'l') { html = listPage(b); nav = 'library'; }
     else html = notFound();
-    $('#contactOpen').hidden = nav !== 'home';
     const key = bad ? '' : `${a}/${b}`, keep = a === 'm' && key === lastKey; lastKey = key;
     const sc = matchMedia('(min-width:1024px)').matches ? $('#main') : document.scrollingElement, y = sc.scrollTop, sx = $('.seasons')?.scrollLeft;
     view.innerHTML = `${building ? buildBar() : ''}<div class="view-in${keep ? ' no-in' : ''}">${html}</div>`;
@@ -945,7 +944,9 @@
 
   // קשר עם מנהל האתר: הכנת הודעה בלבד; השליחה נעשית בידי הגולש בווטסאפ.
   // זרימה אחת לכל הכניסות: בוחרים סוג פנייה (פעם אחת) → כותבים → ממשיכים לווטסאפ.
-  // שיעור מצורף להודעה כשנכנסים מתוך שיעור (⋮ / נגן), או מהבית כשמתנגן שיעור — רק להארה ולתקלה.
+  // ההקשר לפי הדף (דניאל 9.11): הכפתור בכל הדפים; בדף פרק/פרשה/עיון — ההודעה מתייחסת לדף, בבית ובשאר — לשום שיעור.
+  // כניסה מ-⋮ או מהנגן — לשיעור הזה בדיוק. השיעור שמתנגן לא מצורף בשקט: הצעה גלויה שאפשר להדליק/לכבות
+  // (דלוקה מראש רק כשהוא שייך לדף שבו נמצאים).
   const CONTACT_PHONE = '972552562033', SITE = 'https://danvlado1234-sketch.github.io/';
   const whatsappLink = text => `https://wa.me/${CONTACT_PHONE}?text=${encodeURIComponent(text)}`;
   const CONTACT_TYPES = {
@@ -955,30 +956,54 @@
   };
   const feedback = $('#feedback'), feedbackForm = $('#feedbackForm'), feedbackText = $('#feedbackText');
   const contactChoices = $('#contactChoices');
-  let feedbackFrom = null, feedbackItem = null, feedbackKind = null, feedbackReturn = null;
+  const feedbackAttach = $('#feedbackAttach');
+  let feedbackFrom = null, feedbackPage = null, feedbackKind = null, feedbackReturn = null, attachPlaying = false;
+  const DEFAULT_CTX = 'הפנייה מגיעה לדניאל, מנהל האתר.';
+  // הדף שבו נמצאים עכשיו: שם להצגה + האם שיעור שייך אליו. null = דף בלי שיעור מסוים (בית, חיפוש, ספרייה…)
+  function pageContext() {
+    let a, b, c;
+    try { [, a, b, c] = location.hash.split('/').map(decodeURIComponent); } catch { return null; }
+    if (a === 'm' && masechet[b]) return c
+      ? { label: `מסכת ${b} פרק ${heb(+c)}`, has: it => it.kind === 'm' && it.masechet === b && String(it.perek) === c }
+      : { label: `מסכת ${b}`, has: it => it.kind === 'm' && it.masechet === b };
+    if (a === 'p' && groups[b]) return { label: groups[b].moed ? (MOED_NAME[b] || b) : `פרשת ${b}`, has: it => it.kind !== 'm' && !it.iyun && it.title === b };
+    if (a === 'iyun' && b && iyGroups[b]) return { label: `עיון — ${MOED_NAME[b] || b}`, has: it => !!it.iyun && it.title === b };
+    return null;
+  }
+  const ctxText = () => byId[feedbackFrom] ? `על השיעור: ${fullName(byId[feedbackFrom])}` : feedbackPage ? `מתוך: ${feedbackPage.label}` : DEFAULT_CTX;
   function showFeedbackLayer() { feedback.hidden = false; document.body.classList.add('feedback-open'); }
   function showContactChoices() {
     contactChoices.hidden = false; feedbackForm.hidden = true;
     $('#feedbackTitle').textContent = 'איך אפשר לעזור?';
-    const it = byId[feedbackFrom];
-    $('#feedbackContext').textContent = it ? `על השיעור: ${fullName(it)}` : 'הפנייה מגיעה לדניאל, מנהל האתר.';
+    $('#feedbackContext').textContent = ctxText();
     showFeedbackLayer();
     $('[data-contact-type]').focus();
   }
-  // from = שיעור שממנו נכנסו (או null מהבית); trigger = לאן מחזירים את הפוקוס בסגירה
+  // from = שיעור שממנו נכנסו (⋮ / נגן) או null מהכותרת; trigger = לאן מחזירים את הפוקוס בסגירה
   function openContact(from, trigger) {
-    if ((from || null) !== feedbackFrom) { feedbackForm.reset(); feedbackKind = null; }
-    feedbackFrom = from || null; feedbackReturn = trigger || document.activeElement;
+    const page = from ? null : pageContext();
+    if ((from || null) !== feedbackFrom || page?.label !== feedbackPage?.label) { feedbackForm.reset(); feedbackKind = null; }
+    feedbackFrom = from || null; feedbackPage = page; feedbackReturn = trigger || document.activeElement;
     showContactChoices();
   }
+  function renderAttach() {
+    const it = byId[nowId];
+    feedbackAttach.hidden = !it || !!feedbackFrom || feedbackKind === 'general';
+    if (feedbackAttach.hidden) return;
+    feedbackAttach.setAttribute('aria-pressed', attachPlaying);
+    feedbackAttach.innerHTML = `${icon(attachPlaying ? 'check' : 'plus')}<span>${attachPlaying ? 'מצורף השיעור שמתנגן' : 'לצרף את השיעור שמתנגן'}: <b>${esc(fullName(it))}</b></span>`;
+  }
+  feedbackAttach.addEventListener('click', () => { attachPlaying = !attachPlaying; renderAttach(); });
   function openForm(kind) {
     const t = CONTACT_TYPES[kind];
     if (kind !== feedbackKind) feedbackText.value = '';
     feedbackKind = kind;
-    feedbackItem = byId[feedbackFrom] || (kind !== 'general' && byId[nowId]) || null;
+    const playing = byId[nowId];
+    attachPlaying = !!(playing && feedbackPage?.has(playing));
     contactChoices.hidden = true; feedbackForm.hidden = false;
     $('#feedbackTitle').textContent = t.title;
-    $('#feedbackContext').textContent = feedbackItem ? `על השיעור: ${fullName(feedbackItem)}` : 'הפנייה מגיעה לדניאל, מנהל האתר.';
+    $('#feedbackContext').textContent = ctxText();
+    renderAttach();
     feedbackText.placeholder = t.ph; feedbackText.setCustomValidity('');
     showFeedbackLayer();
     feedbackText.focus();
@@ -1004,8 +1029,12 @@
   $('#feedbackSend').addEventListener('click', e => {
     feedbackText.setCustomValidity(feedbackText.value.trim() ? '' : 'נא לכתוב את תוכן הפנייה.');
     if (!feedbackForm.reportValidity()) { e.preventDefault(); return; }
-    const it = feedbackItem;
-    const context = it ? `שיעור: ${fullName(it)}\nקישור: ${SITE}${seriesHref(it)}` : `עמוד באתר: ${SITE}${location.hash || '#/'}`;
+    const it = byId[feedbackFrom] || (attachPlaying && !feedbackAttach.hidden && byId[nowId]) || null;
+    const lines = [];
+    if (it) lines.push(`שיעור: ${fullName(it)}`, `קישור: ${SITE}${seriesHref(it)}`);
+    else if (feedbackPage) lines.push(`מתוך: ${feedbackPage.label}`, `קישור: ${SITE}${location.hash}`);
+    else lines.push(`עמוד באתר: ${SITE}${location.hash || '#/'}`);
+    const context = lines.join('\n');
     e.currentTarget.href = whatsappLink(`שלום דניאל, ${CONTACT_TYPES[feedbackKind].open}\n\n${feedbackText.value.trim()}\n\n${context}`);
     // הקישור נפתח בלשונית חדשה; כאן מנקים וסוגרים כדי שלא יישאר טקסט ישן
     setTimeout(() => { feedbackForm.reset(); feedbackFrom = feedbackKind = null; closeFeedback(); toast('ההודעה נפתחה בווטסאפ — נשאר ללחוץ שם על שליחה'); }, 0);

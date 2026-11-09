@@ -34,9 +34,9 @@
 <meta name="apple-mobile-web-app-title" content="שיעורי הרב">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <script>
-  // גרסת הקבצים — בכל עדכון של app.js / style.css / live.js / gen.js מחליפים את כל המופעים של 20261109e בקובץ הזה
+  // גרסת הקבצים — בכל עדכון של app.js / style.css / live.js / gen.js מחליפים את כל המופעים של 20261109f בקובץ הזה
   // (ה-SW שומר קבצים לפי הכתובת המלאה, אז גרסה חדשה = כתובת חדשה = הקובץ החדש מיד)
-  window.APP_V = '20261109e';
+  window.APP_V = '20261109f';
   // כרום שולח את הצעת ההתקנה מוקדם — שומרים אותה עד ש-app.js נטען (כפתור "התקנה")
   window.addEventListener('beforeinstallprompt', e => { e.preventDefault(); window.__bip = e; });
   // קישורים מהאתרים הקודמים (/shiurim-parasha/?parasha=נח, /Shiurim-mishnhyot/?m=ברכות&p=2, המייל) — לכתובת החדשה
@@ -57,7 +57,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Frank+Ruhl+Libre:wght@500;700;900&family=Rubik:wght@400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="style.css?v=20261109e">
+<link rel="stylesheet" href="style.css?v=20261109f">
 </head>
 <body>
 <div class="shell">
@@ -93,7 +93,7 @@
         <button class="chip" data-f="h">מועדים</button>
         <button class="chip" data-f="i">עיון</button>
       </div>
-      <button class="contact-trigger" id="contactOpen" aria-haspopup="dialog" aria-controls="feedback" aria-label="יצירת קשר" title="יצירת קשר" hidden>
+      <button class="contact-trigger" id="contactOpen" aria-haspopup="dialog" aria-controls="feedback" aria-label="יצירת קשר" title="יצירת קשר">
         <svg class="i" aria-hidden="true"><use href="#i-whatsapp"/></svg><span>יצירת קשר</span>
       </button>
       <button class="theme-btn install-btn" id="installBtn" hidden aria-label="התקנת האפליקציה"><svg class="i"><use href="#i-download"/></svg><span>התקנה</span></button>
@@ -247,6 +247,7 @@
     </div>
     <form id="feedbackForm" hidden>
       <button class="feedback-back" id="feedbackBack" type="button"><svg class="i" aria-hidden="true"><use href="#i-next"/></svg>סוג פנייה אחר</button>
+      <button class="feedback-attach" id="feedbackAttach" type="button" aria-pressed="false" hidden></button>
       <label class="feedback-field"><textarea id="feedbackText" rows="5" maxlength="1500" required aria-label="תוכן הפנייה"></textarea></label>
       <p class="feedback-hint">ההודעה תיפתח בווטסאפ, ותישלח רק כשתלחצו שם על שליחה.</p>
       <a class="btn feedback-send" id="feedbackSend" href="https://wa.me/972552562033" target="_blank" rel="noopener noreferrer"><svg class="i"><use href="#i-whatsapp"/></svg>המשך לווטסאפ</a>
@@ -300,8 +301,8 @@
   </defs>
 </svg>
 
-<script src="gen.js?v=20261109e" onerror="window.GEN={}"></script>
-<script src="live.js?v=20261109e"></script>
+<script src="gen.js?v=20261109f" onerror="window.GEN={}"></script>
+<script src="live.js?v=20261109f"></script>
 <script>if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js').catch(() => {});</script>
 </body>
 </html>
