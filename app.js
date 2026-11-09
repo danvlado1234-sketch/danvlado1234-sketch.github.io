@@ -945,18 +945,36 @@
   // קשר עם מנהל האתר: הכנת הודעה בלבד; השליחה נעשית בידי הגולש בווטסאפ.
   const CONTACT_PHONE = '972552562033';
   const whatsappLink = text => `https://wa.me/${CONTACT_PHONE}?text=${encodeURIComponent(text)}`;
-  $$('[data-contact]').forEach(a => { a.href = whatsappLink('שלום דניאל, פנייה בעניין אתר שיעורי הרב ולדומירסקי:'); });
   const feedback = $('#feedback'), feedbackForm = $('#feedbackForm'), feedbackText = $('#feedbackText');
+  const contactChoices = $('#contactChoices');
   let feedbackItem = null, feedbackReturn = null;
-  function openFeedback(id, trigger) {
-    const it = byId[id]; if (!it) return;
-    if (!feedbackItem || feedbackItem.id !== id) feedbackForm.reset();
+  function openFeedback(id, trigger, type) {
+    const it = byId[id] || null;
+    if (feedbackItem?.id !== it?.id) feedbackForm.reset();
     feedbackItem = it; feedbackReturn = trigger || document.activeElement;
     feedbackText.setCustomValidity('');
-    $('#feedbackContext').textContent = fullName(it);
+    contactChoices.hidden = true; feedbackForm.hidden = false;
+    if (type) $('#feedbackType').value = type;
+    $('#feedbackTitle').textContent = type === 'פנייה כללית' ? 'פנייה כללית' : type === 'תקלה באתר או בהקלטה' ? 'דיווח על תקלה' : 'הארות והערות';
+    $('#feedbackContext').textContent = it ? fullName(it) : 'פנייה לדניאל, מנהל האתר';
     feedback.hidden = false; document.body.classList.add('feedback-open');
     $('#feedbackType').focus();
   }
+  function showContactChoices() {
+    contactChoices.hidden = false; feedbackForm.hidden = true;
+    $('#feedbackTitle').textContent = 'איך אפשר לעזור?';
+    $('#feedbackContext').textContent = 'בחרו את סוג הפנייה לדניאל, מנהל האתר.';
+    feedback.hidden = false; document.body.classList.add('feedback-open');
+    $('[data-contact-type]').focus();
+  }
+  $('#contactOpen').addEventListener('click', () => {
+    feedbackItem = null; feedbackReturn = $('#contactOpen'); showContactChoices();
+  });
+  $('#feedbackBack').addEventListener('click', showContactChoices);
+  $$('[data-contact-type]').forEach(b => b.addEventListener('click', () => {
+    const origin = feedbackReturn;
+    openFeedback(feedbackItem?.id, origin, b.dataset.contactType);
+  }));
   function closeFeedback() {
     feedback.hidden = true; document.body.classList.remove('feedback-open');
     if (feedbackReturn && feedbackReturn.isConnected) feedbackReturn.focus();
@@ -966,7 +984,7 @@
   feedback.addEventListener('keydown', e => {
     if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); closeFeedback(); }
     if (e.key !== 'Tab') return;
-    const controls = [...feedback.querySelectorAll('button, select, textarea, a[href]')], first = controls[0], last = controls[controls.length - 1];
+    const controls = [...feedback.querySelectorAll('button, select, textarea, a[href]')].filter(el => el.getClientRects().length), first = controls[0], last = controls[controls.length - 1];
     if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
     else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
   });
@@ -974,9 +992,10 @@
   feedbackText.addEventListener('input', () => feedbackText.setCustomValidity(''));
   $('#feedbackSend').addEventListener('click', e => {
     feedbackText.setCustomValidity(feedbackText.value.trim() ? '' : 'נא לכתוב את תוכן הפנייה.');
-    if (!feedbackForm.reportValidity() || !feedbackItem) { e.preventDefault(); return; }
+    if (!feedbackForm.reportValidity()) { e.preventDefault(); return; }
     const it = feedbackItem;
-    const text = `שלום דניאל, ${$('#feedbackType').value} באתר שיעורי הרב.\n\nשיעור: ${fullName(it)}\nקובץ: ${it.id.split('/').pop()}\nקישור: https://danvlado1234-sketch.github.io/${seriesHref(it)}\n\n${feedbackText.value.trim()}`;
+    const context = it ? `שיעור: ${fullName(it)}\nקובץ: ${it.id.split('/').pop()}\nקישור: https://danvlado1234-sketch.github.io/${seriesHref(it)}` : `עמוד באתר: https://danvlado1234-sketch.github.io/${location.hash || '#/'}`;
+    const text = `שלום דניאל, ${$('#feedbackType').value} באתר שיעורי הרב.\n\n${context}\n\n${feedbackText.value.trim()}`;
     e.currentTarget.href = whatsappLink(text);
   });
   $$('[data-feedback]').forEach(b => b.addEventListener('click', () => openFeedback(nowId, b)));
