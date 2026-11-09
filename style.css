@@ -562,39 +562,54 @@ input[type=range]::-moz-range-thumb{ width: 13px; height: 13px; border: 0; borde
 .menu button:focus-visible{ background: oklch(1 0 0 / 0.1); outline: none; } @media (hover: hover){ .menu button:hover{ background: oklch(1 0 0 / 0.1); outline: none; } }
 .menu .i{ width: 20px; height: 20px; color: var(--text-2); }
 
-/* ---------- תור ורשימות ---------- */
-/* פנייה אישית על שיעור — מותאם גם למסך צר ולמצב יום. */
-.contact-trigger{ flex: none; height: 34px; display: inline-flex; align-items: center; gap: 5px; padding: 4px 7px 4px 10px; border: 1px solid var(--line); border-radius: 99px; background: var(--surface); color: var(--text); font-size: .78rem; font-weight: 500; white-space: nowrap; }
+/* ---------- יצירת קשר ---------- */
+/* הכפתור: בדף הבית בלבד, ליד יום/לילה — באותו סגנון כמוהו, כדי שלא ייראה כעוד מסנן.
+   טלפון: סמל ווטסאפ בלבד (השם בתווית הנגישות); מחשב: סמל + "יצירת קשר" */
+.contact-trigger{ margin-inline-start: auto; flex: none; display: inline-flex; align-items: center; justify-content: center; gap: 6px; height: 36px; width: 36px; padding: 0; border-radius: 99px; background: oklch(1 0 0 / 0.08); color: var(--text); font-size: var(--fs-small); font-weight: 600; transition: background .2s; }
 .contact-trigger[hidden]{ display: none; }
-.wa-mark{ width: 24px; height: 24px; display: grid; place-items: center; color: #128c4a; border-radius: 50%; }
-.contact-trigger .i{ width: 18px; height: 18px; }
-@media (hover: hover){ .contact-trigger:hover{ background: var(--surface-2); } }
-@media (max-width: 1023px){
-  .contact-trigger{ order: 4; }
-  .top .brand-mob + .top-chips{ flex: 1 1 calc(100% - 124px); min-width: 0; width: auto; }
+.contact-trigger .i{ width: 19px; height: 19px; color: #25d366; }
+.contact-trigger span{ display: none; }
+.contact-trigger:not([hidden]) ~ .install-btn, .contact-trigger:not([hidden]) ~ .theme-btn{ margin-inline-start: -8px; }
+@media (hover: hover){ .contact-trigger:hover{ background: oklch(1 0 0 / 0.14); } }
+@media (min-width: 1024px){ .contact-trigger{ width: auto; padding: 0 12px; } .contact-trigger span{ display: inline; } }
+@media (max-width: 1023px){ .contact-trigger{ order: 2; } }
+/* טלפון צר כשכפתור "התקנה" מוצג: אין מקום בשורת השם — הסמל עובר לסוף שורת המסננים (המסננים נגללים לפניו) */
+@media (max-width: 479px){
+  .top:has(> .install-btn:not([hidden])) .contact-trigger{ order: 4; margin-inline-start: 0; }
+  .top:has(> .install-btn:not([hidden])) .contact-trigger ~ .install-btn{ margin-inline-start: auto; }
+  .top:has(> .install-btn:not([hidden])) .brand-mob + .top-chips{ flex: 1 1 calc(100% - 52px); width: auto; min-width: 0; }
 }
+:root[data-theme="day"] .contact-trigger{ background: oklch(0 0 0 / 0.06); }
+:root[data-theme="day"] .contact-trigger .i{ color: #128c4a; }
+:root[data-theme="day"]:not(.no-day-bg) .contact-trigger{ background: oklch(0.97 0.012 85 / 0.6); backdrop-filter: blur(10px); }
+
+/* החלונית: בחירת סוג (פעם אחת) → כתיבה → ווטסאפ */
 .feedback-layer{ position: fixed; z-index: 110; inset: 0; display: grid; place-items: center; padding: 16px; background: oklch(0 0 0 / .65); overflow-y: auto; overscroll-behavior: contain; }
 .feedback-layer[hidden]{ display: none; }
 .feedback-panel{ width: min(100%, 460px); max-height: 100%; overflow-y: auto; padding: 24px; border: 1px solid var(--line); border-radius: 20px; background: var(--surface); color: var(--text); box-shadow: 0 20px 70px oklch(0 0 0 / .35); }
 .feedback-head{ display: flex; align-items: center; justify-content: space-between; gap: 12px; }
 .feedback-head h2{ margin: 0; font-family: var(--f-title); font-size: 1.85rem; }
-.feedback-context{ margin: 6px 0 22px; color: var(--text-2); overflow-wrap: anywhere; }
-.feedback-field{ display: grid; gap: 8px; margin-top: 16px; font-weight: 500; }
-.feedback-field select, .feedback-field textarea{ width: 100%; min-width: 0; padding: 12px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface-2); color: var(--text); font: inherit; }
-.feedback-field textarea{ resize: vertical; min-height: 120px; }
-.feedback-field textarea{ font-weight: 400; line-height: 1.7; }
-.feedback-back{ font-size: .85rem; color: var(--text-3); text-decoration: underline; text-underline-offset: 4px; }
+.feedback-context{ margin: 6px 0 18px; color: var(--text-2); overflow-wrap: anywhere; }
+.feedback-field{ display: grid; gap: 8px; }
+.feedback-field textarea{ width: 100%; min-width: 0; min-height: 140px; padding: 12px; border: 1px solid var(--line); border-radius: 12px; background: var(--surface-2); color: var(--text); font: inherit; font-weight: 400; line-height: 1.7; resize: vertical; }
+.feedback-field textarea:focus{ outline: none; border-color: var(--accent); }
+.feedback-back{ display: inline-flex; align-items: center; gap: 4px; margin-bottom: 12px; font-size: .85rem; color: var(--text-3); }
+.feedback-back .i{ width: 16px; height: 16px; transform: scaleX(-1); }
+@media (hover: hover){ .feedback-back:hover{ color: var(--text); } }
 .contact-choices[hidden], #feedbackForm[hidden]{ display: none; }
-.contact-choice{ width: 100%; display: flex; align-items: center; gap: 12px; padding: 16px 12px; margin-top: 10px; border: 1px solid var(--line); border-radius: 12px; text-align: start; transition: background .2s; }
+.contact-choice{ --tone: var(--accent); width: 100%; display: flex; align-items: center; gap: 14px; padding: 14px 12px; margin-top: 10px; border: 1px solid var(--line); border-radius: 14px; text-align: start; transition: background .2s, border-color .2s; }
 .contact-choice > span:nth-child(2){ flex: 1; }
-.contact-choice b{ display: block; font-weight: 500; font-size: 1rem; }
-.contact-choice small{ display: block; margin-top: 4px; color: var(--text-3); font-size: .8rem; line-height: 1.6; }
-.contact-choice-icon{ display: grid; place-items: center; width: 36px; height: 40px; flex: none; color: var(--accent); }
+.contact-choice b{ display: block; font-weight: 600; font-size: 1rem; }
+.contact-choice small{ display: block; margin-top: 3px; color: var(--text-3); font-size: .8rem; line-height: 1.6; }
+.contact-choice-icon{ display: grid; place-items: center; width: 42px; height: 42px; flex: none; border-radius: 12px; color: var(--tone); background: color-mix(in oklch, var(--tone) 16%, transparent); }
+.contact-choice-icon .i{ width: 22px; height: 22px; }
 .contact-arrow{ width: 16px; color: var(--text-3); }
-.contact-note{ color: var(--text-3); font-size: .8rem; line-height: 1.7; margin: 20px 0 0; }
-@media (hover: hover){ .contact-choice:hover{ background: var(--surface-2); } }
-.feedback-hint{ margin: 16px 0; color: var(--text-3); font-size: var(--fs-small); }
-.feedback-send{ width: 100%; height: auto; min-height: 50px; padding: 12px; background: var(--accent); color: var(--accent-ink); font-size: 1rem; }
+@media (hover: hover){ .contact-choice:hover{ background: var(--surface-2); border-color: color-mix(in oklch, var(--tone) 45%, var(--line)); } }
+.contact-note{ display: flex; align-items: center; gap: 6px; color: var(--text-3); font-size: .8rem; line-height: 1.7; margin: 18px 0 0; }
+.contact-note .i, .feedback-hint .i{ width: 15px; height: 15px; color: #25d366; }
+.feedback-hint{ margin: 12px 0 16px; color: var(--text-3); font-size: var(--fs-small); }
+.feedback-send{ width: 100%; height: auto; min-height: 50px; padding: 12px; background: #1faa59; color: #fff; font-size: 1rem; }
+@media (hover: hover){ .feedback-send:hover{ background: #189a4f; } }
 body.feedback-open{ overflow: hidden; }
 body.feedback-open .main{ overflow: hidden; }
 
