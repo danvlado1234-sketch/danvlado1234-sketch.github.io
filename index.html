@@ -34,9 +34,9 @@
 <meta name="apple-mobile-web-app-title" content="שיעורי הרב">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <script>
-  // גרסת הקבצים — בכל עדכון של app.js / style.css / live.js / gen.js מחליפים את כל המופעים של 20261108b בקובץ הזה
+  // גרסת הקבצים — בכל עדכון של app.js / style.css / live.js / gen.js מחליפים את כל המופעים של 20261109a בקובץ הזה
   // (ה-SW שומר קבצים לפי הכתובת המלאה, אז גרסה חדשה = כתובת חדשה = הקובץ החדש מיד)
-  window.APP_V = '20261108b';
+  window.APP_V = '20261109a';
   // כרום שולח את הצעת ההתקנה מוקדם — שומרים אותה עד ש-app.js נטען (כפתור "התקנה")
   window.addEventListener('beforeinstallprompt', e => { e.preventDefault(); window.__bip = e; });
   // קישורים מהאתרים הקודמים (/shiurim-parasha/?parasha=נח, /Shiurim-mishnhyot/?m=ברכות&p=2, המייל) — לכתובת החדשה
@@ -57,7 +57,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Frank+Ruhl+Libre:wght@500;700;900&family=Rubik:wght@400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="style.css?v=20261108b">
+<link rel="stylesheet" href="style.css?v=20261109a">
 </head>
 <body>
 <div class="shell">
@@ -69,7 +69,7 @@
         <a href="#/" data-nav="home"><svg class="i"><use href="#i-home"/></svg>בית</a>
         <a href="#/search" data-nav="search"><svg class="i"><use href="#i-search"/></svg>חיפוש</a>
         <a href="#/library" data-nav="library"><svg class="i"><use href="#i-library"/></svg>הספרייה שלי</a>
-        <a href="https://wa.me/972552562033" data-contact target="_blank" rel="noopener noreferrer"><svg class="i"><use href="#i-message"/></svg>יצירת קשר</a>
+        <a href="https://wa.me/972552562033" data-contact target="_blank" rel="noopener noreferrer"><svg class="i"><use href="#i-whatsapp"/></svg>יצירת קשר</a>
       </nav>
     </div>
     <div class="side-lib">
@@ -174,7 +174,7 @@
   <a href="#/" data-nav="home"><svg class="i"><use href="#i-home"/></svg>בית</a>
   <a href="#/search" data-nav="search"><svg class="i"><use href="#i-search"/></svg>חיפוש</a>
   <a href="#/library" data-nav="library"><svg class="i"><use href="#i-library"/></svg>הספרייה</a>
-  <a href="https://wa.me/972552562033" data-contact target="_blank" rel="noopener noreferrer"><svg class="i"><use href="#i-message"/></svg>יצירת קשר</a>
+  <a href="https://wa.me/972552562033" data-contact target="_blank" rel="noopener noreferrer"><svg class="i"><use href="#i-whatsapp"/></svg>יצירת קשר</a>
 </nav>
 
 <!-- נגן מלא — אפל מיוזיק: כריכה, צבע מהתמונה, טקסט והבא בתור -->
@@ -234,6 +234,10 @@
   <button role="menuitem" data-m="feedback"><svg class="i"><use href="#i-message"/></svg>הארות והערות</button>
 </div>
 
+<a class="wa-float" href="https://wa.me/972552562033" data-contact target="_blank" rel="noopener noreferrer" aria-label="יצירת קשר עם דניאל בווטסאפ">
+  <svg class="i" aria-hidden="true"><use href="#i-whatsapp"/></svg><span class="wa-label" aria-hidden="true">לשיחה בווטסאפ</span>
+</a>
+
 <div class="feedback-layer" id="feedback" role="dialog" aria-modal="true" aria-labelledby="feedbackTitle" aria-describedby="feedbackContext" hidden>
   <section class="feedback-panel">
     <header class="feedback-head"><h2 id="feedbackTitle">הארות והערות</h2><button class="ib" id="feedbackClose" aria-label="סגירת חלונית ההערה"><svg class="i"><use href="#i-x"/></svg></button></header>
@@ -242,7 +246,7 @@
       <label class="feedback-field">סוג הפנייה<select id="feedbackType"><option>הארה על השיעור</option><option>טעות בסיכום</option><option>תקלה בהקלטה</option><option>אחר</option></select></label>
       <label class="feedback-field">מה תרצו לשתף?<textarea id="feedbackText" rows="5" maxlength="1500" required placeholder="כתבו כאן את ההארה, ההערה או פרטי התקלה"></textarea></label>
       <p class="feedback-hint">הפנייה מגיעה לדניאל, מנהל האתר. ההודעה תיפתח בווטסאפ ותישלח רק לאחר שתלחצו שם על שליחה.</p>
-      <a class="btn feedback-send" id="feedbackSend" href="https://wa.me/972552562033" target="_blank" rel="noopener noreferrer"><svg class="i"><use href="#i-message"/></svg>המשך לווטסאפ</a>
+      <a class="btn feedback-send" id="feedbackSend" href="https://wa.me/972552562033" target="_blank" rel="noopener noreferrer"><svg class="i"><use href="#i-whatsapp"/></svg>המשך לווטסאפ</a>
     </form>
   </section>
 </div>
@@ -251,6 +255,8 @@
 
 <svg width="0" height="0" style="position:absolute" aria-hidden="true">
   <defs>
+    <!-- Bootstrap Icons, MIT: licenses/bootstrap-icons.txt -->
+    <symbol id="i-whatsapp" viewBox="0 0 16 16"><path fill="currentColor" stroke="none" d="M13.601 2.326A7.85 7.85 0 0 0 7.994 0C3.627 0 .068 3.558.064 7.926c0 1.399.366 2.76 1.057 3.965L0 16l4.204-1.102a7.9 7.9 0 0 0 3.79.965h.004c4.368 0 7.926-3.558 7.93-7.93A7.9 7.9 0 0 0 13.6 2.326zM7.994 14.521a6.6 6.6 0 0 1-3.356-.92l-.24-.144-2.494.654.666-2.433-.156-.251a6.56 6.56 0 0 1-1.007-3.505c0-3.626 2.957-6.584 6.591-6.584a6.56 6.56 0 0 1 4.66 1.931 6.56 6.56 0 0 1 1.928 4.66c-.004 3.639-2.961 6.592-6.592 6.592m3.615-4.934c-.197-.099-1.17-.578-1.353-.646-.182-.065-.315-.099-.445.099-.133.197-.513.646-.627.775-.114.133-.232.148-.43.05-.197-.1-.836-.308-1.592-.985-.59-.525-.985-1.175-1.103-1.372-.114-.198-.011-.304.088-.403.087-.088.197-.232.296-.346.1-.114.133-.198.198-.33.065-.134.034-.248-.015-.347-.05-.099-.445-1.076-.612-1.47-.16-.389-.323-.335-.445-.34-.114-.007-.247-.007-.38-.007a.73.73 0 0 0-.529.247c-.182.198-.691.677-.691 1.654s.71 1.916.81 2.049c.098.133 1.394 2.132 3.383 2.992.47.205.84.326 1.129.418.475.152.904.129 1.246.08.38-.058 1.171-.48 1.338-.943.164-.464.164-.86.114-.943-.049-.084-.182-.133-.38-.232"/></symbol>
     <symbol id="i-play" viewBox="0 0 24 24"><path d="M7 4.5v15a1 1 0 0 0 1.5.86l12.4-7.5a1 1 0 0 0 0-1.72L8.5 3.64A1 1 0 0 0 7 4.5Z" fill="currentColor" stroke="none"/></symbol>
     <symbol id="i-pause" viewBox="0 0 24 24"><rect x="6" y="4" width="4.2" height="16" rx="1.2" fill="currentColor" stroke="none"/><rect x="13.8" y="4" width="4.2" height="16" rx="1.2" fill="currentColor" stroke="none"/></symbol>
     <symbol id="i-home" viewBox="0 0 24 24"><path d="M15 21v-8a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v8"/><path d="M3 10a2 2 0 0 1 .709-1.528l7-5.999a2 2 0 0 1 2.582 0l7 5.999A2 2 0 0 1 21 10v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></symbol>
@@ -289,8 +295,8 @@
   </defs>
 </svg>
 
-<script src="gen.js?v=20261108b" onerror="window.GEN={}"></script>
-<script src="live.js?v=20261108b"></script>
+<script src="gen.js?v=20261109a" onerror="window.GEN={}"></script>
+<script src="live.js?v=20261109a"></script>
 <script>if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js').catch(() => {});</script>
 </body>
 </html>
