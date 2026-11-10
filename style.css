@@ -573,11 +573,17 @@ input[type=range]::-moz-range-thumb{ width: 13px; height: 13px; border: 0; borde
 @media (hover: hover){ .contact-trigger:hover{ background: oklch(1 0 0 / 0.14); } }
 @media (min-width: 1024px){ .contact-trigger{ width: auto; padding: 0 12px; } .contact-trigger span{ display: inline; } }
 @media (max-width: 1023px){ .contact-trigger{ order: 2; } }
-/* טלפון צר כשכפתור "התקנה" מוצג: אין מקום בשורת השם — הסמל עובר לסוף שורת המסננים (המסננים נגללים לפניו) */
+/* טלפון צר (עד 479): בלי חיתוך —
+   חמשת המסננים נכנסים בשורה אחת (ריווח קטן יותר), והסמל תמיד בשורה העליונה.
+   כשמוצג גם "התקנה" — השם קטן מעט והרווחים 6px, כדי שהשם, יצירת קשר, התקנה ויום/לילה ייכנסו יחד גם ברוחב 360 */
 @media (max-width: 479px){
-  .top:has(> .install-btn:not([hidden])) .contact-trigger{ order: 4; margin-inline-start: 0; }
-  .top:has(> .install-btn:not([hidden])) .contact-trigger ~ .install-btn{ margin-inline-start: auto; }
-  .top:has(> .install-btn:not([hidden])) .brand-mob + .top-chips{ flex: 1 1 calc(100% - 52px); width: auto; min-width: 0; }
+  #top .top-chips{ gap: 6px; }
+  #top .top-chips .chip{ padding: 0 10px; }
+  #top:has(> .install-btn:not([hidden])){ column-gap: 6px; }
+  #top:has(> .install-btn:not([hidden])) .contact-trigger ~ .install-btn{ margin-inline-start: 0; }
+  #top:has(> .install-btn:not([hidden])) .install-btn{ padding: 0 7px; }
+  #top:has(> .install-btn:not([hidden])) .brand-word{ font-size: 1.28rem; }
+  #top:has(> .install-btn:not([hidden])) .brand-sub{ font-size: .92rem; }
 }
 :root[data-theme="day"] .contact-trigger{ background: oklch(0 0 0 / 0.06); }
 :root[data-theme="day"] .contact-trigger .i{ color: #128c4a; }
