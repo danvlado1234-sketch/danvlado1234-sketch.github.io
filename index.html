@@ -36,7 +36,7 @@
 <script>
   // גרסת הקבצים — בכל עדכון של app.js / style.css / live.js / gen.js מחליפים את כל המופעים של 20261110a בקובץ הזה
   // (ה-SW שומר קבצים לפי הכתובת המלאה, אז גרסה חדשה = כתובת חדשה = הקובץ החדש מיד)
-  window.APP_V = '20261110a';
+  window.APP_V = '20261112b';
   // כרום שולח את הצעת ההתקנה מוקדם — שומרים אותה עד ש-app.js נטען (כפתור "התקנה")
   window.addEventListener('beforeinstallprompt', e => { e.preventDefault(); window.__bip = e; });
   // קישורים מהאתרים הקודמים (/shiurim-parasha/?parasha=נח, /Shiurim-mishnhyot/?m=ברכות&p=2, המייל) — לכתובת החדשה
@@ -57,7 +57,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Frank+Ruhl+Libre:wght@500;700;900&family=Rubik:wght@400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="style.css?v=20261110a">
+<link rel="stylesheet" href="style.css?v=20261112b">
 </head>
 <body>
 <div class="shell">
@@ -94,7 +94,10 @@
         <button class="chip" data-f="i">עיון</button>
       </div>
       <button class="contact-trigger" id="contactOpen" aria-haspopup="dialog" aria-controls="feedback" aria-label="יצירת קשר" title="יצירת קשר">
-        <svg class="i" aria-hidden="true"><use href="#i-whatsapp"/></svg><span>יצירת קשר</span>
+        <svg class="i" aria-hidden="true"><use href="#i-message"/></svg><span>יצירת קשר</span>
+      </button>
+      <button class="contact-trigger admin-trigger" id="adminOpen" type="button" hidden aria-haspopup="dialog" aria-controls="adminLayer" aria-label="ניהול תגובות ופניות" title="ניהול תגובות ופניות">
+        <svg class="i" aria-hidden="true"><use href="#i-check"/></svg><span>ניהול</span><b class="cmt-badge" id="adminPendingBadge" hidden>0</b>
       </button>
       <button class="theme-btn install-btn" id="installBtn" hidden aria-label="התקנת האפליקציה"><svg class="i"><use href="#i-download"/></svg><span>התקנה</span></button>
       <button class="theme-btn" id="themeBtn" aria-pressed="false" aria-label="מצב יום / לילה"><svg class="i"><use href="#i-moon"/></svg><span>לילה</span></button>
@@ -129,7 +132,7 @@
         <button class="act" data-act="download"><svg class="i"><use href="#i-download"/></svg><span>הורדה</span></button>
         <button class="act" data-act="loop" data-loop aria-pressed="false"><svg class="i"><use href="#i-repeat1"/></svg><span>חזרה</span></button>
         <button class="act" data-act="share"><svg class="i"><use href="#i-share"/></svg><span>שיתוף</span></button>
-        <button class="act" data-feedback aria-label="הארות והערות על השיעור"><svg class="i"><use href="#i-message"/></svg><span>הערה</span></button>
+        <button class="act" data-feedback aria-label="תגובות על השיעור"><svg class="i"><use href="#i-message"/></svg><span>תגובות <b class="cmt-inline-badge" data-now-cmt-badge hidden>0</b></span></button>
       </div>
       <section class="dock-card" id="dockTextCard">
         <header><h4 id="dockTextTitle">טקסט המשנה</h4><button data-full="text">לימוד עם טקסט</button></header>
@@ -213,7 +216,7 @@
           <button class="tool" id="npQueueBtn" data-pane="queue" aria-pressed="false"><svg class="i"><use href="#i-queue"/></svg><span>הבא בתור</span></button>
           <a class="tool" id="npSefaria" target="_blank" rel="noopener"><svg class="i"><use href="#i-book"/></svg><span id="npSefariaLbl">ספריא</span></a>
           <button class="tool" id="npDownload"><svg class="i"><use href="#i-download"/></svg><span id="npDlLbl">הורדה</span></button>
-          <button class="tool" data-feedback aria-label="הארות והערות על השיעור"><svg class="i"><use href="#i-message"/></svg><span>הערה</span></button>
+          <button class="tool" data-feedback aria-label="תגובות על השיעור"><svg class="i"><use href="#i-message"/></svg><span>תגובות <b class="cmt-inline-badge" data-now-cmt-badge hidden>0</b></span></button>
         </div>
       </div>
       <aside class="np-panel" aria-label="טקסט והבא בתור">
@@ -232,26 +235,126 @@
   <button role="menuitem" data-m="next"><svg class="i"><use href="#i-play-next"/></svg>נגן הבא</button>
   <button role="menuitem" data-m="queue"><svg class="i"><use href="#i-queue"/></svg>הוסף לתור</button>
   <button role="menuitem" data-m="fav"><svg class="i"><use href="#i-plus"/></svg>שמירה ב"השמורים שלי"</button>
-  <button role="menuitem" data-m="feedback"><svg class="i"><use href="#i-message"/></svg>הארות והערות</button>
+  <button role="menuitem" data-m="feedback"><svg class="i"><use href="#i-message"/></svg>תגובות על השיעור</button>
 </div>
 
 <div class="feedback-layer" id="feedback" role="dialog" aria-modal="true" aria-labelledby="feedbackTitle" aria-describedby="feedbackContext" hidden>
   <section class="feedback-panel">
-    <header class="feedback-head"><h2 id="feedbackTitle">הארות והערות</h2><button class="ib" id="feedbackClose" aria-label="סגירת חלונית ההערה"><svg class="i"><use href="#i-x"/></svg></button></header>
-    <p class="feedback-context" id="feedbackContext"></p>
-    <div class="contact-choices" id="contactChoices" hidden>
-      <button class="contact-choice" data-contact-type="note" style="--tone: var(--accent)"><span class="contact-choice-icon"><svg class="i"><use href="#i-bulb"/></svg></span><span><b>הארות והערות</b><small>מחשבה, שאלה או תיקון על שיעור</small></span><svg class="i contact-arrow"><use href="#i-next"/></svg></button>
-      <button class="contact-choice" data-contact-type="problem" style="--tone: oklch(0.68 0.16 30)"><span class="contact-choice-icon"><svg class="i"><use href="#i-alert"/></svg></span><span><b>דיווח על תקלה</b><small>בעיה בהאזנה, טעות בסיכום או משהו באתר שלא עובד</small></span><svg class="i contact-arrow"><use href="#i-next"/></svg></button>
-      <button class="contact-choice" data-contact-type="general" style="--tone: oklch(0.7 0.15 150)"><span class="contact-choice-icon"><svg class="i"><use href="#i-message"/></svg></span><span><b>פנייה כללית</b><small>כל דבר אחר שתרצו לשתף</small></span><svg class="i contact-arrow"><use href="#i-next"/></svg></button>
-      <p class="contact-note"><svg class="i" aria-hidden="true"><use href="#i-whatsapp"/></svg>ההודעה תיפתח בווטסאפ, ותישלח רק כשתלחצו שם על שליחה.</p>
+    <div class="sheet-grab" aria-hidden="true"><i></i></div>
+    <header class="feedback-head"><div class="sheet-head-title"><span class="comments-kicker">פנייה לצוות האתר</span><h2 id="feedbackTitle">יצירת קשר</h2></div><button class="ib" id="feedbackClose" type="button" aria-label="סגירת חלונית יצירת קשר"><svg class="i"><use href="#i-x"/></svg></button></header>
+    <p class="feedback-context" id="feedbackContext">פנייה פרטית לצוות האתר — אינה מתפרסמת באתר.</p>
+    <div class="contact-choices" id="contactChoices">
+      <button class="contact-choice" type="button" data-contact-type="bug" style="--tone: oklch(0.68 0.16 30)"><span class="contact-choice-icon"><svg class="i"><use href="#i-alert"/></svg></span><span><b>דיווח על תקלה</b><small>בעיה בהאזנה, טעות בסיכום או משהו באתר שלא עובד</small></span><svg class="i contact-arrow"><use href="#i-next"/></svg></button>
+      <button class="contact-choice" type="button" data-contact-type="improvement" style="--tone: var(--accent)"><span class="contact-choice-icon"><svg class="i"><use href="#i-bulb"/></svg></span><span><b>הצעה לשיפור</b><small>רעיון, בקשה או שיפור שיקל על הלימוד וההאזנה</small></span><svg class="i contact-arrow"><use href="#i-next"/></svg></button>
+      <button class="contact-choice" type="button" data-contact-type="whatsapp" style="--tone: oklch(0.7 0.15 150)"><span class="contact-choice-icon"><svg class="i"><use href="#i-whatsapp"/></svg></span><span><b>פנייה בווטסאפ</b><small>מעבר לוואטסאפ לשליחת הודעה ישירה לדניאל</small></span><svg class="i contact-arrow"><use href="#i-next"/></svg></button>
+      <p class="contact-note"><svg class="i" aria-hidden="true"><use href="#i-info"/></svg>דיווחי תקלה והצעות לשיפור נשמרים במערכת הפניות הפרטית של האתר.</p>
     </div>
-    <form id="feedbackForm" hidden>
+    <form id="feedbackForm" hidden novalidate>
       <button class="feedback-back" id="feedbackBack" type="button"><svg class="i" aria-hidden="true"><use href="#i-next"/></svg>סוג פנייה אחר</button>
-      <button class="feedback-attach" id="feedbackAttach" type="button" aria-pressed="false" hidden></button>
-      <label class="feedback-field"><textarea id="feedbackText" rows="5" maxlength="1500" required aria-label="תוכן הפנייה"></textarea></label>
-      <p class="feedback-hint">ההודעה תיפתח בווטסאפ, ותישלח רק כשתלחצו שם על שליחה.</p>
-      <a class="btn feedback-send" id="feedbackSend" href="https://wa.me/972552562033" target="_blank" rel="noopener noreferrer"><svg class="i"><use href="#i-whatsapp"/></svg>המשך לווטסאפ</a>
+      <div class="feedback-grid">
+        <label class="feedback-input"><span>שם (רשות)</span><input id="feedbackSender" type="text" maxlength="60" dir="auto" placeholder="איך לפנות אליכם?"></label>
+        <label class="feedback-input"><span>טלפון או אימייל לחזרה (רשות)</span><input id="feedbackContact" type="text" maxlength="120" dir="auto" placeholder="רק אם תרצו שנחזור אליכם"></label>
+      </div>
+      <label class="feedback-field"><span>תוכן הפנייה *</span><textarea id="feedbackText" rows="5" maxlength="2000" required dir="auto" aria-label="תוכן הפנייה"></textarea></label>
+      <p class="feedback-error" id="feedbackError" role="alert" hidden></p>
+      <p class="feedback-hint" id="feedbackHint">הפנייה נשמרת באופן פרטי וגלויה רק למנהלי האתר.</p>
+      <button class="btn feedback-submit-btn" id="feedbackSubmitBtn" type="submit"><svg class="i"><use href="#i-check"/></svg><span>שליחת פנייה</span></button>
     </form>
+    <div id="feedbackWhatsappView" hidden>
+      <button class="feedback-back" id="feedbackWhatsappBack" type="button"><svg class="i" aria-hidden="true"><use href="#i-next"/></svg>סוג פנייה אחר</button>
+      <label class="feedback-field"><span>הכנת הודעה לוואטסאפ (רשות)</span><textarea id="feedbackWhatsappText" rows="4" maxlength="1500" dir="auto" placeholder="אפשר לכתוב כאן את ההודעה מראש או להמשיך ישירות לוואטסאפ"></textarea></label>
+      <p class="feedback-hint"><svg class="i" aria-hidden="true"><use href="#i-whatsapp"/></svg>לחיצה תפתח את וואטסאפ בחלון חדש. ההודעה תישלח רק לאחר שתלחצו שם על שליחה.</p>
+      <a class="btn feedback-send" id="feedbackSend" href="https://wa.me/972552562033" target="_blank" rel="noopener noreferrer"><svg class="i"><use href="#i-whatsapp"/></svg>המשך לווטסאפ</a>
+    </div>
+    <div class="feedback-success" id="feedbackSuccess" hidden>
+      <div class="feedback-success-icon"><svg class="i"><use href="#i-check"/></svg></div>
+      <h3>הפנייה נשמרה במערכת</h3>
+      <p>תודה! הפנייה התקבלה ותטופל בידי צוות האתר.</p>
+      <div class="feedback-ref-box"><span>מספר אסמכתא למעקב:</span><code id="feedbackRefCode" dir="ltr">REF-0000</code></div>
+      <div class="feedback-success-acts">
+        <button class="btn btn-ghost" id="feedbackNewBtn" type="button">פנייה נוספת</button>
+        <button class="btn feedback-submit-btn" id="feedbackDoneBtn" type="button">סגירה</button>
+      </div>
+    </div>
+  </section>
+</div>
+
+<!-- שכבת תגובות ציבוריות לשיעור (W5) -->
+<div class="feedback-layer comments-layer" id="commentsLayer" role="dialog" aria-modal="true" aria-labelledby="commentsTitle" hidden>
+  <section class="feedback-panel comments-panel">
+    <div class="sheet-grab" aria-hidden="true"><i></i></div>
+    <header class="feedback-head comments-head">
+      <div class="comments-head-main">
+        <img class="comments-art" id="commentsArt" src="" alt="" hidden>
+        <div class="comments-head-txt">
+          <span class="comments-kicker" id="commentsKicker">תגובות על השיעור</span>
+          <h2 id="commentsTitle">תגובות</h2>
+        </div>
+      </div>
+      <button class="ib" id="commentsClose" type="button" aria-label="סגירת חלונית התגובות"><svg class="i"><use href="#i-x"/></svg></button>
+    </header>
+    <div class="comments-bar">
+      <span class="comments-count-pill" id="commentsCountLabel">טוען תגובות…</span>
+      <button class="btn-compose-toggle" id="commentsWriteToggle" type="button"><svg class="i"><use href="#i-plus"/></svg><span>הוספת תגובה או שאלה</span></button>
+    </div>
+    <form class="comments-form" id="commentsForm" hidden novalidate>
+      <div class="comments-reply-banner" id="commentsReplyBanner" hidden>
+        <span id="commentsReplyTarget">מענה לתגובה</span>
+        <button type="button" id="commentsCancelReply" aria-label="ביטול מענה">ביטול</button>
+      </div>
+      <div class="feedback-grid">
+        <label class="feedback-input"><span>שם להצגה *</span><input id="commentAuthor" type="text" maxlength="60" required dir="auto" placeholder="השם שיופיע לצד התגובה"></label>
+        <label class="feedback-input"><span>טלפון / אימייל (רשות, לא יפורסם)</span><input id="commentContact" type="text" maxlength="120" dir="auto" placeholder="לצוות האתר בלבד"></label>
+      </div>
+      <label class="feedback-field"><span>תוכן התגובה או השאלה *</span><textarea id="commentBody" rows="4" maxlength="1500" required dir="auto" placeholder="שאלה, הארה או נקודה למחשבה על השיעור…"></textarea></label>
+      <p class="feedback-error" id="commentError" role="alert" hidden></p>
+      <p class="feedback-hint">התגובה נשמרת ומפורסמת באתר לאחר אישור קצר, כדי לשמור על שיח תורני מכובד.</p>
+      <div class="comments-form-acts">
+        <button class="btn btn-ghost" id="commentFormCancel" type="button">ביטול</button>
+        <button class="btn feedback-submit-btn" id="commentSubmitBtn" type="submit"><svg class="i"><use href="#i-check"/></svg><span>שליחת תגובה</span></button>
+      </div>
+    </form>
+    <div class="comments-notice" id="commentsNotice" role="status" hidden></div>
+    <div class="comments-list" id="commentsList" aria-live="polite"></div>
+  </section>
+</div>
+
+<!-- מסך ניהול תגובות ופניות (W7) -->
+<div class="feedback-layer admin-layer" id="adminLayer" role="dialog" aria-modal="true" aria-labelledby="adminTitle" hidden>
+  <section class="feedback-panel admin-panel">
+    <div class="sheet-grab" aria-hidden="true"><i></i></div>
+    <header class="feedback-head admin-head">
+      <div>
+        <span class="comments-kicker">ממשק ניהול</span>
+        <h2 id="adminTitle">ניהול תגובות ופניות</h2>
+      </div>
+      <div class="admin-head-acts">
+        <select id="adminRoleSelect" class="admin-select" aria-label="זהות משיב">
+          <option value="admin">מנהל האתר (דניאל)</option>
+          <option value="rabbi">הרב ולדומירסקי</option>
+        </select>
+        <button class="btn btn-ghost btn-sm" id="adminExportBtn" type="button"><svg class="i"><use href="#i-download"/></svg><span>ייצוא גיבוי</span></button>
+        <button class="ib" id="adminClose" type="button" aria-label="סגירת מסך ניהול"><svg class="i"><use href="#i-x"/></svg></button>
+      </div>
+    </header>
+    <div class="admin-tabs" role="tablist">
+      <button class="chip is-on" role="tab" data-admin-tab="comments" aria-selected="true">תגובות על שיעורים <b id="adminCommentsCount">0</b></button>
+      <button class="chip" role="tab" data-admin-tab="tickets" aria-selected="false">פניות פרטיות <b id="adminTicketsCount">0</b></button>
+    </div>
+    <div class="admin-filters" id="adminCommentFilters">
+      <button class="chip is-on" data-cmt-filter="pending">ממתינות לאישור</button>
+      <button class="chip" data-cmt-filter="reported" id="adminReportedFilter">מדווחות <b id="adminReportedCount" hidden>0</b></button>
+      <button class="chip" data-cmt-filter="published">מפורסמות</button>
+      <button class="chip" data-cmt-filter="hidden">מוסתרות</button>
+      <button class="chip" data-cmt-filter="">הכל</button>
+    </div>
+    <div class="admin-filters" id="adminTicketFilters" hidden>
+      <button class="chip is-on" data-tkt-filter="new">חדשות</button>
+      <button class="chip" data-tkt-filter="in_progress">בטיפול</button>
+      <button class="chip" data-tkt-filter="resolved">טופלו</button>
+      <button class="chip" data-tkt-filter="">הכל</button>
+    </div>
+    <div class="admin-body" id="adminBody"></div>
   </section>
 </div>
 
@@ -298,11 +401,15 @@
     <symbol id="i-x" viewBox="0 0 24 24"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></symbol>
     <symbol id="i-edit" viewBox="0 0 24 24"><path d="M21.17 6.81a1 1 0 0 0-3.98-3.98L3.84 16.17a2 2 0 0 0-.5.83l-1.32 4.35a.5.5 0 0 0 .62.62l4.35-1.32a2 2 0 0 0 .83-.5z"/><path d="m15 5 4 4"/></symbol>
     <symbol id="i-trash" viewBox="0 0 24 24"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><path d="M10 11v6"/><path d="M14 11v6"/></symbol>
+    <symbol id="i-reply" viewBox="0 0 24 24"><path d="M9 17 4 12l5-5"/><path d="M20 18v-2a4 4 0 0 0-4-4H4"/></symbol>
+    <symbol id="i-flag" viewBox="0 0 24 24"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><path d="M4 22v-7"/></symbol>
   </defs>
 </svg>
 
-<script src="gen.js?v=20261110a" onerror="window.GEN={}"></script>
-<script src="live.js?v=20261110a"></script>
-<script>if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js').catch(() => {});</script>
+<script src="gen.js?v=20261112b" onerror="window.GEN={}"></script>
+<script src="community-config.js?v=20261112b"></script>
+<script src="community.js?v=20261112b"></script>
+<script src="live.js?v=20261112b"></script>
+<script>if (!location.pathname.startsWith('/manage') && 'serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js').catch(() => {});</script>
 </body>
 </html>

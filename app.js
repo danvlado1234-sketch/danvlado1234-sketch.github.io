@@ -427,7 +427,8 @@
   // במצב "בניית רשימה" — במקום ⋮ מופיע ＋ (✓ כשכבר ברשימה)
   const addBtn = it => { const on = !!building && building.ids.includes(it.id); return `<button class="addb${on ? ' is-on' : ''}" data-addl="${esc(it.id)}" aria-pressed="${on}" aria-label="${on ? 'הסרה מהרשימה' : 'הוספה לרשימה'}: ${esc(fullName(it))}">${icon(on ? 'check' : 'plus')}</button>`; };
   const lessonRow = it => `<div class="res res-l"><img src="${IMG(artOf(it), 120, 120)}" alt=""><div><b>${esc(it.kind === 'm' ? fullName(it) : (it.iyun || seriesName(it)))}</b><span>${esc(it.kind === 'm' ? `מסכת ${it.masechet} · ${rel(it.date)}` : `${seriesName(it)} · ${it.year}${it.tag ? ' · ' + it.tag : ''}`)}</span></div>${addBtn(it)}</div>`;
-  const moreBtn = it => building ? addBtn(it) : `<button class="more" data-more="${esc(it.id)}" aria-label="אפשרויות ל${esc(fullName(it))}" title="נגן הבא · הוסף לתור · שמירה לרשימה · הארות והערות">${icon('more')}</button>`;
+  const cmtBtn = it => `<button class="ep-cmt" type="button" data-comments="${esc(it.id)}" aria-label="תגובות ל${esc(fullName(it))}" title="תגובות על השיעור">${icon('message')}<span class="ep-cmt-n" data-cmt-badge="${esc(it.id)}" hidden>0</span></button>`;
+  const moreBtn = it => building ? addBtn(it) : `<div class="ep-acts">${cmtBtn(it)}<button class="more" data-more="${esc(it.id)}" aria-label="אפשרויות ל${esc(fullName(it))}" title="נגן הבא · הוסף לתור · שמירה לרשימה · תגובות על השיעור">${icon('more')}</button></div>`;
 
   // iy — דף העיון של המועד: רק שיעורי העיון שלו (#/iyun/<מועד>)
   function groupPage(title, iy) {
@@ -556,6 +557,7 @@
     else if (a === 'search') { html = searchPage(); nav = 'search'; }
     else if (a === 'library') { html = libraryPage(); nav = 'library'; }
     else if (a === 'l') { html = listPage(b); nav = 'library'; }
+    else if (a === 'admin') { html = home(); flat = false; nav = 'home'; setTimeout(() => window.ShiurimCommunity?.openAdmin(), 0); }
     else html = notFound();
     const key = bad ? '' : `${a}/${b}`, keep = a === 'm' && key === lastKey; lastKey = key;
     const sc = matchMedia('(min-width:1024px)').matches ? $('#main') : document.scrollingElement, y = sc.scrollTop, sx = $('.seasons')?.scrollLeft;
@@ -568,6 +570,7 @@
     if (keep && sx != null && $('.seasons')) $('.seasons').scrollLeft = sx;
     onScroll();
     if (typeof syncPlayBtns === 'function' && nowId) syncPlayBtns();
+    window.ShiurimCommunity?.onRoute();
   }
   // רקע לפי הדף (מצב יום): הבית — נוף/שמיים; כל סדרה — מהכריכה שלה, מטושטש (כמו ספוטיפיי/אפל מיוזיק)
   const pageBg = document.createElement('div'); pageBg.className = 'pagebg'; pageBg.setAttribute('aria-hidden', 'true'); document.body.prepend(pageBg);
@@ -704,6 +707,7 @@
       navigator.mediaSession.setActionHandler('nexttrack', () => next());
       navigator.mediaSession.setActionHandler('previoustrack', () => prev());
     }
+    window.ShiurimCommunity?.onNowChange(it.id);
   }
   function next(auto) {
     let id = null, from = null;
@@ -924,9 +928,15 @@
   }, true);
   document.addEventListener('input', e => { if (e.target.id === 'bName' && building) { building.name = e.target.value; const b = $('.buildbar b'); if (b) b.textContent = building.name || 'רשימה חדשה'; } });
 
-  // תפריט "עוד" (⋮) לכל שיעור
+  // תפריט "עוד" (⋮) וכפתור תגובות לכל שיעור
   const menu = $('#menu'); let menuFor = null, menuAnchor = null;
   document.addEventListener('click', e => {
+    const cm = e.target.closest('[data-comments]');
+    if (cm) {
+      e.preventDefault(); e.stopPropagation();
+      window.ShiurimCommunity?.openComments(cm.dataset.comments || nowId, cm);
+      return;
+    }
     const b = e.target.closest('[data-more]');
     if (b) {
       e.preventDefault(); e.stopPropagation();
@@ -938,108 +948,13 @@
       return;
     }
     const a = e.target.closest('#menu [data-m]');
-    if (a) { const id = menuFor; menu.hidden = true; e.stopPropagation(); ({ next: playNext, queue: addToQueue, fav: saveToFav, feedback: id => openContact(id, menuAnchor) })[a.dataset.m](id); return; }
+    if (a) { const id = menuFor; menu.hidden = true; e.stopPropagation(); ({ next: playNext, queue: addToQueue, fav: saveToFav, feedback: id => window.ShiurimCommunity?.openComments(id, menuAnchor) })[a.dataset.m](id); return; }
     if (!menu.hidden && !e.target.closest('#menu')) menu.hidden = true;
   }, true);
 
-  // קשר עם מנהל האתר: הכנת הודעה בלבד; השליחה נעשית בידי הגולש בווטסאפ.
-  // זרימה אחת לכל הכניסות: בוחרים סוג פנייה (פעם אחת) → כותבים → ממשיכים לווטסאפ.
-  // ההקשר לפי הדף (דניאל 9.11): הכפתור בכל הדפים; בדף פרק/פרשה/עיון — ההודעה מתייחסת לדף, בבית ובשאר — לשום שיעור.
-  // כניסה מ-⋮ או מהנגן — לשיעור הזה בדיוק. השיעור שמתנגן לא מצורף בשקט: הצעה גלויה שאפשר להדליק/לכבות
-  // (דלוקה מראש רק כשהוא שייך לדף שבו נמצאים).
-  const CONTACT_PHONE = '972552562033', SITE = 'https://danvlado1234-sketch.github.io/';
-  const whatsappLink = text => `https://wa.me/${CONTACT_PHONE}?text=${encodeURIComponent(text)}`;
-  const CONTACT_TYPES = {
-    note:    { title: 'הארות והערות', open: 'יש לי הארה על שיעור באתר שיעורי הרב.', ph: 'מחשבה, שאלה או תיקון על השיעור' },
-    problem: { title: 'דיווח על תקלה', open: 'רציתי לדווח על תקלה באתר שיעורי הרב.', ph: 'מה קרה? למשל: ההקלטה נעצרת, טעות בסיכום, כפתור שלא עובד' },
-    general: { title: 'פנייה כללית', open: 'פנייה מאתר שיעורי הרב.', ph: 'כתבו כאן את הפנייה' },
-  };
-  const feedback = $('#feedback'), feedbackForm = $('#feedbackForm'), feedbackText = $('#feedbackText');
-  const contactChoices = $('#contactChoices');
-  const feedbackAttach = $('#feedbackAttach');
-  let feedbackFrom = null, feedbackPage = null, feedbackKind = null, feedbackReturn = null, attachPlaying = false;
-  const DEFAULT_CTX = 'הפנייה מגיעה לדניאל, מנהל האתר.';
-  // הדף שבו נמצאים עכשיו: שם להצגה + האם שיעור שייך אליו. null = דף בלי שיעור מסוים (בית, חיפוש, ספרייה…)
-  function pageContext() {
-    let a, b, c;
-    try { [, a, b, c] = location.hash.split('/').map(decodeURIComponent); } catch { return null; }
-    if (a === 'm' && masechet[b]) return c
-      ? { label: `מסכת ${b} פרק ${heb(+c)}`, has: it => it.kind === 'm' && it.masechet === b && String(it.perek) === c }
-      : { label: `מסכת ${b}`, has: it => it.kind === 'm' && it.masechet === b };
-    if (a === 'p' && groups[b]) return { label: groups[b].moed ? (MOED_NAME[b] || b) : `פרשת ${b}`, has: it => it.kind !== 'm' && !it.iyun && it.title === b };
-    if (a === 'iyun' && b && iyGroups[b]) return { label: `עיון — ${MOED_NAME[b] || b}`, has: it => !!it.iyun && it.title === b };
-    return null;
-  }
-  const ctxText = () => byId[feedbackFrom] ? `על השיעור: ${fullName(byId[feedbackFrom])}` : feedbackPage ? `מתוך: ${feedbackPage.label}` : DEFAULT_CTX;
-  function showFeedbackLayer() { feedback.hidden = false; document.body.classList.add('feedback-open'); }
-  function showContactChoices() {
-    contactChoices.hidden = false; feedbackForm.hidden = true;
-    $('#feedbackTitle').textContent = 'איך אפשר לעזור?';
-    $('#feedbackContext').textContent = ctxText();
-    showFeedbackLayer();
-    $('[data-contact-type]').focus();
-  }
-  // from = שיעור שממנו נכנסו (⋮ / נגן) או null מהכותרת; trigger = לאן מחזירים את הפוקוס בסגירה
-  function openContact(from, trigger) {
-    const page = from ? null : pageContext();
-    if ((from || null) !== feedbackFrom || page?.label !== feedbackPage?.label) { feedbackForm.reset(); feedbackKind = null; }
-    feedbackFrom = from || null; feedbackPage = page; feedbackReturn = trigger || document.activeElement;
-    showContactChoices();
-  }
-  function renderAttach() {
-    const it = byId[nowId];
-    feedbackAttach.hidden = !it || !!feedbackFrom || feedbackKind === 'general';
-    if (feedbackAttach.hidden) return;
-    feedbackAttach.setAttribute('aria-pressed', attachPlaying);
-    feedbackAttach.innerHTML = `${icon(attachPlaying ? 'check' : 'plus')}<span>${attachPlaying ? 'מצורף השיעור שמתנגן' : 'לצרף את השיעור שמתנגן'}: <b>${esc(fullName(it))}</b></span>`;
-  }
-  feedbackAttach.addEventListener('click', () => { attachPlaying = !attachPlaying; renderAttach(); });
-  function openForm(kind) {
-    const t = CONTACT_TYPES[kind];
-    if (kind !== feedbackKind) feedbackText.value = '';
-    feedbackKind = kind;
-    const playing = byId[nowId];
-    attachPlaying = !!(playing && feedbackPage?.has(playing));
-    contactChoices.hidden = true; feedbackForm.hidden = false;
-    $('#feedbackTitle').textContent = t.title;
-    $('#feedbackContext').textContent = ctxText();
-    renderAttach();
-    feedbackText.placeholder = t.ph; feedbackText.setCustomValidity('');
-    showFeedbackLayer();
-    feedbackText.focus();
-  }
-  $('#contactOpen').addEventListener('click', e => openContact(null, e.currentTarget));
-  $('#feedbackBack').addEventListener('click', showContactChoices);
-  $$('[data-contact-type]').forEach(b => b.addEventListener('click', () => openForm(b.dataset.contactType)));
-  function closeFeedback() {
-    feedback.hidden = true; document.body.classList.remove('feedback-open');
-    if (feedbackReturn && feedbackReturn.isConnected) feedbackReturn.focus();
-  }
-  $('#feedbackClose').addEventListener('click', closeFeedback);
-  feedback.addEventListener('click', e => { if (e.target === feedback) closeFeedback(); });
-  feedback.addEventListener('keydown', e => {
-    if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); closeFeedback(); }
-    if (e.key !== 'Tab') return;
-    const controls = [...feedback.querySelectorAll('button, textarea, a[href]')].filter(el => el.getClientRects().length), first = controls[0], last = controls[controls.length - 1];
-    if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
-    else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
-  });
-  feedbackForm.addEventListener('submit', e => e.preventDefault());
-  feedbackText.addEventListener('input', () => feedbackText.setCustomValidity(''));
-  $('#feedbackSend').addEventListener('click', e => {
-    feedbackText.setCustomValidity(feedbackText.value.trim() ? '' : 'נא לכתוב את תוכן הפנייה.');
-    if (!feedbackForm.reportValidity()) { e.preventDefault(); return; }
-    const it = byId[feedbackFrom] || (attachPlaying && !feedbackAttach.hidden && byId[nowId]) || null;
-    const lines = [];
-    if (it) lines.push(`שיעור: ${fullName(it)}`, `קישור: ${SITE}${seriesHref(it)}`);
-    else if (feedbackPage) lines.push(`מתוך: ${feedbackPage.label}`, `קישור: ${SITE}${location.hash}`);
-    else lines.push(`עמוד באתר: ${SITE}${location.hash || '#/'}`);
-    const context = lines.join('\n');
-    e.currentTarget.href = whatsappLink(`שלום דניאל, ${CONTACT_TYPES[feedbackKind].open}\n\n${feedbackText.value.trim()}\n\n${context}`);
-    // הקישור נפתח בלשונית חדשה; כאן מנקים וסוגרים כדי שלא יישאר טקסט ישן
-    setTimeout(() => { feedbackForm.reset(); feedbackFrom = feedbackKind = null; closeFeedback(); toast('ההודעה נפתחה בווטסאפ — נשאר ללחוץ שם על שליחה'); }, 0);
-  });
-  $$('[data-feedback]').forEach(b => b.addEventListener('click', () => openContact(nowId, b)));
+  // חיבור יצירת קשר (פרטי) ותגובות על שיעורים (ציבורי) למודול הקהילה (community.js)
+  $('#contactOpen')?.addEventListener('click', e => window.ShiurimCommunity?.openContact(e.currentTarget));
+  $$('[data-feedback]').forEach(b => b.addEventListener('click', () => window.ShiurimCommunity?.openComments(nowId, b)));
 
   function toggle() { if (!nowId) return; audio.paused ? audio.play().catch(() => {}) : audio.pause(); }
   function skip(s) { audio.currentTime = Math.max(0, Math.min((audio.duration || 0), audio.currentTime + s)); }
@@ -1577,6 +1492,8 @@
     if (window.WANT_INSTALL && isIOS && !standalone) openGuide();
   }
 
+  window.SHIURIM_APP = { items, byId, fullName, seriesName, epName, seriesHref, toast, artOf, IMG, getNowId: () => nowId };
+  window.ShiurimCommunity?.init(window.SHIURIM_APP);
   if (params.get('f')) { filter = params.get('f'); $$('#topChips .chip').forEach(x => x.classList.toggle('is-on', x.dataset.f === filter)); }
   sideList();
   route();

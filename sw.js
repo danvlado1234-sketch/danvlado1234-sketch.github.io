@@ -9,7 +9,7 @@
 //    ברקע. הקוד נטען עם ?v=<גרסה> (index.html), אז גרסה חדשה = כתובת חדשה = מיד.
 //  - קובצי השמע (R2) וטקסט המשנה (ספריא) לא עוברים כאן בכלל - ישר לרשת.
 // ============================================================
-const CACHE = 'shiurim-v2';
+const CACHE = 'shiurim-v4';
 const CORE = ['/', '/manifest.webmanifest',
   '/icons/icon-192.png', '/icons/icon-512.png', '/icons/apple-touch-icon.png', '/icons/favicon-32.png'];
 
@@ -56,6 +56,8 @@ self.addEventListener('fetch', (e) => {
   const req = e.request;
   if (req.method !== 'GET' || req.headers.has('range')) return;
   const url = new URL(req.url);
+  if (url.pathname.startsWith('/manage')) return;
+  if (url.pathname.startsWith('/v1/') || url.pathname.startsWith('/api/') || url.pathname.startsWith('/admin')) return;
   const sameOrigin = url.origin === self.location.origin;
   if (/\.(m4a|mp3|mp4|pdf)$/i.test(url.pathname)) return;
   if (sameOrigin && req.mode === 'navigate' && url.pathname.toLowerCase().startsWith('/shiurim-parasha/')) return;
