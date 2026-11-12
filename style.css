@@ -2157,3 +2157,30 @@ body.building .top{ display: none; }
     font-size: 0.96rem;
   }
 }
+
+
+/* Native content scrolling stays separate from the mobile sheet drag handle. */
+.feedback-panel, .comments-list, .admin-body {
+  touch-action: pan-y pinch-zoom;
+  overscroll-behavior-y: contain;
+  -webkit-overflow-scrolling: touch;
+}
+.feedback-panel { overflow-x: hidden; }
+.comments-list, .admin-body { min-height: min(160px, 25dvh); }
+.cmt-card, .admin-card { flex-shrink: 0; }
+.feedback-panel > .sheet-grab, .feedback-panel > .feedback-head { flex-shrink: 0; }
+.feedback-panel.sheet-ready { animation: none; }
+.feedback-panel.sheet-moving { will-change: transform; }
+@media (max-width: 680px) {
+  .feedback-layer { overflow: hidden; }
+  .feedback-panel > .sheet-grab, .feedback-panel > .feedback-head {
+    touch-action: none;
+    user-select: none;
+    cursor: grab;
+  }
+  .feedback-panel > .sheet-grab { min-height: 32px; }
+  .feedback-panel.sheet-moving { cursor: grabbing; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .feedback-layer, .feedback-panel { animation: none; }
+}

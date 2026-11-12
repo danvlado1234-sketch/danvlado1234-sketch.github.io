@@ -107,7 +107,97 @@
   }
 
   function isLocalOrAdmin() {
-    return LOCAL_MODE || productionIdentity.role !== 'guest';
+    return LOCAL_MODE || (productionIdentity.authenticated === true && ['admin', 'rabbi'].includes(productionIdentity.role));
+  }
+
+  async function refreshIdentity() {
+    try {
+      const identity = await apiFetch('/v1/auth/me');
+      productionIdentity = identity.authenticated === true && ['admin', 'rabbi'].includes(identity.role)
+        ? identity : { role: 'guest', actor_id: null };
+    } catch {
+      productionIdentity = { role: 'guest', actor_id: null };
+    }
+    adminOpenBtn.hidden = !isLocalOrAdmin();
+    if (isLocalOrAdmin()) await refreshAdminBadge();
+    else if (!adminLayer.hidden) closeAdmin();
+  }
+
+  // Drag only the handle/title. Content retains native touch scrolling and zoom.
+  const sheetControllers = new WeakMap();
+  function resetSheet(layer) { sheetControllers.get(layer)?.reset(); }
+  function installSheetGesture(layer, close) {
+    const panel = layer?.querySelector('.feedback-panel');
+    if (!panel) return;
+    let drag = null, animation = null;
+    const mobile = () => matchMedia('(max-width: 680px)').matches;
+    const reset = () => {
+      const previous = drag;
+      drag = null;
+      animation?.cancel();
+      animation = null;
+      if (previous && panel.hasPointerCapture(previous.id)) panel.releasePointerCapture(previous.id);
+      panel.style.removeProperty('transform');
+      panel.classList.remove('sheet-moving', 'sheet-ready');
+    };
+    sheetControllers.set(layer, { reset });
+    const settle = (offset, dismiss) => {
+      const end = dismiss ? panel.getBoundingClientRect().height + 40 : 0;
+      const duration = matchMedia('(prefers-reduced-motion: reduce)').matches ? 0 : 220;
+      animation = panel.animate([
+        { transform: `translate3d(0, ${offset}px, 0)` },
+        { transform: `translate3d(0, ${end}px, 0)` },
+      ], { duration, easing: 'cubic-bezier(.22, 1, .36, 1)' });
+      const current = animation;
+      current.finished.then(() => {
+        if (animation !== current) return;
+        animation = null;
+        panel.style.removeProperty('transform');
+        panel.classList.remove('sheet-moving');
+        if (dismiss) close();
+      }).catch(() => {});
+    };
+    panel.addEventListener('pointerdown', e => {
+      if (!mobile() || layer.hidden || drag || animation || !e.isPrimary || e.button !== 0) return;
+      if (!e.target.closest('.sheet-grab, .feedback-head') || e.target.closest('button, a, input, select, textarea, [role="button"]')) return;
+      panel.classList.add('sheet-ready');
+      drag = { id: e.pointerId, x: e.clientX, y: e.clientY, offset: 0, moved: false,
+        samples: [[e.timeStamp, e.clientY]] };
+      panel.setPointerCapture(e.pointerId);
+    });
+    panel.addEventListener('pointermove', e => {
+      if (!drag || e.pointerId !== drag.id) return;
+      const dx = e.clientX - drag.x, dy = e.clientY - drag.y;
+      if (!drag.moved && Math.abs(dy) < 7) return;
+      if (!drag.moved && Math.abs(dx) > Math.abs(dy)) { reset(); return; }
+      drag.moved = true;
+      drag.offset = Math.max(-24, dy < 0 ? dy * .12 : dy);
+      drag.samples.push([e.timeStamp, e.clientY]);
+      while (drag.samples.length > 2 && e.timeStamp - drag.samples[0][0] > 100) drag.samples.shift();
+      panel.classList.add('sheet-moving');
+      panel.style.transform = `translate3d(0, ${drag.offset}px, 0)`;
+      e.preventDefault();
+    });
+    const finish = e => {
+      if (!drag || e.pointerId !== drag.id) return;
+      const done = drag;
+      drag = null;
+      if (panel.hasPointerCapture(done.id)) panel.releasePointerCapture(done.id);
+      if (!done.moved) return;
+      const first = done.samples[0];
+      const speed = (e.clientY - first[1]) / Math.max(16, e.timeStamp - first[0]);
+      const dismiss = e.type === 'pointerup' && (done.offset > Math.min(140, panel.offsetHeight * .28) || (done.offset > 45 && speed > .65));
+      settle(done.offset, dismiss);
+    };
+    panel.addEventListener('pointerup', finish);
+    panel.addEventListener('pointercancel', finish);
+    panel.addEventListener('lostpointercapture', () => {
+      if (!drag) return;
+      const offset = drag.offset;
+      drag = null;
+      settle(offset, false);
+    });
+    window.addEventListener('resize', () => { if (!mobile() || drag) reset(); });
   }
 
   async function apiFetch(path, { method = 'GET', body, headers = {} } = {}) {
@@ -658,6 +748,7 @@
     loadingEl.textContent = 'טוען תגובות לשיעור…';
     commentsList.appendChild(loadingEl);
 
+    resetSheet(commentsLayer);
     commentsLayer.hidden = false;
     document.body.classList.add('feedback-open');
     commentsWriteToggle.focus();
@@ -684,6 +775,7 @@
 
   function closeComments() {
     saveCurrentCommentDraft();
+    resetSheet(commentsLayer);
     commentsLayer.hidden = true;
     if ($('#feedback').hidden && $('#adminLayer').hidden) {
       document.body.classList.remove('feedback-open');
@@ -905,12 +997,14 @@
 
   function openContact(triggerEl) {
     contactReturnFocus = triggerEl || document.activeElement;
+    resetSheet(feedback);
     feedback.hidden = false;
     document.body.classList.add('feedback-open');
     showContactChoicesView();
   }
 
   function closeContact() {
+    resetSheet(feedback);
     feedback.hidden = true;
     if (commentsLayer.hidden && $('#adminLayer').hidden) {
       document.body.classList.remove('feedback-open');
@@ -1031,7 +1125,7 @@
   }
 
   async function refreshAdminBadge() {
-    if (!isLocalOrAdmin()) return;
+    if (!isLocalOrAdmin()) { adminOpenBtn.hidden = true; return; }
     const role = getCurrentRole();
     if (role === 'guest') {
       adminOpenBtn.hidden = true;
@@ -1063,8 +1157,12 @@
       adminTicketsCount.textContent = String(tCount);
       adminPendingBadge.textContent = String(total);
       adminPendingBadge.hidden = total <= 0;
-    } catch {
-      // אם אין הרשאת מנהל פעילה, מסתירים את החיווי
+    } catch (error) {
+      if (error.status === 401 || error.status === 403) {
+        productionIdentity = { role: 'guest', actor_id: null };
+        adminOpenBtn.hidden = true;
+        if (!adminLayer.hidden) closeAdmin();
+      }
     }
   }
 
@@ -1528,19 +1626,21 @@
   async function openAdmin(triggerEl) {
     if (!LOCAL_MODE) {
       await productionReady;
-      if (productionIdentity.role === 'guest') {
+      if (!isLocalOrAdmin() || API_BASE) {
         if (productionConfig?.admin_url) location.assign(productionConfig.admin_url);
         else app?.toast?.('הכניסה לניהול עדיין אינה זמינה.');
         return;
       }
     }
     adminReturnFocus = triggerEl || document.activeElement;
+    resetSheet(adminLayer);
     adminLayer.hidden = false;
     document.body.classList.add('feedback-open');
     renderAdminContent();
   }
 
   function closeAdmin() {
+    resetSheet(adminLayer);
     adminLayer.hidden = true;
     if (commentsLayer.hidden && feedback.hidden) {
       document.body.classList.remove('feedback-open');
@@ -1632,6 +1732,10 @@
     }
   });
 
+  installSheetGesture(feedback, closeContact);
+  installSheetGesture(commentsLayer, closeComments);
+  installSheetGesture(adminLayer, closeAdmin);
+
   // ---------- 5. אתחול וחיבור ל-app.js ----------
 
   function init(shiurimApp) {
@@ -1640,13 +1744,12 @@
       if (adminRoleSelect) adminRoleSelect.hidden = true;
       productionReady = Promise.all([
         apiFetch('/v1/config').then(config => { productionConfig = config; }),
-        apiFetch('/v1/auth/me').then(identity => { productionIdentity = identity; }).catch(() => {}),
-      ]).then(() => {
-        adminOpenBtn.hidden = false;
-        const label = adminOpenBtn.querySelector('.contact-label');
-        if (productionIdentity.role === 'guest' && label) label.textContent = 'כניסה לניהול';
-        else refreshAdminBadge();
-      }).catch(() => { adminOpenBtn.hidden = true; });
+        refreshIdentity(),
+      ]).catch(() => { adminOpenBtn.hidden = true; });
+      document.addEventListener('visibilitychange', () => {
+        if (!document.hidden) refreshIdentity();
+      });
+      window.addEventListener('pageshow', e => { if (e.persisted) refreshIdentity(); });
     }
     if (isLocalOrAdmin()) {
       adminOpenBtn.hidden = false;
