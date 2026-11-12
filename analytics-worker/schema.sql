@@ -82,6 +82,7 @@ CREATE TABLE IF NOT EXISTS listens (
   speed        REAL    NOT NULL DEFAULT 1,
   completed    INTEGER NOT NULL DEFAULT 0,
   resumed      INTEGER NOT NULL DEFAULT 0,   -- המשך מנקודה שמורה
+  wall_s       REAL NOT NULL DEFAULT 0,
   source       TEXT                          -- מאיפה הופעל: תור, המשך אוטומטי, לחיצה
 );
 CREATE INDEX IF NOT EXISTS idx_listens_day     ON listens(day);
@@ -108,3 +109,23 @@ CREATE TABLE IF NOT EXISTS events (
 );
 CREATE INDEX IF NOT EXISTS idx_events_day_type ON events(day, type);
 CREATE INDEX IF NOT EXISTS idx_events_session  ON events(session_id);
+
+-- Immutable packet receipts: retained to prevent delayed retries from counting twice.
+CREATE TABLE IF NOT EXISTS ingest_batches (
+  batch_id TEXT PRIMARY KEY, visitor_id TEXT NOT NULL, session_id TEXT NOT NULL,
+  received_at INTEGER NOT NULL, nonce TEXT NOT NULL, fingerprint TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_batches_received ON ingest_batches(received_at);
+CREATE TABLE IF NOT EXISTS listen_segments (
+  id INTEGER PRIMARY KEY AUTOINCREMENT, listen_id TEXT NOT NULL, session_id TEXT NOT NULL, visitor_id TEXT NOT NULL,
+  ts INTEGER NOT NULL, day TEXT NOT NULL, hour INTEGER NOT NULL, dow INTEGER NOT NULL,
+  listened_s REAL NOT NULL, wall_s REAL NOT NULL, speed REAL NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_segments_day ON listen_segments(day);
+CREATE INDEX IF NOT EXISTS idx_segments_visitor ON listen_segments(visitor_id);
+CREATE TRIGGER IF NOT EXISTS sessions_owner BEFORE INSERT ON sessions
+WHEN EXISTS (SELECT 1 FROM sessions WHERE session_id=NEW.session_id AND visitor_id<>NEW.visitor_id)
+BEGIN SELECT RAISE(ABORT, 'session owner mismatch'); END;
+CREATE TRIGGER IF NOT EXISTS listens_owner BEFORE INSERT ON listens
+WHEN EXISTS (SELECT 1 FROM listens WHERE listen_id=NEW.listen_id AND (visitor_id<>NEW.visitor_id OR session_id<>NEW.session_id OR item_id<>NEW.item_id))
+BEGIN SELECT RAISE(ABORT, 'listen owner mismatch'); END;

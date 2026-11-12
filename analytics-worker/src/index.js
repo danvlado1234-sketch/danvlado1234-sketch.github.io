@@ -53,7 +53,7 @@ function allowedOrigin(request, env) {
   const origin = request.headers.get('Origin');
   if (!origin) return null;
   const list = String(env.ALLOWED_ORIGINS || '').split(',').map(s => s.trim()).filter(Boolean);
-  if (list.includes('*') || list.includes(origin)) return origin;
+  if (list.includes(origin)) return origin;
   if (/^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(origin) && env.ALLOW_LOCALHOST === 'true') return origin;
   return null;
 }
@@ -118,6 +118,25 @@ async function checkAuth(request, env) {
   return crypto.subtle.timingSafeEqual(a, b);
 }
 
+
+// These are abuse controls for public telemetry, not proof of a person's identity.
+async function rateAllowed(binding, key) {
+  if (!binding || typeof binding.limit !== 'function') throw new Error('rate limiter unavailable');
+  return (await binding.limit({ key })).success;
+}
+async function clientKey(request, env) {
+  if (!env.RATE_LIMIT_SALT) throw new Error('rate salt unavailable');
+  const hash = await sha(env.RATE_LIMIT_SALT + ':' + (request.headers.get('CF-Connecting-IP') || 'unknown'));
+  return [...new Uint8Array(hash)].map(x => x.toString(16).padStart(2, '0')).join('');
+}
+function csvCell(v) {
+  if (v == null) return '';
+  let s = String(v);
+  // Spreadsheet exports are for viewing: force untrusted formula-like strings to text.
+  if (typeof v === 'string' && /^[\s\u0000-\u001f]*[=+@\-＝＋＠－]/u.test(s)) s = '\t' + s;
+  return '"' + s.replace(/"/g, '""') + '"';
+}
+
 // ---------- קליטת אירועים ----------
 async function ingest(request, env, ctx) {
   const origin = allowedOrigin(request, env);
@@ -125,20 +144,43 @@ async function ingest(request, env, ctx) {
   if (!origin) return new Response('forbidden origin', { status: 403 });
   const ua = request.headers.get('User-Agent') || '';
   if (BOT_RE.test(ua)) return new Response(null, { status: 204, headers: cors });
+  try {
+    if (!(await rateAllowed(env.INGEST_LIMITER, await clientKey(request, env))))
+      return new Response('too many requests', { status: 429, headers: { ...cors, 'Retry-After': '60' } });
+  } catch { return new Response('temporarily unavailable', { status: 503, headers: cors }); }
   const len = Number(request.headers.get('Content-Length') || 0);
   if (len > 65536) return new Response('too large', { status: 413, headers: cors });
 
   let body;
   try {
-    const text = await request.text();
-    if (text.length > 65536) return new Response('too large', { status: 413, headers: cors });
-    body = JSON.parse(text);
+    const reader = request.body?.getReader();
+    if (!reader) return new Response('bad json', { status: 400, headers: cors });
+    const decoder = new TextDecoder();
+    let text = '', size = 0;
+    while (true) {
+      const { value, done } = await reader.read();
+      if (done) break;
+      size += value.byteLength;
+      if (size > 65536) { await reader.cancel(); return new Response('too large', { status: 413, headers: cors }); }
+      text += decoder.decode(value, { stream: true });
+    }
+    body = JSON.parse(text + decoder.decode());
   } catch { return new Response('bad json', { status: 400, headers: cors }); }
 
+  if (!body || typeof body !== 'object' || Array.isArray(body) || body.ver !== 2 || !ID_RE.test(body.b || ''))
+    return new Response('bad packet', { status: 400, headers: cors });
   const vid = String(body.v || ''), sid = String(body.s || '');
   if (!ID_RE.test(vid) || !ID_RE.test(sid)) return new Response('bad id', { status: 400, headers: cors });
 
+  try {
+    if (!(await rateAllowed(env.VISITOR_LIMITER, vid)))
+      return new Response('too many requests', { status: 429, headers: { ...cors, 'Retry-After': '60' } });
+  } catch { return new Response('temporarily unavailable', { status: 503, headers: cors }); }
   const now = Date.now();
+  if (!Number.isFinite(body.created) || body.created < now - 3 * 864e5 || body.created > now + 60e3)
+    return new Response('expired packet', { status: 400, headers: cors });
+  const batchId = body.b, nonce = crypto.randomUUID();
+  const fingerprint = [...new Uint8Array(await sha(JSON.stringify(body)))].map(x => x.toString(16).padStart(2, '0')).join('');
   const clampTs = t => { t = Number(t); return Number.isFinite(t) && t > now - 3 * 864e5 && t < now + 60e3 ? Math.round(t) : now; };
   const c = body.ctx || {};
   const cf = request.cf || {};
@@ -148,12 +190,20 @@ async function ingest(request, env, ctx) {
   const source = classifySource(referrer, str(c.src, 80), ua);
   const campaign = str(c.cmp, 120);
 
-  const evs = Array.isArray(body.ev) ? body.ev.slice(0, 200) : [];
-  const lss = Array.isArray(body.ls) ? body.ls.slice(0, 50) : [];
+  if (!Array.isArray(body.ev) || !Array.isArray(body.ls) || body.ev.length > 50 || body.ls.length > 10)
+    return new Response('bad arrays', { status: 400, headers: cors });
+  const evs = body.ev;
+  const lss = Array.isArray(body.ls) ? body.ls : [];
   const active = num(body.act, 0, 3600);
 
   let firstTs = Infinity, lastTs = 0, pageviews = 0, plays = 0, listenSum = 0, exitRoute = null, entryRoute = str(c.entry, 200);
-  const stmts = [];
+  const stmts = [env.DB.prepare(`INSERT INTO ingest_batches (batch_id, visitor_id, session_id, received_at, nonce, fingerprint)
+    VALUES (?1,?2,?3,?4,?5,?6) ON CONFLICT(batch_id) DO NOTHING`).bind(batchId, vid, sid, now, nonce, fingerprint)];
+  // D1 batch is transactional. Only the request that inserted this nonce may mutate counters.
+  const gated = (sql, ...values) => env.DB.prepare(sql.replaceAll('/*BATCH*/',
+    `EXISTS (SELECT 1 FROM ingest_batches WHERE batch_id = ?${values.length + 1} AND nonce = ?${values.length + 2})`))
+    .bind(...values, batchId, nonce);
+  const segments = [];
   const evRows = [];
   for (const e of evs) {
     if (!e || !EVENT_TYPES.has(e.t)) continue;
@@ -163,36 +213,51 @@ async function ingest(request, env, ctx) {
     evRows.push([ts, t.day, t.hour, vid, sid, e.t, str(e.r, 200), str(e.i, 300), str(e.k, 20), str(e.ti, 200), str(e.se, 120), str(e.l, 200), e.n == null ? null : num(e.n, -1e9, 1e9)]);
   }
   const lsRows = [];
+  const listenIds = new Set();
   for (const l of lss) {
     if (!l || !ID_RE.test(String(l.id || '')) || !l.i) continue;
+    if (listenIds.has(String(l.id))) return new Response('duplicate listen', { status: 400, headers: cors });
+    listenIds.add(String(l.id));
     const st = clampTs(l.st), lt = clampTs(l.t || l.st); const t = il(st);
     firstTs = Math.min(firstTs, st); lastTs = Math.max(lastTs, lt);
-    const d = num(l.d, 0, 4 * 3600);
+    if (!Array.isArray(l.sg) || l.sg.length > 60) return new Response('bad segments', { status: 400, headers: cors });
+    let d = 0, wall = 0;
+    for (const g of l.sg) {
+      if (!g || !Number.isFinite(g.ts) || g.ts < now - 4 * 864e5 || g.ts > now + 60e3 || !Number.isFinite(g.d) || !Number.isFinite(g.w)
+          || g.d < 0 || g.w < 0 || g.d > 14400 || g.w > 14400 || !Number.isFinite(g.spd) || g.spd < 0.25 || g.spd > 4
+          || Math.abs(g.d - g.w * g.spd) > 1) return new Response('bad segment', { status: 400, headers: cors });
+      const gt = il(g.ts);
+      d += g.d; wall += g.w;
+      segments.push([String(l.id), sid, vid, g.ts, gt.day, gt.hour, gt.dow, g.d, g.w, g.spd]);
+    }
+    if (d > 14400 || wall > 14400 || wall > Math.max(0, (lt - st) / 1000) + 5 || segments.length > 120) return new Response('too much listening', { status: 400, headers: cors });
     listenSum += d; if (l.n) plays++;
     lsRows.push([String(l.id), sid, vid, str(l.i, 300), str(l.k, 20), str(l.ti, 200), str(l.se, 120), st, lt, t.day, t.hour, t.dow,
-      d, num(l.sp, 0, 1e6), num(l.mp, 0, 1e6), num(l.du, 0, 1e6), num(l.spd, 0.25, 4) || 1, l.c ? 1 : 0, l.r ? 1 : 0, str(l.src, 20)]);
+      d, num(l.sp, 0, 1e6), num(l.mp, 0, 1e6), num(l.du, 0, 1e6), num(l.spd, 0.25, 4) || 1, l.c ? 1 : 0, l.r ? 1 : 0, str(l.src, 20), wall]);
   }
   if (body.hb) { const ts = clampTs(body.hb); firstTs = Math.min(firstTs, ts); lastTs = Math.max(lastTs, ts); }
   if (firstTs === Infinity) { firstTs = now; lastTs = now; }
+  firstTs = Math.min(firstTs, clampTs(body.sst));
   const st = il(firstTs);
 
+  const newListenIds = JSON.stringify([...listenIds]);
   // מבקר: סופרים ביקור חדש רק כשהביקור עוד לא קיים
-  stmts.push(env.DB.prepare(
+  stmts.push(gated(
     `INSERT INTO visitors (visitor_id, first_seen, first_day, last_seen, sessions, listen_s, plays, country, city, device, os, browser, first_referrer, first_source)
-     VALUES (?1, ?2, ?3, ?4, 0, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13)
-     ON CONFLICT(visitor_id) DO UPDATE SET last_seen = MAX(last_seen, excluded.last_seen), listen_s = listen_s + excluded.listen_s,
+     SELECT ?1, ?2, ?3, ?4, 0, ?5, (SELECT COUNT(*) FROM json_each(?6) j WHERE NOT EXISTS (SELECT 1 FROM listens WHERE listen_id=j.value)), ?7, ?8, ?9, ?10, ?11, ?12, ?13 WHERE /*BATCH*/
+     ON CONFLICT(visitor_id) DO UPDATE SET first_seen = MIN(first_seen, excluded.first_seen), first_day = MIN(first_day, excluded.first_day), last_seen = MAX(last_seen, excluded.last_seen), listen_s = listen_s + excluded.listen_s,
        plays = plays + excluded.plays, country = COALESCE(excluded.country, country), city = COALESCE(excluded.city, city),
        device = excluded.device, os = excluded.os, browser = excluded.browser`
-  ).bind(vid, firstTs, st.day, lastTs, listenSum, plays, country, city, device, os, browser, referrer, source));
-  stmts.push(env.DB.prepare(
-    `UPDATE visitors SET sessions = sessions + 1 WHERE visitor_id = ?1 AND NOT EXISTS (SELECT 1 FROM sessions WHERE session_id = ?2)`
-  ).bind(vid, sid));
-  stmts.push(env.DB.prepare(
+  , vid, firstTs, st.day, lastTs, listenSum, newListenIds, country, city, device, os, browser, referrer, source));
+  stmts.push(gated(
+    `UPDATE visitors SET sessions = sessions + 1 WHERE visitor_id = ?1 AND NOT EXISTS (SELECT 1 FROM sessions WHERE session_id = ?2) AND /*BATCH*/`
+  , vid, sid));
+  stmts.push(gated(
     `INSERT INTO sessions (session_id, visitor_id, started_at, last_seen, start_day, start_hour, start_dow, duration_s, active_s, pageviews, plays, listen_s, events,
        is_new, entry_route, exit_route, referrer, source, campaign, country, region, city, timezone, device, os, browser, standalone, lang, screen, connection)
-     VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, CAST((?4 - ?3) / 1000 AS INTEGER), ?8, ?9, ?10, ?11, ?12,
+     SELECT ?1, ?2, ?3, ?4, ?5, ?6, ?7, CAST((?4 - ?3) / 1000 AS INTEGER), ?8, ?9, (SELECT COUNT(*) FROM json_each(?10) j WHERE NOT EXISTS (SELECT 1 FROM listens WHERE listen_id=j.value)), ?11, ?12,
        CASE WHEN EXISTS (SELECT 1 FROM sessions WHERE visitor_id = ?2) THEN 0 ELSE 1 END,
-       ?13, ?14, ?15, ?16, ?17, ?18, ?19, ?20, ?21, ?22, ?23, ?24, ?25, ?26, ?27, ?28)
+       ?13, ?14, ?15, ?16, ?17, ?18, ?19, ?20, ?21, ?22, ?23, ?24, ?25, ?26, ?27, ?28 WHERE /*BATCH*/
      ON CONFLICT(session_id) DO UPDATE SET
        last_seen = MAX(last_seen, excluded.last_seen),
        duration_s = CAST((MAX(last_seen, excluded.last_seen) - started_at) / 1000 AS INTEGER),
@@ -200,24 +265,34 @@ async function ingest(request, env, ctx) {
        listen_s = listen_s + excluded.listen_s, events = events + excluded.events,
        exit_route = COALESCE(excluded.exit_route, exit_route), entry_route = COALESCE(entry_route, excluded.entry_route),
        standalone = MAX(standalone, excluded.standalone)`
-  ).bind(sid, vid, firstTs, lastTs, st.day, st.hour, st.dow, Math.round(active), pageviews, plays, listenSum, evRows.length,
+  , sid, vid, firstTs, lastTs, st.day, st.hour, st.dow, Math.round(active), pageviews, newListenIds, listenSum, evRows.length,
     entryRoute, exitRoute, referrer, source, campaign, country, region, city, timezone, device, os, browser,
     c.sa ? 1 : 0, str(c.lang, 20), str(c.scr, 20), str(c.conn, 20)));
   for (const r of evRows) {
-    stmts.push(env.DB.prepare(
-      `INSERT INTO events (ts, day, hour, visitor_id, session_id, type, route, item_id, kind, title, series, label, value) VALUES (?1,?2,?3,?4,?5,?6,?7,?8,?9,?10,?11,?12,?13)`
-    ).bind(...r));
+    stmts.push(gated(
+      `INSERT INTO events (ts, day, hour, visitor_id, session_id, type, route, item_id, kind, title, series, label, value) SELECT ?1,?2,?3,?4,?5,?6,?7,?8,?9,?10,?11,?12,?13 WHERE /*BATCH*/`
+    , ...r));
   }
   for (const r of lsRows) {
-    stmts.push(env.DB.prepare(
-      `INSERT INTO listens (listen_id, session_id, visitor_id, item_id, kind, title, series, started_at, last_at, day, hour, dow, listened_s, start_pos_s, max_pos_s, duration_s, speed, completed, resumed, source)
-       VALUES (?1,?2,?3,?4,?5,?6,?7,?8,?9,?10,?11,?12,?13,?14,?15,?16,?17,?18,?19,?20)
+    stmts.push(gated(
+      `INSERT INTO listens (listen_id, session_id, visitor_id, item_id, kind, title, series, started_at, last_at, day, hour, dow, listened_s, start_pos_s, max_pos_s, duration_s, speed, completed, resumed, source, wall_s)
+       SELECT ?1,?2,?3,?4,?5,?6,?7,?8,?9,?10,?11,?12,?13,?14,?15,?16,?17,?18,?19,?20,?21 WHERE /*BATCH*/
        ON CONFLICT(listen_id) DO UPDATE SET last_at = MAX(last_at, excluded.last_at), listened_s = listened_s + excluded.listened_s,
          max_pos_s = MAX(max_pos_s, excluded.max_pos_s), duration_s = MAX(duration_s, excluded.duration_s),
-         speed = excluded.speed, completed = MAX(completed, excluded.completed)`
-    ).bind(...r));
+         speed = excluded.speed, wall_s = wall_s + excluded.wall_s, completed = MAX(completed, excluded.completed)`
+    , ...r));
   }
-  ctx.waitUntil(env.DB.batch(stmts).catch(err => console.error('ingest failed', err && err.message)));
+  for (const r of segments) stmts.push(gated(`INSERT INTO listen_segments
+    (listen_id, session_id, visitor_id, ts, day, hour, dow, listened_s, wall_s, speed)
+    SELECT ?1,?2,?3,?4,?5,?6,?7,?8,?9,?10 WHERE /*BATCH*/`, ...r));
+  stmts.push(env.DB.prepare('SELECT fingerprint FROM ingest_batches WHERE batch_id = ?1').bind(batchId));
+  try {
+    const result = await env.DB.batch(stmts);
+    if (result[result.length - 1].results[0]?.fingerprint !== fingerprint)
+      return new Response('packet conflict', { status: 409, headers: cors });
+  } catch {
+    return new Response('temporarily unavailable', { status: 503, headers: { ...cors, 'Retry-After': '30' } });
+  }
   return new Response(null, { status: 204, headers: cors });
 }
 
@@ -243,25 +318,38 @@ const STAT_QUERIES = {
            COALESCE(SUM(CASE WHEN pageviews <= 1 AND plays = 0 AND duration_s < 30 THEN 1 ELSE 0 END),0) bounces,
            COALESCE(SUM(standalone),0) app_sessions, COALESCE(SUM(CASE WHEN plays > 0 THEN 1 ELSE 0 END),0) listening_sessions
          FROM sessions WHERE start_day BETWEEN ?1 AND ?2`,
-  kpiL: `SELECT COUNT(*) plays, COUNT(DISTINCT visitor_id) listeners, COUNT(DISTINCT item_id) items, COALESCE(SUM(listened_s),0) listen_s,
-           COALESCE(SUM(completed),0) completed, AVG(listened_s) avg_listen, COALESCE(SUM(listened_s / speed),0) wall_s
-         FROM listens WHERE day BETWEEN ?1 AND ?2`,
+  kpiL: `WITH time_in_range AS (SELECT listen_id, SUM(listened_s) d, SUM(wall_s) w FROM listen_segments
+     WHERE day BETWEEN ?1 AND ?2 GROUP BY listen_id), picked AS (
+     SELECT l.*, COALESCE(t.d,0) range_d, COALESCE(t.w,0) range_w, CASE WHEN l.day BETWEEN ?1 AND ?2 THEN 1 ELSE 0 END in_range
+     FROM listens l LEFT JOIN time_in_range t USING(listen_id) WHERE l.day BETWEEN ?1 AND ?2 OR t.listen_id IS NOT NULL) SELECT COALESCE(SUM(in_range),0) plays, COUNT(DISTINCT visitor_id) listeners, COUNT(DISTINCT item_id) items,
+      COALESCE(SUM(range_d),0) listen_s, COALESCE(SUM(completed * in_range),0) completed, AVG(range_d) avg_listen, COALESCE(SUM(range_w),0) wall_s FROM picked`,
   returning: `SELECT COUNT(DISTINCT s.visitor_id) n FROM sessions s JOIN visitors v ON v.visitor_id = s.visitor_id
               WHERE s.start_day BETWEEN ?1 AND ?2 AND v.first_day < ?1`,
   evTypes: `SELECT type, COUNT(*) n, COUNT(DISTINCT visitor_id) u FROM events WHERE day BETWEEN ?1 AND ?2 GROUP BY type`,
   dailyS: `SELECT start_day day, COUNT(*) sessions, COUNT(DISTINCT visitor_id) visitors, SUM(is_new) new_visitors, SUM(pageviews) pageviews,
              AVG(duration_s) avg_duration, SUM(active_s) active_s FROM sessions WHERE start_day BETWEEN ?1 AND ?2 GROUP BY start_day`,
-  dailyL: `SELECT day, COUNT(*) plays, COUNT(DISTINCT visitor_id) listeners, SUM(listened_s) listen_s, SUM(completed) completed
-           FROM listens WHERE day BETWEEN ?1 AND ?2 GROUP BY day`,
+  dailyL: `WITH days AS (SELECT day FROM listens WHERE day BETWEEN ?1 AND ?2 UNION SELECT day FROM listen_segments WHERE day BETWEEN ?1 AND ?2),
+    p AS (SELECT day, COUNT(*) plays, SUM(completed) completed FROM listens WHERE day BETWEEN ?1 AND ?2 GROUP BY day),
+    t AS (SELECT day, COUNT(DISTINCT visitor_id) listeners, SUM(listened_s) listen_s FROM listen_segments WHERE day BETWEEN ?1 AND ?2 GROUP BY day)
+    SELECT days.day, COALESCE(p.plays,0) plays, COALESCE(t.listeners,0) listeners, COALESCE(t.listen_s,0) listen_s, COALESCE(p.completed,0) completed
+    FROM days LEFT JOIN p USING(day) LEFT JOIN t USING(day)`,
   heatS: `SELECT start_dow dow, start_hour hour, COUNT(*) n, COUNT(DISTINCT visitor_id) u FROM sessions WHERE start_day BETWEEN ?1 AND ?2 GROUP BY 1, 2`,
-  heatL: `SELECT dow, hour, COUNT(*) n, SUM(listened_s) s FROM listens WHERE day BETWEEN ?1 AND ?2 GROUP BY 1, 2`,
-  topItems: `SELECT item_id, MAX(title) title, MAX(series) series, MAX(kind) kind, COUNT(*) plays, COUNT(DISTINCT visitor_id) listeners,
-               SUM(listened_s) listen_s, SUM(completed) completed, MAX(duration_s) duration_s,
-               AVG(CASE WHEN duration_s > 0 THEN MIN(1.0, max_pos_s / duration_s) END) avg_reach
-             FROM listens WHERE day BETWEEN ?1 AND ?2 GROUP BY item_id ORDER BY plays DESC, listen_s DESC LIMIT 150`,
-  series: `SELECT series, MAX(kind) kind, COUNT(*) plays, COUNT(DISTINCT visitor_id) listeners, SUM(listened_s) listen_s, COUNT(DISTINCT item_id) items,
-             SUM(completed) completed FROM listens WHERE day BETWEEN ?1 AND ?2 GROUP BY series ORDER BY listen_s DESC LIMIT 80`,
-  kinds: `SELECT kind k, COUNT(*) n, COUNT(DISTINCT visitor_id) u, SUM(listened_s) s FROM listens WHERE day BETWEEN ?1 AND ?2 GROUP BY kind`,
+  heatL: `SELECT dow, hour, COUNT(DISTINCT listen_id) n, SUM(wall_s) s FROM listen_segments WHERE day BETWEEN ?1 AND ?2 GROUP BY 1, 2`,
+  topItems: `WITH time_in_range AS (SELECT listen_id, SUM(listened_s) d, SUM(wall_s) w FROM listen_segments
+     WHERE day BETWEEN ?1 AND ?2 GROUP BY listen_id), picked AS (
+     SELECT l.*, COALESCE(t.d,0) range_d, COALESCE(t.w,0) range_w, CASE WHEN l.day BETWEEN ?1 AND ?2 THEN 1 ELSE 0 END in_range
+     FROM listens l LEFT JOIN time_in_range t USING(listen_id) WHERE l.day BETWEEN ?1 AND ?2 OR t.listen_id IS NOT NULL) SELECT item_id, MAX(title) title, MAX(series) series, MAX(kind) kind, SUM(in_range) plays, COUNT(DISTINCT visitor_id) listeners,
+    SUM(range_d) listen_s, SUM(completed * in_range) completed, MAX(duration_s) duration_s,
+    AVG(CASE WHEN duration_s > 0 THEN MIN(1.0,max_pos_s/duration_s) END) avg_reach FROM picked GROUP BY item_id ORDER BY plays DESC, listen_s DESC LIMIT 150`,
+  series: `WITH time_in_range AS (SELECT listen_id, SUM(listened_s) d, SUM(wall_s) w FROM listen_segments
+     WHERE day BETWEEN ?1 AND ?2 GROUP BY listen_id), picked AS (
+     SELECT l.*, COALESCE(t.d,0) range_d, COALESCE(t.w,0) range_w, CASE WHEN l.day BETWEEN ?1 AND ?2 THEN 1 ELSE 0 END in_range
+     FROM listens l LEFT JOIN time_in_range t USING(listen_id) WHERE l.day BETWEEN ?1 AND ?2 OR t.listen_id IS NOT NULL) SELECT series, MAX(kind) kind, SUM(in_range) plays, COUNT(DISTINCT visitor_id) listeners, SUM(range_d) listen_s, COUNT(DISTINCT item_id) items,
+    SUM(completed * in_range) completed FROM picked GROUP BY series ORDER BY listen_s DESC LIMIT 80`,
+  kinds: `WITH time_in_range AS (SELECT listen_id, SUM(listened_s) d, SUM(wall_s) w FROM listen_segments
+     WHERE day BETWEEN ?1 AND ?2 GROUP BY listen_id), picked AS (
+     SELECT l.*, COALESCE(t.d,0) range_d, COALESCE(t.w,0) range_w, CASE WHEN l.day BETWEEN ?1 AND ?2 THEN 1 ELSE 0 END in_range
+     FROM listens l LEFT JOIN time_in_range t USING(listen_id) WHERE l.day BETWEEN ?1 AND ?2 OR t.listen_id IS NOT NULL) SELECT kind k, SUM(in_range) n, COUNT(DISTINCT visitor_id) u, SUM(range_d) s FROM picked GROUP BY kind`,
   devices: `SELECT device k, COUNT(*) n, COUNT(DISTINCT visitor_id) u FROM sessions WHERE start_day BETWEEN ?1 AND ?2 GROUP BY device ORDER BY n DESC`,
   os: `SELECT os k, COUNT(*) n, COUNT(DISTINCT visitor_id) u FROM sessions WHERE start_day BETWEEN ?1 AND ?2 GROUP BY os ORDER BY n DESC`,
   browsers: `SELECT browser k, COUNT(*) n, COUNT(DISTINCT visitor_id) u FROM sessions WHERE start_day BETWEEN ?1 AND ?2 GROUP BY browser ORDER BY n DESC`,
@@ -286,7 +374,7 @@ const STAT_QUERIES = {
                FROM sessions WHERE start_day BETWEEN ?1 AND ?2 GROUP BY b`,
   freq: `SELECT c, COUNT(*) n FROM (SELECT visitor_id, MIN(COUNT(*), 10) c FROM sessions WHERE start_day BETWEEN ?1 AND ?2 GROUP BY visitor_id) GROUP BY c`,
   activeDays: `SELECT c, COUNT(*) n FROM (SELECT visitor_id, MIN(COUNT(DISTINCT start_day), 15) c FROM sessions WHERE start_day BETWEEN ?1 AND ?2 GROUP BY visitor_id) GROUP BY c`,
-  speeds: `SELECT speed k, COUNT(*) n FROM listens WHERE day BETWEEN ?1 AND ?2 GROUP BY speed ORDER BY speed`,
+  speeds: `SELECT speed k, COUNT(DISTINCT listen_id) n FROM listen_segments WHERE day BETWEEN ?1 AND ?2 GROUP BY speed ORDER BY speed`,
   listenSrc: `SELECT COALESCE(source, 'click') k, COUNT(*) n FROM listens WHERE day BETWEEN ?1 AND ?2 GROUP BY 1`,
   reach: `SELECT MIN(CAST(max_pos_s * 10 / duration_s AS INTEGER), 10) b, COUNT(*) n FROM listens WHERE day BETWEEN ?1 AND ?2 AND duration_s > 0 GROUP BY b`,
   langs: `SELECT lang k, COUNT(*) n FROM sessions WHERE start_day BETWEEN ?1 AND ?2 GROUP BY lang ORDER BY n DESC LIMIT 15`,
@@ -368,7 +456,7 @@ async function exportCsv(env, url) {
   const r = await env.DB.prepare(sql).bind(from, to).all();
   const rows = r.results || [];
   const cols = rows.length ? Object.keys(rows[0]) : [];
-  const esc = v => { if (v == null) return ''; const s = String(v); return /[",\n\r]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s; };
+  const esc = csvCell;
   const lines = [cols.join(',')];
   for (const row of rows) lines.push(cols.map(c => esc(TS_COLS.has(c) && row[c] ? il(row[c]).text : row[c])).join(','));
   return new Response('\uFEFF' + lines.join('\r\n'), {
@@ -385,6 +473,7 @@ async function deleteVisitor(request, env) {
   const id = String(body.visitor_id || '');
   if (!ID_RE.test(id)) return json({ error: 'bad id' }, 400);
   await env.DB.batch([
+    env.DB.prepare(`DELETE FROM listen_segments WHERE visitor_id = ?1`).bind(id),
     env.DB.prepare(`DELETE FROM events WHERE visitor_id = ?1`).bind(id),
     env.DB.prepare(`DELETE FROM listens WHERE visitor_id = ?1`).bind(id),
     env.DB.prepare(`DELETE FROM sessions WHERE visitor_id = ?1`).bind(id),
@@ -407,24 +496,31 @@ export default {
         });
       }
       if (request.method !== 'POST') return new Response('method not allowed', { status: 405 });
-      return ingest(request, env, ctx);
+      return await ingest(request, env, ctx);
     }
 
     if (path === '/' || path === '/dashboard') {
       return new Response(DASHBOARD, {
         headers: {
           'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-store',
-          'x-frame-options': 'DENY', 'referrer-policy': 'no-referrer', 'x-robots-tag': 'noindex, nofollow',
+          'content-security-policy': "default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; connect-src 'self'; img-src 'self' data:; frame-ancestors 'none'; base-uri 'none'; form-action 'none'",
+          'x-content-type-options': 'nosniff', 'x-frame-options': 'DENY', 'referrer-policy': 'no-referrer', 'x-robots-tag': 'noindex, nofollow',
         },
       });
     }
-    if (path === '/health') return json({ ok: true, time: il(Date.now()).text });
+    if (path === '/health') {
+      try { await env.DB.prepare('SELECT batch_id FROM ingest_batches LIMIT 1').all(); return json({ ok: true, version: '20261112d', time: il(Date.now()).text }); }
+      catch { return json({ ok: false }, 503); }
+    }
     if (path === '/robots.txt') return new Response('User-agent: *\nDisallow: /\n');
 
     if (path.startsWith('/api/')) {
       if (!env.DASHBOARD_PASSWORD) return json({ error: 'DASHBOARD_PASSWORD לא הוגדרה בשרת' }, 500);
       if (!(await checkAuth(request, env))) {
-        await new Promise(r => setTimeout(r, 400));
+        try {
+          if (!(await rateAllowed(env.AUTH_LIMITER, await clientKey(request, env))))
+            return json({ error: 'too many attempts' }, 429, { 'Retry-After': '60' });
+        } catch { return json({ error: 'temporarily unavailable' }, 503); }
         return json({ error: 'unauthorized' }, 401);
       }
       try {
@@ -437,7 +533,7 @@ export default {
         if (path === '/api/delete-visitor' && request.method === 'POST') return await deleteVisitor(request, env);
         if (path === '/api/ping') return json({ ok: true });
       } catch (err) {
-        return json({ error: String(err && err.message || err) }, 500);
+        return json({ error: 'internal error' }, 500);
       }
       return json({ error: 'not found' }, 404);
     }

@@ -15,6 +15,7 @@
     --r: 14px;
   }
   * { box-sizing: border-box; }
+  [hidden] { display: none !important; }
   html, body { margin: 0; background: var(--bg); color: var(--text); font: 14px/1.5 Rubik, system-ui, sans-serif; }
   a { color: var(--gold2); }
   button, input, select { font: inherit; color: inherit; }
@@ -114,7 +115,7 @@
   <form id="loginForm">
     <div class="brand">סטטיסטיקות<small>שיעורי הרה"ג רבי יצחק ולדומירסקי שליט"א</small></div>
     <input type="password" id="pw" placeholder="סיסמה" autocomplete="current-password" required>
-    <label class="note"><input type="checkbox" id="remember" checked> לזכור במכשיר הזה</label>
+    <span class="note">הכניסה נשמרת בלשונית הזאת בלבד.</span>
     <button class="btn primary" type="submit">כניסה</button>
     <div class="err" id="loginErr"></div>
   </form>
@@ -165,7 +166,7 @@
   const $$ = (s, r = document) => [...r.querySelectorAll(s)];
   const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
   const KEY = 'sa_dash_pw';
-  let PW = sessionStorage.getItem(KEY) || localStorage.getItem(KEY) || '';
+  let PW = sessionStorage.getItem(KEY) || '';
 
   // ---------- פורמטים ----------
   const TZ = 'Asia/Jerusalem';
@@ -228,12 +229,18 @@
     PW = $('#pw').value;
     try {
       await api('/api/ping');
-      sessionStorage.setItem(KEY, PW);
-      if ($('#remember').checked) localStorage.setItem(KEY, PW); else localStorage.removeItem(KEY);
+      sessionStorage.setItem(KEY, PW); $('#pw').value = '';
+      localStorage.removeItem(KEY); // Do not persist a dashboard password across browser sessions.
       start();
     } catch (err) { if (err.message !== 'unauthorized') $('#loginErr').textContent = 'שגיאה: ' + err.message; }
   });
-  $('#logout').addEventListener('click', () => { sessionStorage.removeItem(KEY); localStorage.removeItem(KEY); PW = ''; showLogin(); });
+  $('#logout').addEventListener('click', () => {
+    sessionStorage.removeItem(KEY); localStorage.removeItem(KEY); PW = ''; $('#pw').value = '';
+    clearInterval(liveTimer); clearInterval(statsTimer); DATA = null; sessRows = [];
+    for (const id of ['main', 'kpis', 'live', 'dlgBody']) $('#' + id).replaceChildren();
+    if (dlg.open) dlg.close();
+    showLogin();
+  });
 
   // ---------- טווח ----------
   let range = { from: addDays(todayIL(), -6), to: todayIL(), key: '7' };
@@ -267,7 +274,9 @@
     $('#main').classList.add('loading'); $('#kpis').classList.add('loading');
     try {
       const r = await api(`/api/stats?from=${range.from}&to=${range.to}`);
-      DATA = await r.json();
+      const nextData = await r.json();
+      if (!PW) return;
+      DATA = nextData;
       if (range.key === 'all' && DATA.allTime.since && DATA.allTime.since !== range.from) { range.from = DATA.allTime.since; $('#from').value = range.from; }
       render();
     } catch (e) { if (e.message !== 'unauthorized') $('#main').innerHTML = `<div class="card w12 empty">שגיאה בטעינת הנתונים: ${esc(e.message)}</div>`; }
@@ -277,6 +286,7 @@
   async function loadLive() {
     try {
       const d = await (await api('/api/live')).json();
+      if (!PW) return;
       const listening = d.listening.filter(l => Date.now() - l.last_at < 90e3);
       const lst = listening.slice(0, 6).map(l => `🎧 ${esc(l.title || l.item_id)} <span class="pill">${l.duration_s ? Math.round(l.max_pos_s / l.duration_s * 100) + '%' : ''}</span>`).join(' · ');
       const where = d.sessions.slice(0, 8).map(s => `${esc(DEVICE[s.device] || s.device || '')} ${esc(s.city || country(s.country))} · ${esc(routeName(s.exit_route))}`).join(' · ');
@@ -363,7 +373,7 @@
     return h + '</div>';
   }
 
-  function sumBy(rows, key, valKey = 'n') { const o = {}; for (const r of rows) o[r[key]] = (o[r[key]] || 0) + (r[valKey] || 0); return o; }
+  function sumBy(rows, key, valKey = 'n') { const o = Object.create(null); for (const r of rows) o[r[key]] = (o[r[key]] || 0) + (r[valKey] || 0); return o; }
 
   // טבלה ממוינת
   function table(id, cols, rows, opts = {}) {
@@ -400,7 +410,8 @@
       kpi('משך ביקור ממוצע', dur(s.avg_duration), delta(s.avg_duration, ps.avg_duration), 'מהכניסה ועד הפעולה האחרונה (כולל האזנה ברקע)'),
       kpi('זמן פעיל ממוצע', dur(s.avg_active), `סה״כ ${hours(s.total_active)} שעות מול המסך`, 'הזמן שהאתר היה גלוי ופעיל על המסך'),
       kpi('השמעות שיעורים', N(l.plays), delta(l.plays, pl.plays), 'השמעה = לפחות 3 שניות האזנה'),
-      kpi('שעות האזנה', hours(l.listen_s), delta(l.listen_s, pl.listen_s), 'כמה מתוכן השיעורים נשמע בפועל (בלי דילוגים)'),
+      kpi('שעות האזנה', hours(l.listen_s), delta(l.listen_s, pl.listen_s), 'זמן מתוך תוכן השיעורים, ללא דילוגים; זמן שעון מוצג בנפרד'),
+      kpi('שעות האזנה בפועל', hours(l.wall_s), delta(l.wall_s, pl.wall_s), 'זמן שעון, תוך שקלול שינויי מהירות'),
       kpi('מאזינים ייחודיים', N(l.listeners), `${pct(l.listeners, s.visitors)} מהמבקרים האזינו`),
       kpi('שיעורים שהושלמו', N(l.completed), `${pct(l.completed, l.plays)} מההשמעות הגיעו ל-90%`),
       kpi('האזנה ממוצעת להשמעה', dur(l.avg_listen), `${N(l.items)} שיעורים שונים הושמעו`),
@@ -432,7 +443,7 @@
 
   function vLessons() {
     const l = DATA.kpiL[0] || {};
-    const actions = {};
+    const actions = Object.create(null);
     for (const a of DATA.actions) { const o = (actions[a.item_id] ||= { item_id: a.item_id, title: a.title }); o[a.type] = a.n; }
     const items = DATA.topItems.map(r => ({ ...r, ...(actions[r.item_id] || {}), reach: r.avg_reach || 0 }));
     const reachRows = Array.from({ length: 11 }, (_, b) => ({ k: b === 10 ? '100%' : `${b * 10}–${b * 10 + 9}%`, n: (DATA.reach.find(x => x.b === b) || {}).n || 0 }));
@@ -489,7 +500,7 @@
     const peakD = Object.entries(byDow).sort((a, b) => b[1] - a[1])[0];
     return `<div class="grid">
       <div class="card w12"><h3>מתי נכנסים לאתר <span class="sub">שעת תחילת הביקור, שעון ישראל${peakH ? ` · שעת השיא: ${peakH[0]}:00` : ''}${peakD ? ` · יום השיא: ${DAYS[peakD[0]]}` : ''}</span></h3>${heatmap(DATA.heatS)}</div>
-      <div class="card w12"><h3>מתי מאזינים <span class="sub">דקות האזנה לפי יום ושעה</span></h3>${heatmap(DATA.heatL, 's', v => dur(v))}</div>
+      <div class="card w12"><h3>מתי מאזינים <span class="sub">זמן שעון לפי יום ושעה</span></h3>${heatmap(DATA.heatL, 's', v => dur(v))}</div>
       <div class="card"><h3>כניסות לפי שעה</h3>${hbars(Array.from({ length: 24 }, (_, h) => ({ k: `${String(h).padStart(2, '0')}:00`, n: byHour[h] || 0 })), { limit: 24, sub: r => `${dur(lHour[parseInt(r.k)] || 0)} האזנה` })}</div>
       <div class="card"><h3>כניסות לפי יום בשבוע</h3>${hbars(DAYS.map((k, d) => ({ k, n: byDow[d] || 0 })), { limit: 7, sub: r => pct(r.n, s.sessions) })}
         <h3 style="margin-top:18px">משך הביקורים</h3>${hbars(durRows, { limit: 7, sub: r => pct(r.n, s.sessions) })}</div>
@@ -611,7 +622,7 @@
   const dlg = $('#dlg');
   $('#dlgClose').addEventListener('click', () => dlg.close());
   dlg.addEventListener('click', e => { if (e.target === dlg) dlg.close(); });
-  function openDlg(title, html) { $('#dlgTitle').textContent = title; $('#dlgBody').innerHTML = html; if (!dlg.open) dlg.showModal(); }
+  function openDlg(title, html) { if (!PW) return; $('#dlgTitle').textContent = title; $('#dlgBody').innerHTML = html; if (!dlg.open) dlg.showModal(); }
 
   function evText(e) {
     const t = EVT[e.type] || e.type;
@@ -650,7 +661,7 @@
     openDlg('מבקר', '<div class="empty">טוען…</div>');
     const d = await (await api('/api/visitor?id=' + encodeURIComponent(id))).json();
     const v = d.visitor; if (!v) return openDlg('מבקר', '<div class="empty">לא נמצא</div>');
-    const byItem = {};
+    const byItem = Object.create(null);
     for (const l of d.listens) { const o = (byItem[l.item_id] ||= { title: l.title || l.item_id, n: 0, s: 0, c: 0, last: 0 }); o.n++; o.s += l.listened_s; o.c += l.completed; o.last = Math.max(o.last, l.started_at); }
     const items = Object.values(byItem).sort((a, b) => b.last - a.last);
     openDlg(`מבקר ${id.slice(0, 8)}`, `

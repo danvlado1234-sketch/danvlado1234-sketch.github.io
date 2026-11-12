@@ -75,10 +75,17 @@
 
   function ensureSession() {
     const now = Date.now();
-    if (!S || !ID_RE.test(S.id || '') || now - S.last > IDLE) {
-      if (S && S.id && (evq.length || cur)) flush(true);
+    if (!S || !ID_RE.test(S.id || '') || !Number.isFinite(S.last) || !Number.isFinite(S.start) || now - S.last > IDLE) {
+      if (S && S.id) {
+        // Closing an idle visit must not extend its heartbeat to the next visit.
+        finishListen();
+        flush(true, false);
+      }
       S = { id: rid(), start: now, last: now };
+      ctx.entry = route();
       lastRoute = null;
+      visibleSince = document.visibilityState === 'visible' ? now : null;
+      lastInput = now;
       saveS();
       return true;
     }
@@ -103,39 +110,78 @@
   }
 
   function listenSnap(l, final) {
-    if (!l.sent && l.d < 3 && !l.c) return null;          // פחות מ-3 שניות — לא נחשב השמעה
-    if (l.sent && l.d < 0.5 && !final && l.c === l.cSent) return null;
-    const s = { id: l.lid, i: l.id, k: l.k, ti: l.ti, se: l.se, st: l.st, t: l.t, d: Math.round(l.d * 10) / 10,
-      sp: Math.round(l.sp), mp: Math.round(l.mp), du: Math.round(l.du || 0), spd: l.spd, c: l.c, r: l.r, src: l.src, n: !l.sent };
-    l.d = 0; l.sent = true; l.cSent = l.c;
-    return s;
+    if (!l.sent && l.d < 3 && !l.c) return null;
+    if (l.sent && l.d < 0.001 && !final && l.c === l.cSent) return null;
+    const snap = { id: l.lid, i: l.id, k: l.k, ti: l.ti, se: l.se, st: l.st, t: l.t,
+      sp: Math.round(l.sp), mp: Math.round(l.mp), du: Math.round(l.du || 0), spd: l.spd,
+      c: l.c, r: l.r, src: l.src, n: !l.sent, sg: [...l.buckets.values()] };
+    l.d = 0; l.buckets.clear(); l.sent = true; l.cSent = l.c;
+    return snap;
   }
 
-  function flush(beacon) {
+  // Immutable packets survive refresh/navigation. An acknowledgement removes a packet;
+  // a beacon never acknowledges it. Duplicate delivery is handled atomically by the server.
+  const OUTBOX = 'sa_packet_v2_';
+  const pending = new Map();
+  let sending = false, retryAt = 0;
+  function recoverPackets() {
+    try {
+      for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (!key || !key.startsWith(OUTBOX) || pending.has(key)) continue;
+        const text = get(key);
+        try {
+          const p = JSON.parse(text);
+          if (p.ver === 2 && ID_RE.test(p.b) && p.created >= Date.now() - 3 * 864e5) pending.set(key, text);
+          else set(key, null);
+        } catch { set(key, null); }
+      }
+    } catch {}
+  }
+  function remember(payload) {
+    const key = OUTBOX + payload.b, text = JSON.stringify(payload);
+    pending.set(key, text);
+    set(key, text);
+  }
+  async function deliver() {
+    if (sending || Date.now() < retryAt) return;
+    sending = true;
+    recoverPackets();
+    try {
+      let budget = 5;
+      for (const [key, body] of pending) {
+        if (JSON.parse(body).created < Date.now() - 3 * 864e5) { pending.delete(key); set(key, null); continue; }
+        if (budget-- <= 0) break;
+        const r = await fetch(BASE + '/e', { method: 'POST', body, keepalive: body.length < 60000,
+          mode: 'cors', credentials: 'omit', headers: { 'content-type': 'text/plain' } });
+        if (!r.ok) {
+          retryAt = Date.now() + Math.max(30, Math.min(300, Number(r.headers.get('Retry-After')) || 30)) * 1000;
+          break;
+        }
+        pending.delete(key); set(key, null);
+      }
+    } catch { retryAt = Date.now() + 30000; }
+    finally { sending = false; }
+  }
+  function flush(beacon, heartbeat = true) {
     if (!S) return;
     accrueActive();
     const ls = [];
-    while (doneListens.length) { const s = listenSnap(doneListens.shift(), true); if (s) ls.push(s); }
-    if (cur) { const s = listenSnap(cur, false); if (s) ls.push(s); }
+    while (doneListens.length && ls.length < 5) { const snap = listenSnap(doneListens.shift(), true); if (snap) ls.push(snap); }
+    if (cur && ls.length < 5) { const snap = listenSnap(cur, false); if (snap) ls.push(snap); }
     const act = Math.floor(activeAcc);
     const engaged = isPlaying() || (visibleSince != null && Date.now() - lastInput < ACTIVE_GRACE);
-    if (!evq.length && !ls.length && act < 5 && !engaged) return;
-    activeAcc -= act;
-    const payload = { v: vid, s: S.id, ctx, ev: evq.splice(0), ls, act };
-    if (engaged || payload.ev.length || ls.length) payload.hb = Date.now();
-    const body = JSON.stringify(payload);
-    const url = BASE + '/e';
-    let ok = false;
-    if (beacon && navigator.sendBeacon) { try { ok = navigator.sendBeacon(url, new Blob([body], { type: 'text/plain' })); } catch {} }
-    if (!ok) {
-      fetch(url, { method: 'POST', body, keepalive: body.length < 60000, mode: 'cors', credentials: 'omit', headers: { 'content-type': 'text/plain' } })
-        .catch(() => {
-          // אין רשת — מחזירים לתור (עד גבול), ננסה שוב בפעם הבאה
-          if (evq.length < 300) evq.unshift(...payload.ev);
-          activeAcc += act;
-          for (const s of ls) if (cur && cur.lid === s.id) { cur.d += s.d; if (s.n) cur.sent = false; }
-        });
+    if (evq.length || ls.length || act >= 5 || (heartbeat && engaged)) {
+      activeAcc -= act;
+      const payload = { ver: 2, b: rid(), created: Date.now(), v: vid, s: S.id, sst: S.start,
+        ctx: { ...ctx }, ev: evq.splice(0, 25), ls, act };
+      if (heartbeat && (engaged || payload.ev.length || ls.length)) payload.hb = Date.now();
+      remember(payload);
     }
+    if (beacon && navigator.sendBeacon) {
+      const body = pending.values().next().value;
+      if (body) { try { navigator.sendBeacon(BASE + '/e', new Blob([body], { type: 'text/plain' })); } catch {} }
+    } else void deliver();
   }
 
   function pageview(force) {
@@ -166,40 +212,53 @@
     const a = A.audio, ct = a.currentTime || 0;
     const from = A.getNowFrom ? A.getNowFrom() : 'direct';
     cur = Object.assign({ id, lid: rid(), st: Date.now(), t: Date.now(), d: 0, sp: ct, mp: ct, du: a.duration || 0,
-      spd: a.playbackRate || 1, c: false, cSent: false, r: ct > 5, src: from, sent: false, lastCT: ct }, info(id));
+      spd: a.playbackRate || 1, c: false, cSent: false, r: ct > 5, src: from, sent: false, lastCT: ct, lastTS: Date.now(), lastRate: a.playbackRate || 1, buckets: new Map() }, info(id));
     delete cur.i;
   }
 
+  function sampleAudio() {
+    if (!cur || !A || A.getNowId() !== cur.id) return;
+    const a = A.audio, now = Date.now(), ct = a.currentTime || 0;
+    const diff = ct - cur.lastCT, rate = cur.lastRate || 1;
+    const elapsed = Math.max(0, (now - cur.lastTS) / 1000);
+    // A seek is not listening. Accept delayed background events when actual elapsed time permits them.
+    if (diff > 0 && diff <= elapsed * rate + 1 && !a.seeking) {
+      const wall = diff / rate;
+      let from = now - wall * 1000;
+      while (from < now) {
+        const end = Math.min(now, (Math.floor(from / 3600000) + 1) * 3600000);
+        const w = (end - from) / 1000, key = Math.floor(from / 3600000) + ':' + rate;
+        const g = cur.buckets.get(key) || { ts: Math.floor(from / 3600000) * 3600000, d: 0, w: 0, spd: rate };
+        g.d += w * rate; g.w += w; cur.buckets.set(key, g);
+        cur.d += w * rate; from = end;
+      }
+    }
+    cur.lastCT = ct; cur.lastTS = now; cur.lastRate = a.playbackRate || 1;
+    cur.mp = Math.max(cur.mp, ct);
+    if (a.duration && isFinite(a.duration)) cur.du = a.duration;
+    cur.spd = a.playbackRate || 1; cur.t = now;
+    if (cur.du && ct / cur.du >= 0.9) cur.c = true;
+  }
   function hookAudio() {
     const a = A.audio;
     a.addEventListener('playing', () => {
-      ensureSession();
-      const id = A.getNowId();
+      const rotated = ensureSession(), id = A.getNowId();
       if (!id) return;
+      if (rotated) pageview(true);
       if (!cur || cur.id !== id || (cur.c && (a.currentTime || 0) < 5)) startListen(id);
-      else cur.lastCT = a.currentTime;
+      else { cur.lastCT = a.currentTime; cur.lastTS = Date.now(); cur.lastRate = a.playbackRate || 1; }
       if (visibleSince == null && document.visibilityState === 'visible') visibleSince = Date.now();
     });
-    a.addEventListener('timeupdate', () => {
-      if (!cur || A.getNowId() !== cur.id) return;
-      const ct = a.currentTime || 0;
-      if (!a.paused && cur.lastCT != null) {
-        const diff = ct - cur.lastCT;
-        if (diff > 0 && diff < 4 * (a.playbackRate || 1)) cur.d += diff;
-      }
-      cur.lastCT = ct;
-      cur.mp = Math.max(cur.mp, ct);
-      if (a.duration && isFinite(a.duration)) cur.du = a.duration;
-      cur.spd = a.playbackRate || 1;
-      cur.t = Date.now();
-      if (cur.du && ct / cur.du >= 0.9) cur.c = true;
+    a.addEventListener('timeupdate', sampleAudio);
+    for (const ev of ['seeking', 'seeked']) a.addEventListener(ev, () => {
+      if (cur) { cur.lastCT = a.currentTime; cur.lastTS = Date.now(); }
     });
-    for (const ev of ['seeking', 'seeked']) a.addEventListener(ev, () => { if (cur) cur.lastCT = a.currentTime; });
-    a.addEventListener('pause', () => flush());
-    a.addEventListener('ended', () => { if (cur) { cur.c = true; cur.mp = cur.du || cur.mp; } finishListen(); flush(); });
+    a.addEventListener('pause', () => { sampleAudio(); flush(); });
+    a.addEventListener('ended', () => { sampleAudio(); if (cur) { cur.c = true; cur.mp = cur.du || cur.mp; } finishListen(); flush(); });
     a.addEventListener('emptied', () => { if (cur && A.getNowId() !== cur.id) finishListen(); });
     a.addEventListener('error', () => { const e = a.error; track('error', Object.assign(nowInfo(), { l: 'audio' + (e ? ':' + e.code : '') })); });
-    a.addEventListener('ratechange', () => { if (cur) cur.spd = a.playbackRate || 1; });
+    a.addEventListener('ratechange', () => { sampleAudio(); flush(); });
+    if (isPlaying()) startListen(A.getNowId());
   }
 
   // ---------- לחיצות ----------
@@ -241,7 +300,7 @@
     searchT = setTimeout(() => {
       if (v.length < 2 || v === lastSearch) return;
       lastSearch = v;
-      const results = document.querySelectorAll('#view [data-play], #view .ep').length;
+      const results = document.querySelectorAll('#res > *').length;
       track('search', { l: v.slice(0, 120), n: results });
     }, 1500);
   }, true);
@@ -257,15 +316,19 @@
       if (rotated) pageview(true);
     }
   });
-  addEventListener('pagehide', () => { finishListen(); flush(true); });
+  addEventListener('pagehide', () => { sampleAudio(); finishListen(); flush(true); });
+  addEventListener('pageshow', e => { if (e.persisted && A && isPlaying()) { ensureSession(); startListen(A.getNowId()); } void deliver(); });
+  addEventListener('online', () => { retryAt = 0; void deliver(); });
   addEventListener('appinstalled', () => track('app_installed'));
   setInterval(() => {
     const engaged = isPlaying() || (visibleSince != null && Date.now() - lastInput < ACTIVE_GRACE);
     if (engaged) ensureSession();
-    if (engaged || evq.length) flush();
+    if (engaged || evq.length || doneListens.length) flush();
+    else void deliver();
   }, 30e3);
 
   // התחלה
+  recoverPackets();
   ensureSession();
   pageview(true);
   setTimeout(() => flush(), 4000);

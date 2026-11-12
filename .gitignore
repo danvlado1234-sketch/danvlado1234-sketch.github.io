@@ -1,3 +1,10 @@
 # הגדרות מקומיות וסודות אינם תוכן לפרסום
 rclone.conf
 *mail-config*.json
+
+node_modules/
+.wrangler/
+.dev.vars*
+.env*
+*.local.json
+*.local.txt

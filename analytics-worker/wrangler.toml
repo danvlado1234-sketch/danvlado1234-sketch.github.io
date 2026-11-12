@@ -1,4 +1,6 @@
 name = "shiurim-analytics"
+account_id = "54e13c8c03e647e88d738dd4d92309f5"
+workers_dev = true
 main = "src/index.js"
 compatibility_date = "2026-11-01"
 
@@ -17,9 +19,31 @@ ALLOW_LOCALHOST = "false"
 binding = "DB"
 database_name = "shiurim-analytics"
 # אחרי `npx wrangler d1 create shiurim-analytics` — מדביקים כאן את ה-database_id שהתקבל
-database_id = "REPLACE_WITH_DATABASE_ID"
+database_id = "46d96a4a-0666-4850-9eed-b646efdc4210"
+migrations_dir = "migrations"
 
 [observability]
-enabled = true
+enabled = false
 
 # הסיסמה ללוח הבקרה נשמרת כסוד (לא בקובץ):  npx wrangler secret put DASHBOARD_PASSWORD
+
+[[ratelimits]]
+name = "INGEST_LIMITER"
+namespace_id = "11301"
+[ratelimits.simple]
+limit = 120
+period = 60
+
+[[ratelimits]]
+name = "VISITOR_LIMITER"
+namespace_id = "11302"
+[ratelimits.simple]
+limit = 20
+period = 60
+
+[[ratelimits]]
+name = "AUTH_LIMITER"
+namespace_id = "11303"
+[ratelimits.simple]
+limit = 10
+period = 60
