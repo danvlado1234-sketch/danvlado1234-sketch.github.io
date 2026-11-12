@@ -1492,7 +1492,8 @@
     if (window.WANT_INSTALL && isIOS && !standalone) openGuide();
   }
 
-  window.SHIURIM_APP = { items, byId, fullName, seriesName, epName, seriesHref, toast, artOf, IMG, getNowId: () => nowId };
+  // audio + getNowFrom — לסטטיסטיקות (analytics.js): מודדים כמה נשמע בפועל ומאיפה הופעל השיעור
+  window.SHIURIM_APP = { items, byId, fullName, seriesName, epName, seriesHref, toast, artOf, IMG, getNowId: () => nowId, audio, getNowFrom: () => nowFrom };
   window.ShiurimCommunity?.init(window.SHIURIM_APP);
   if (params.get('f')) { filter = params.get('f'); $$('#topChips .chip').forEach(x => x.classList.toggle('is-on', x.dataset.f === filter)); }
   sideList();

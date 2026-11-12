@@ -1,0 +1,25 @@
+name = "shiurim-analytics"
+main = "src/index.js"
+compatibility_date = "2026-11-01"
+
+# לוח הבקרה נטען כקובץ טקסט מתוך הקוד
+[[rules]]
+type = "Text"
+globs = ["**/*.html"]
+fallthrough = false
+
+[vars]
+# מאילו אתרים מותר לשלוח נתונים (מופרד בפסיקים)
+ALLOWED_ORIGINS = "https://danvlado1234-sketch.github.io"
+ALLOW_LOCALHOST = "false"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "shiurim-analytics"
+# אחרי `npx wrangler d1 create shiurim-analytics` — מדביקים כאן את ה-database_id שהתקבל
+database_id = "REPLACE_WITH_DATABASE_ID"
+
+[observability]
+enabled = true
+
+# הסיסמה ללוח הבקרה נשמרת כסוד (לא בקובץ):  npx wrangler secret put DASHBOARD_PASSWORD

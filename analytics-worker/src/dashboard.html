@@ -1,0 +1,693 @@
+<!doctype html>
+<html dir="rtl" lang="he">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>סטטיסטיקות · שיעורי הרב</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;500;600;700&family=Frank+Ruhl+Libre:wght@700;900&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #121110; --panel: #1b1a18; --panel2: #232120; --line: #2f2c29; --text: #f2ede6; --muted: #a39a8f; --dim: #6f675e;
+    --gold: #d9a441; --gold2: #f0c674; --green: #5fbf7f; --red: #e06c5f; --blue: #6aa7e0; --violet: #b08be0;
+    --r: 14px;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; background: var(--bg); color: var(--text); font: 14px/1.5 Rubik, system-ui, sans-serif; }
+  a { color: var(--gold2); }
+  button, input, select { font: inherit; color: inherit; }
+  .wrap { max-width: 1400px; margin: 0 auto; padding: 18px 18px 60px; }
+  header.top { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 18px; margin-bottom: 14px; }
+  .brand { font-family: 'Frank Ruhl Libre', serif; font-size: 26px; font-weight: 900; letter-spacing: .3px; }
+  .brand small { display: block; font: 500 12px Rubik, sans-serif; color: var(--muted); letter-spacing: 0; }
+  .spacer { flex: 1; }
+  .chips { display: flex; flex-wrap: wrap; gap: 6px; }
+  .chip { background: var(--panel2); border: 1px solid var(--line); border-radius: 999px; padding: 6px 13px; cursor: pointer; white-space: nowrap; }
+  .chip:hover { border-color: #4a4540; }
+  .chip.on { background: var(--gold); color: #1a1408; border-color: var(--gold); font-weight: 600; }
+  .range-custom { display: flex; gap: 6px; align-items: center; color: var(--muted); }
+  .range-custom input { background: var(--panel2); border: 1px solid var(--line); border-radius: 8px; padding: 5px 8px; color-scheme: dark; }
+  .btn { background: var(--panel2); border: 1px solid var(--line); border-radius: 10px; padding: 7px 14px; cursor: pointer; }
+  .btn:hover { border-color: var(--gold); }
+  .btn.primary { background: var(--gold); color: #1a1408; border-color: var(--gold); font-weight: 600; }
+  .btn.danger { border-color: #6a2f2a; color: #f2a59c; }
+  .live { display: flex; flex-wrap: wrap; gap: 10px 22px; align-items: center; background: linear-gradient(90deg, #1f1c16, var(--panel)); border: 1px solid var(--line);
+          border-radius: var(--r); padding: 12px 16px; margin-bottom: 14px; }
+  .dot { width: 9px; height: 9px; border-radius: 50%; background: var(--green); display: inline-block; box-shadow: 0 0 0 0 rgba(95,191,127,.6); animation: pulse 2s infinite; margin-inline-end: 6px; }
+  @keyframes pulse { 70% { box-shadow: 0 0 0 9px rgba(95,191,127,0); } 100% { box-shadow: 0 0 0 0 rgba(95,191,127,0); } }
+  .live b { font-size: 18px; }
+  .live .now-list { color: var(--muted); font-size: 13px; flex-basis: 100%; }
+  .kpis { display: grid; grid-template-columns: repeat(auto-fill, minmax(175px, 1fr)); gap: 10px; margin-bottom: 14px; }
+  .kpi { background: var(--panel); border: 1px solid var(--line); border-radius: var(--r); padding: 12px 14px; }
+  .kpi .l { color: var(--muted); font-size: 12.5px; }
+  .kpi .v { font-size: 25px; font-weight: 700; margin-top: 2px; direction: ltr; text-align: right; }
+  .kpi .d { font-size: 12px; margin-top: 2px; color: var(--dim); }
+  .up { color: var(--green) !important; } .down { color: var(--red) !important; }
+  nav.tabs { display: flex; flex-wrap: wrap; gap: 4px; border-bottom: 1px solid var(--line); margin: 8px 0 14px; }
+  nav.tabs button { background: none; border: 0; padding: 10px 14px; cursor: pointer; color: var(--muted); border-bottom: 2px solid transparent; margin-bottom: -1px; font-weight: 500; }
+  nav.tabs button.on { color: var(--text); border-color: var(--gold); }
+  .grid { display: grid; gap: 14px; grid-template-columns: repeat(12, 1fr); }
+  .card { background: var(--panel); border: 1px solid var(--line); border-radius: var(--r); padding: 14px 16px; min-width: 0; grid-column: span 6; }
+  .card.w12 { grid-column: span 12; } .card.w4 { grid-column: span 4; } .card.w8 { grid-column: span 8; } .card.w3 { grid-column: span 3; }
+  @media (max-width: 1000px) { .card, .card.w4, .card.w8, .card.w3 { grid-column: span 12; } }
+  .card h3 { margin: 0 0 10px; font-size: 15px; font-weight: 600; display: flex; align-items: center; gap: 10px; }
+  .card h3 .sub { color: var(--dim); font-weight: 400; font-size: 12.5px; }
+  .card h3 .right { margin-inline-start: auto; display: flex; gap: 6px; }
+  .card h3 .chip { padding: 3px 10px; font-size: 12px; }
+  .note { color: var(--dim); font-size: 12.5px; }
+  .hbars { display: flex; flex-direction: column; gap: 6px; }
+  .hbar { display: grid; grid-template-columns: minmax(90px, 38%) 1fr auto; gap: 10px; align-items: center; font-size: 13px; }
+  .hbar .k { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .hbar .bar { height: 10px; background: var(--panel2); border-radius: 6px; overflow: hidden; }
+  .hbar .bar i { display: block; height: 100%; background: linear-gradient(90deg, var(--gold), var(--gold2)); border-radius: 6px; }
+  .hbar .n { color: var(--muted); direction: ltr; min-width: 60px; text-align: left; font-variant-numeric: tabular-nums; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th, td { text-align: right; padding: 7px 8px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  th { color: var(--muted); font-weight: 500; cursor: pointer; white-space: nowrap; user-select: none; position: sticky; top: 0; background: var(--panel); }
+  th.sorted::after { content: ' ▾'; color: var(--gold); }
+  th.sorted.asc::after { content: ' ▴'; }
+  td.num { direction: ltr; text-align: left; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  tr.click { cursor: pointer; } tr.click:hover td { background: #22201d; }
+  .scroll { max-height: 560px; overflow: auto; }
+  .chart svg { width: 100%; height: 260px; display: block; }
+  .chart .bar { fill: var(--gold); } .chart .bar:hover { fill: var(--gold2); }
+  .chart .bar2 { fill: #5b4a2a; }
+  .chart text { fill: var(--dim); font-size: 11px; font-family: Rubik, sans-serif; }
+  .chart line { stroke: var(--line); }
+  .heat { display: grid; grid-template-columns: 54px repeat(24, 1fr); gap: 2px; font-size: 11px; direction: rtl; }
+  .heat .c { aspect-ratio: 1.3; border-radius: 3px; background: var(--panel2); position: relative; }
+  .heat .h { color: var(--dim); text-align: center; }
+  .heat .d { color: var(--muted); display: flex; align-items: center; }
+  .pill { display: inline-block; background: var(--panel2); border: 1px solid var(--line); border-radius: 999px; padding: 1px 8px; font-size: 11.5px; color: var(--muted); white-space: nowrap; }
+  .pill.g { color: var(--green); border-color: #2c4a36; } .pill.y { color: var(--gold2); border-color: #4a3d22; }
+  .split { display: flex; height: 14px; border-radius: 7px; overflow: hidden; background: var(--panel2); margin: 6px 0 8px; }
+  .split i { display: block; height: 100%; }
+  .legend { display: flex; gap: 14px; flex-wrap: wrap; font-size: 12.5px; color: var(--muted); }
+  .legend span::before { content: ''; display: inline-block; width: 10px; height: 10px; border-radius: 3px; background: var(--c); margin-inline-end: 5px; vertical-align: -1px; }
+  #login { min-height: 100vh; display: grid; place-items: center; }
+  #login form { background: var(--panel); border: 1px solid var(--line); border-radius: 18px; padding: 28px; width: min(380px, 92vw); display: flex; flex-direction: column; gap: 12px; }
+  #login input[type=password] { background: var(--panel2); border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; }
+  #login .err { color: var(--red); min-height: 1.2em; font-size: 13px; }
+  .loading { opacity: .5; pointer-events: none; transition: opacity .2s; }
+  dialog { background: var(--panel); color: var(--text); border: 1px solid var(--line); border-radius: 18px; width: min(900px, 95vw); max-height: 88vh; padding: 0; }
+  dialog::backdrop { background: rgba(0,0,0,.6); }
+  dialog .dh { display: flex; align-items: center; gap: 10px; padding: 14px 18px; border-bottom: 1px solid var(--line); position: sticky; top: 0; background: var(--panel); }
+  dialog .db { padding: 14px 18px; }
+  .tl { list-style: none; margin: 0; padding: 0; }
+  .tl li { display: grid; grid-template-columns: 70px 1fr; gap: 10px; padding: 6px 0; border-bottom: 1px dashed var(--line); }
+  .tl time { color: var(--dim); direction: ltr; text-align: right; font-variant-numeric: tabular-nums; }
+  .facts { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 8px 16px; margin-bottom: 14px; font-size: 13px; }
+  .facts div span { display: block; color: var(--dim); font-size: 12px; }
+  .progress { height: 6px; background: var(--panel2); border-radius: 3px; overflow: hidden; min-width: 70px; }
+  .progress i { display: block; height: 100%; background: var(--green); }
+  .empty { color: var(--dim); padding: 18px 0; text-align: center; }
+  .exports { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 12px; }
+  .exports .card { grid-column: auto; }
+  code { background: var(--panel2); padding: 1px 6px; border-radius: 5px; direction: ltr; display: inline-block; }
+</style>
+</head>
+<body>
+
+<div id="login" hidden>
+  <form id="loginForm">
+    <div class="brand">סטטיסטיקות<small>שיעורי הרה"ג רבי יצחק ולדומירסקי שליט"א</small></div>
+    <input type="password" id="pw" placeholder="סיסמה" autocomplete="current-password" required>
+    <label class="note"><input type="checkbox" id="remember" checked> לזכור במכשיר הזה</label>
+    <button class="btn primary" type="submit">כניסה</button>
+    <div class="err" id="loginErr"></div>
+  </form>
+</div>
+
+<div id="app" hidden>
+<div class="wrap">
+  <header class="top">
+    <div class="brand">סטטיסטיקות<small>שיעורי הרב · danvlado1234-sketch.github.io</small></div>
+    <div class="spacer"></div>
+    <div class="chips" id="ranges">
+      <button class="chip" data-r="today">היום</button>
+      <button class="chip" data-r="yesterday">אתמול</button>
+      <button class="chip on" data-r="7">7 ימים</button>
+      <button class="chip" data-r="30">30 יום</button>
+      <button class="chip" data-r="90">3 חודשים</button>
+      <button class="chip" data-r="365">שנה</button>
+      <button class="chip" data-r="all">הכל</button>
+    </div>
+    <div class="range-custom"><input type="date" id="from"> עד <input type="date" id="to"></div>
+    <button class="btn" id="refresh" title="רענון">↻ רענון</button>
+    <button class="btn" id="logout">יציאה</button>
+  </header>
+
+  <section class="live" id="live"><span><span class="dot"></span>טוען…</span></section>
+  <section class="kpis" id="kpis"></section>
+
+  <nav class="tabs" id="tabs">
+    <button class="on" data-tab="overview">סקירה</button>
+    <button data-tab="lessons">שיעורים והאזנה</button>
+    <button data-tab="times">זמני כניסה</button>
+    <button data-tab="audience">קהל ומכשירים</button>
+    <button data-tab="sources">מקורות, דפים וחיפושים</button>
+    <button data-tab="sessions">ביקורים</button>
+    <button data-tab="export">ייצוא נתונים</button>
+  </nav>
+
+  <main id="main"></main>
+</div>
+</div>
+
+<dialog id="dlg"><div class="dh"><b id="dlgTitle"></b><span class="spacer"></span><button class="btn" id="dlgClose">סגירה</button></div><div class="db" id="dlgBody"></div></dialog>
+
+<script>
+(() => {
+  'use strict';
+  const $ = (s, r = document) => r.querySelector(s);
+  const $$ = (s, r = document) => [...r.querySelectorAll(s)];
+  const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  const KEY = 'sa_dash_pw';
+  let PW = sessionStorage.getItem(KEY) || localStorage.getItem(KEY) || '';
+
+  // ---------- פורמטים ----------
+  const TZ = 'Asia/Jerusalem';
+  const dayFmt = new Intl.DateTimeFormat('en-CA', { timeZone: TZ, year: 'numeric', month: '2-digit', day: '2-digit' });
+  const todayIL = () => dayFmt.format(new Date());
+  const addDays = (d, n) => { const x = new Date(d + 'T12:00:00Z'); x.setUTCDate(x.getUTCDate() + n); return x.toISOString().slice(0, 10); };
+  const N = n => (n == null || isNaN(n)) ? '0' : Math.round(n).toLocaleString('he-IL');
+  const pct = (a, b) => b ? Math.round(a / b * 100) + '%' : '—';
+  const dur = s => {
+    s = Math.round(s || 0);
+    if (s < 60) return s + ' שנ׳';
+    if (s < 3600) return Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0') + ' דק׳';
+    const h = Math.floor(s / 3600), m = Math.floor(s % 3600 / 60);
+    return h + ':' + String(m).padStart(2, '0') + ' שע׳';
+  };
+  const hours = s => { const h = (s || 0) / 3600; return h >= 10 ? N(h) : h.toFixed(1); };
+  const tFmt = new Intl.DateTimeFormat('he-IL', { timeZone: TZ, day: 'numeric', month: 'numeric', hour: '2-digit', minute: '2-digit' });
+  const timeFmt = new Intl.DateTimeFormat('he-IL', { timeZone: TZ, hour: '2-digit', minute: '2-digit', second: '2-digit' });
+  const fullFmt = new Intl.DateTimeFormat('he-IL', { timeZone: TZ, weekday: 'long', day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+  const ago = ts => { const s = (Date.now() - ts) / 1000; if (s < 60) return 'עכשיו'; if (s < 3600) return `לפני ${Math.round(s / 60)} דק׳`; if (s < 86400) return `לפני ${Math.round(s / 3600)} שע׳`; return tFmt.format(ts); };
+  let regionNames; try { regionNames = new Intl.DisplayNames(['he'], { type: 'region' }); } catch {}
+  const country = c => { if (!c) return 'לא ידוע'; if (c === 'XX' || c === 'T1') return 'לא ידוע / Tor'; try { return regionNames ? regionNames.of(c) : c; } catch { return c; } };
+  const DAYS = ['ראשון', 'שני', 'שלישי', 'רביעי', 'חמישי', 'שישי', 'שבת'];
+  const KIND = { mishna: 'משנה', parasha: 'פרשת שבוע', moed: 'מועדים', iyun: 'עיון' };
+  const DEVICE = { mobile: 'טלפון', tablet: 'טאבלט', desktop: 'מחשב' };
+  const LSRC = { direct: 'לחיצה על שיעור', click: 'לחיצה על שיעור', user: 'מהתור שלי', cont: 'המשך אוטומטי (הבא בתור)', back: 'חזרה לשיעור הקודם' };
+  const EVT = {
+    pageview: 'צפייה בדף', download: 'הורדת שיעור', pdf_open: 'פתיחת סיכום PDF', share: 'שיתוף', search: 'חיפוש', install_click: 'לחיצה על "התקנה"',
+    app_installed: 'האפליקציה הותקנה', comments_open: 'פתיחת תגובות', contact_open: 'פתיחת "יצירת קשר"', text_open: 'פתיחת טקסט / לימוד',
+    queue_add: 'הוספה לתור', favorite: 'שמירה במועדפים', speed_change: 'שינוי מהירות', cont_on: 'מתג המשך אוטומטי', sefaria_open: 'מעבר לספריא',
+    error: 'שגיאת השמעה', outbound: 'קישור חיצוני',
+  };
+  const routeName = r => {
+    if (!r || r === '#/' || r === '#') return 'דף הבית';
+    const p = r.replace(/^#\/?/, '').split('/');
+    const map = { search: 'חיפוש', library: 'הספרייה שלי', iyun: 'עיון', admin: 'ניהול', fav: 'השמורים שלי', queue: 'התור' };
+    if (p[0] === 'm') return `משנה · ${p[1] || ''}${p[2] ? ' פרק ' + p[2] : ''}`;
+    if (p[0] === 'p') return `פרשה/מועד · ${p[1] || ''}`;
+    if (p[0] === 'book') return `חומש ${p[1] || ''}`;
+    if (p[0] === 'seder') return `סדר ${p[1] || ''}`;
+    if (p[0] === 'iyun' && p[1]) return `עיון · ${p[1]}`;
+    return map[p[0]] || r;
+  };
+  const srcName = s => s ? s : 'כניסה ישירה / לא ידוע';
+
+  // ---------- API ----------
+  async function api(path, opts = {}) {
+    const r = await fetch(path, { ...opts, headers: { ...(opts.headers || {}), Authorization: 'Bearer ' + PW } });
+    if (r.status === 401) { showLogin('הסיסמה שגויה או שפג תוקפה'); throw new Error('unauthorized'); }
+    if (!r.ok) { let m = r.status; try { m = (await r.json()).error || m; } catch {} throw new Error(m); }
+    return r;
+  }
+
+  // ---------- כניסה ----------
+  function showLogin(err) {
+    $('#app').hidden = true; $('#login').hidden = false; $('#loginErr').textContent = err || ''; $('#pw').focus();
+  }
+  $('#loginForm').addEventListener('submit', async e => {
+    e.preventDefault();
+    PW = $('#pw').value;
+    try {
+      await api('/api/ping');
+      sessionStorage.setItem(KEY, PW);
+      if ($('#remember').checked) localStorage.setItem(KEY, PW); else localStorage.removeItem(KEY);
+      start();
+    } catch (err) { if (err.message !== 'unauthorized') $('#loginErr').textContent = 'שגיאה: ' + err.message; }
+  });
+  $('#logout').addEventListener('click', () => { sessionStorage.removeItem(KEY); localStorage.removeItem(KEY); PW = ''; showLogin(); });
+
+  // ---------- טווח ----------
+  let range = { from: addDays(todayIL(), -6), to: todayIL(), key: '7' };
+  function setRange(key) {
+    const t = todayIL();
+    if (key === 'today') range = { from: t, to: t };
+    else if (key === 'yesterday') range = { from: addDays(t, -1), to: addDays(t, -1) };
+    else if (key === 'all') range = { from: (DATA && DATA.allTime && DATA.allTime.since) || '2024-01-01', to: t };
+    else range = { from: addDays(t, -(Number(key) - 1)), to: t };
+    range.key = key;
+    $$('#ranges .chip').forEach(c => c.classList.toggle('on', c.dataset.r === key));
+    $('#from').value = range.from; $('#to').value = range.to;
+    load();
+  }
+  $$('#ranges .chip').forEach(c => c.addEventListener('click', () => setRange(c.dataset.r)));
+  for (const id of ['from', 'to']) $('#' + id).addEventListener('change', () => {
+    if (!$('#from').value || !$('#to').value) return;
+    range = { from: $('#from').value, to: $('#to').value, key: 'custom' };
+    $$('#ranges .chip').forEach(c => c.classList.remove('on'));
+    load();
+  });
+  $('#refresh').addEventListener('click', () => { load(); loadLive(); });
+
+  // ---------- טאבים ----------
+  let tab = location.hash.slice(1) || 'overview';
+  $$('#tabs button').forEach(b => b.addEventListener('click', () => { tab = b.dataset.tab; history.replaceState(null, '', '#' + tab); render(); }));
+
+  // ---------- טעינה ----------
+  let DATA = null;
+  async function load() {
+    $('#main').classList.add('loading'); $('#kpis').classList.add('loading');
+    try {
+      const r = await api(`/api/stats?from=${range.from}&to=${range.to}`);
+      DATA = await r.json();
+      if (range.key === 'all' && DATA.allTime.since && DATA.allTime.since !== range.from) { range.from = DATA.allTime.since; $('#from').value = range.from; }
+      render();
+    } catch (e) { if (e.message !== 'unauthorized') $('#main').innerHTML = `<div class="card w12 empty">שגיאה בטעינת הנתונים: ${esc(e.message)}</div>`; }
+    $('#main').classList.remove('loading'); $('#kpis').classList.remove('loading');
+  }
+
+  async function loadLive() {
+    try {
+      const d = await (await api('/api/live')).json();
+      const listening = d.listening.filter(l => Date.now() - l.last_at < 90e3);
+      const lst = listening.slice(0, 6).map(l => `🎧 ${esc(l.title || l.item_id)} <span class="pill">${l.duration_s ? Math.round(l.max_pos_s / l.duration_s * 100) + '%' : ''}</span>`).join(' · ');
+      const where = d.sessions.slice(0, 8).map(s => `${esc(DEVICE[s.device] || s.device || '')} ${esc(s.city || country(s.country))} · ${esc(routeName(s.exit_route))}`).join(' · ');
+      $('#live').innerHTML = `<span><span class="dot"></span>עכשיו באתר: <b>${N(d.sessions.length)}</b></span>
+        <span>מאזינים כרגע: <b>${N(listening.length)}</b></span>
+        <span>ב-30 הדקות האחרונות: <b>${N(d.last30min)}</b></span>
+        <span class="note">מתעדכן כל 30 שניות · ${timeFmt.format(d.now)}</span>
+        ${lst || where ? `<div class="now-list">${lst}${lst && where ? '<br>' : ''}${where}</div>` : ''}`;
+    } catch {}
+  }
+
+  // ---------- רכיבי תצוגה ----------
+  function delta(cur, prev, invert) {
+    if (prev == null || !isFinite(prev) || prev === 0) return cur ? '<span class="note">אין נתון להשוואה</span>' : '';
+    const ch = (cur - prev) / prev * 100;
+    if (Math.abs(ch) < 0.5) return '<span>ללא שינוי</span>';
+    const good = invert ? ch < 0 : ch > 0;
+    return `<span class="${good ? 'up' : 'down'}">${ch > 0 ? '▲' : '▼'} ${Math.abs(ch).toFixed(0)}%</span> מהתקופה הקודמת`;
+  }
+  const kpi = (l, v, d, title) => `<div class="kpi" title="${esc(title || '')}"><div class="l">${l}</div><div class="v">${v}</div><div class="d">${d || ''}</div></div>`;
+
+  function hbars(rows, { k = r => r.k, v = r => r.n, fmt = N, sub, limit = 15, onClick } = {}) {
+    rows = rows.slice(0, limit);
+    if (!rows.length) return '<div class="empty">אין נתונים בטווח הזה</div>';
+    const max = Math.max(...rows.map(v), 1);
+    return `<div class="hbars">${rows.map((r, i) => `<div class="hbar"${onClick ? ` data-i="${i}" style="cursor:pointer"` : ''}><span class="k" title="${esc(k(r))}">${esc(k(r))}</span><span class="bar"><i style="width:${(v(r) / max * 100).toFixed(1)}%"></i></span><span class="n">${fmt(v(r))}${sub ? ' · ' + sub(r) : ''}</span></div>`).join('')}</div>`;
+  }
+
+  function dailySeries() {
+    const S = Object.fromEntries(DATA.dailyS.map(r => [r.day, r]));
+    const L = Object.fromEntries(DATA.dailyL.map(r => [r.day, r]));
+    const out = [];
+    let d = DATA.from;
+    let guard = 0;
+    while (d <= DATA.to && guard++ < 2000) { out.push({ day: d, s: S[d] || {}, l: L[d] || {} }); d = addDays(d, 1); }
+    let i = 0; while (i < out.length - 1 && !out[i].s.sessions && !out[i].l.plays) i++;
+    return out.slice(i);
+  }
+
+  let dailyMetric = 'visitors';
+  const METRICS = {
+    visitors: { name: 'מבקרים', get: r => r.s.visitors || 0, fmt: N },
+    new_visitors: { name: 'מבקרים חדשים', get: r => r.s.new_visitors || 0, fmt: N },
+    sessions: { name: 'ביקורים', get: r => r.s.sessions || 0, fmt: N },
+    plays: { name: 'השמעות', get: r => r.l.plays || 0, fmt: N },
+    listeners: { name: 'מאזינים', get: r => r.l.listeners || 0, fmt: N },
+    listen: { name: 'דקות האזנה', get: r => (r.l.listen_s || 0) / 60, fmt: N },
+    pageviews: { name: 'צפיות בדפים', get: r => r.s.pageviews || 0, fmt: N },
+  };
+  function dailyChart() {
+    const rows = dailySeries(), m = METRICS[dailyMetric];
+    if (!rows.length) return '<div class="empty">אין נתונים</div>';
+    const W = 1000, H = 260, P = { t: 14, r: 8, b: 26, l: 42 };
+    const vals = rows.map(m.get), max = Math.max(...vals, 1);
+    const nice = (() => { const p = Math.pow(10, Math.floor(Math.log10(max))); const s = [1, 2, 2.5, 5, 10].find(x => x * p >= max / 4) * p; return s; })();
+    const top = Math.ceil(max / nice) * nice;
+    const bw = (W - P.l - P.r) / rows.length;
+    const y = v => H - P.b - v / top * (H - P.t - P.b);
+    let g = '';
+    for (let v = 0; v <= top + 1e-9; v += nice) g += `<line x1="${P.l}" x2="${W - P.r}" y1="${y(v)}" y2="${y(v)}"/><text x="${P.l - 6}" y="${y(v) + 4}" text-anchor="end">${N(v)}</text>`;
+    const step = Math.ceil(rows.length / 14);
+    // ציר X משמאל לימין (התאריך המוקדם משמאל) — הכי קריא לגרף זמן
+    rows.forEach((r, i) => {
+      const x = P.l + i * bw, v = vals[i], dow = new Date(r.day + 'T12:00:00Z').getUTCDay();
+      const h = Math.max(0, H - P.b - y(v));
+      g += `<rect class="bar${dow === 6 ? ' bar2' : ''}" x="${x + bw * 0.12}" y="${y(v)}" width="${Math.max(1, bw * 0.76)}" height="${h}" rx="2"><title>${r.day} (${DAYS[dow]})\n${m.name}: ${m.fmt(v)}\nמבקרים: ${N(r.s.visitors)} · ביקורים: ${N(r.s.sessions)}\nהשמעות: ${N(r.l.plays)} · האזנה: ${dur(r.l.listen_s)}</title></rect>`;
+      if (i % step === 0) g += `<text x="${x + bw / 2}" y="${H - 8}" text-anchor="middle">${r.day.slice(8)}/${r.day.slice(5, 7)}</text>`;
+    });
+    return `<div class="chart"><svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" style="direction:ltr">${g}</svg></div>`;
+  }
+
+  function heatmap(rows, valKey = 'n', fmt = N) {
+    const M = {}; let max = 1;
+    for (const r of rows) { const v = r[valKey] || 0; M[r.dow + '-' + r.hour] = v; max = Math.max(max, v); }
+    let h = '<div class="heat"><span></span>';
+    for (let hr = 0; hr < 24; hr++) h += `<span class="h">${hr % 3 === 0 ? hr : ''}</span>`;
+    for (let d = 0; d < 7; d++) {
+      h += `<span class="d">${DAYS[d]}</span>`;
+      for (let hr = 0; hr < 24; hr++) {
+        const v = M[d + '-' + hr] || 0, a = v ? 0.12 + 0.88 * Math.sqrt(v / max) : 0;
+        h += `<span class="c" style="${v ? `background:rgba(217,164,65,${a.toFixed(2)})` : ''}" title="יום ${DAYS[d]} · ${String(hr).padStart(2, '0')}:00–${String(hr).padStart(2, '0')}:59\n${fmt(v)}"></span>`;
+      }
+    }
+    return h + '</div>';
+  }
+
+  function sumBy(rows, key, valKey = 'n') { const o = {}; for (const r of rows) o[r[key]] = (o[r[key]] || 0) + (r[valKey] || 0); return o; }
+
+  // טבלה ממוינת
+  function table(id, cols, rows, opts = {}) {
+    const st = (table.state[id] ||= { key: opts.sort || cols.find(c => c.num)?.key, asc: false });
+    const sorted = [...rows].sort((a, b) => {
+      const c = cols.find(c => c.key === st.key) || cols[0];
+      const va = c.sortVal ? c.sortVal(a) : a[c.key], vb = c.sortVal ? c.sortVal(b) : b[c.key];
+      const r = typeof va === 'number' || typeof vb === 'number' ? (va || 0) - (vb || 0) : String(va ?? '').localeCompare(String(vb ?? ''), 'he');
+      return st.asc ? r : -r;
+    });
+    if (!rows.length) return '<div class="empty">אין נתונים בטווח הזה</div>';
+    return `<div class="scroll"><table data-table="${id}"><thead><tr>${cols.map(c => `<th data-k="${c.key}" class="${st.key === c.key ? 'sorted' + (st.asc ? ' asc' : '') : ''}">${c.name}</th>`).join('')}</tr></thead>
+      <tbody>${sorted.map((r, i) => `<tr${opts.click ? ` class="click" data-row="${rows.indexOf(r)}"` : ''}>${cols.map(c => `<td class="${c.num ? 'num' : ''}">${c.fmt ? c.fmt(r) : esc(r[c.key])}</td>`).join('')}</tr>`).join('')}</tbody></table></div>`;
+  }
+  table.state = {};
+  table.meta = {};
+  function bindTables(root) {
+    $$('table[data-table] th', root).forEach(th => th.addEventListener('click', () => {
+      const id = th.closest('table').dataset.table, st = table.state[id];
+      if (st.key === th.dataset.k) st.asc = !st.asc; else { st.key = th.dataset.k; st.asc = false; }
+      render();
+    }));
+  }
+
+  // ---------- תצוגות ----------
+  function renderKpis() {
+    const s = DATA.kpiS[0] || {}, l = DATA.kpiL[0] || {}, ps = DATA.prev.kpiS || {}, pl = DATA.prev.kpiL || {};
+    const ret = DATA.returning[0]?.n || 0;
+    const ev = Object.fromEntries(DATA.evTypes.map(r => [r.type, r]));
+    $('#kpis').innerHTML = [
+      kpi('מבקרים (ייחודיים)', N(s.visitors), delta(s.visitors, ps.visitors), 'מכשירים/דפדפנים שונים שנכנסו בטווח'),
+      kpi('מבקרים חדשים', N(s.new_visitors), `${pct(s.new_visitors, s.visitors)} מהמבקרים · חוזרים: ${N(ret)}`),
+      kpi('ביקורים (כניסות)', N(s.sessions), delta(s.sessions, ps.sessions), 'הפסקה של 30 דקות מתחילה ביקור חדש'),
+      kpi('משך ביקור ממוצע', dur(s.avg_duration), delta(s.avg_duration, ps.avg_duration), 'מהכניסה ועד הפעולה האחרונה (כולל האזנה ברקע)'),
+      kpi('זמן פעיל ממוצע', dur(s.avg_active), `סה״כ ${hours(s.total_active)} שעות מול המסך`, 'הזמן שהאתר היה גלוי ופעיל על המסך'),
+      kpi('השמעות שיעורים', N(l.plays), delta(l.plays, pl.plays), 'השמעה = לפחות 3 שניות האזנה'),
+      kpi('שעות האזנה', hours(l.listen_s), delta(l.listen_s, pl.listen_s), 'כמה מתוכן השיעורים נשמע בפועל (בלי דילוגים)'),
+      kpi('מאזינים ייחודיים', N(l.listeners), `${pct(l.listeners, s.visitors)} מהמבקרים האזינו`),
+      kpi('שיעורים שהושלמו', N(l.completed), `${pct(l.completed, l.plays)} מההשמעות הגיעו ל-90%`),
+      kpi('האזנה ממוצעת להשמעה', dur(l.avg_listen), `${N(l.items)} שיעורים שונים הושמעו`),
+      kpi('צפיות בדפים', N(s.pageviews), `${s.sessions ? (s.pageviews / s.sessions).toFixed(1) : 0} לביקור`),
+      kpi('נטישה מיידית', pct(s.bounces, s.sessions), 'ביקור קצר מ-30 שנ׳ בלי השמעה ובלי מעבר דף'),
+      kpi('הורדות', N(ev.download?.n), `סיכומי PDF: ${N(ev.pdf_open?.n)} · שיתופים: ${N(ev.share?.n)}`),
+      kpi('כניסות מהאפליקציה', pct(s.app_sessions, s.sessions), `התקנות חדשות: ${N(ev.app_installed?.n)}`),
+    ].join('');
+  }
+
+  function vOverview() {
+    const s = DATA.kpiS[0] || {}, ret = DATA.returning[0]?.n || 0;
+    const kinds = DATA.kinds.map(r => ({ ...r, k: KIND[r.k] || r.k || 'אחר' }));
+    return `<div class="grid">
+      <div class="card w12"><h3>לפי יום <span class="sub">${DATA.from} – ${DATA.to} · שבת בצבע כהה · מעבר עם העכבר לפרטים</span>
+        <span class="right">${Object.entries(METRICS).map(([k, m]) => `<button class="chip${k === dailyMetric ? ' on' : ''}" data-metric="${k}">${m.name}</button>`).join('')}</span></h3>${dailyChart()}</div>
+      <div class="card w4"><h3>חדשים מול חוזרים</h3>
+        <div class="split"><i style="width:${s.visitors ? (s.new_visitors / s.visitors * 100) : 0}%;background:var(--gold)"></i><i style="flex:1;background:var(--blue)"></i></div>
+        <div class="legend"><span style="--c:var(--gold)">חדשים ${N(s.new_visitors)}</span><span style="--c:var(--blue)">חוזרים ${N(ret)}</span></div>
+        <p class="note">סה״כ מבקרים מאז תחילת המדידה: <b>${N(DATA.allTime.visitors)}</b>${DATA.allTime.since ? ` (מ-${DATA.allTime.since})` : ''}</p></div>
+      <div class="card w4"><h3>האזנה לפי סוג</h3>${hbars(kinds, { v: r => r.s / 3600, fmt: v => v.toFixed(1) + ' שע׳', sub: r => N(r.n) + ' השמעות' })}</div>
+      <div class="card w4"><h3>מכשירים</h3>${hbars(DATA.devices.map(r => ({ ...r, k: DEVICE[r.k] || r.k })), { sub: r => pct(r.n, s.sessions) })}</div>
+      <div class="card w8"><h3>השיעורים המושמעים ביותר <span class="sub">עשרת הראשונים · הרשימה המלאה בלשונית "שיעורים"</span></h3>
+        ${hbars(DATA.topItems, { k: r => r.title || r.item_id, v: r => r.plays, limit: 10, sub: r => `${N(r.listeners)} מאזינים · ${dur(r.listen_s)}` })}</div>
+      <div class="card w4"><h3>מאיפה מגיעים</h3>${hbars(DATA.sources, { k: r => srcName(r.k), limit: 8 })}</div>
+      <div class="card w12"><h3>מתי נכנסים <span class="sub">ביקורים לפי יום ושעה (שעון ישראל)</span></h3>${heatmap(DATA.heatS)}</div>
+    </div>`;
+  }
+
+  function vLessons() {
+    const l = DATA.kpiL[0] || {};
+    const actions = {};
+    for (const a of DATA.actions) { const o = (actions[a.item_id] ||= { item_id: a.item_id, title: a.title }); o[a.type] = a.n; }
+    const items = DATA.topItems.map(r => ({ ...r, ...(actions[r.item_id] || {}), reach: r.avg_reach || 0 }));
+    const reachRows = Array.from({ length: 11 }, (_, b) => ({ k: b === 10 ? '100%' : `${b * 10}–${b * 10 + 9}%`, n: (DATA.reach.find(x => x.b === b) || {}).n || 0 }));
+    const actRows = Object.values(actions).map(a => ({ ...a, title: a.title || a.item_id }));
+    return `<div class="grid">
+      <div class="card w12"><h3>כל השיעורים שהושמעו <span class="sub">לחיצה על כותרת עמודה ממיינת · "הגיעו עד" = ממוצע הנקודה הרחוקה ביותר בשיעור</span></h3>
+        ${table('items', [
+          { key: 'title', name: 'שיעור', fmt: r => `${esc(r.title || r.item_id)}<br><span class="pill">${esc(KIND[r.kind] || r.kind || '')}</span>` },
+          { key: 'plays', name: 'השמעות', num: 1, fmt: r => N(r.plays) },
+          { key: 'listeners', name: 'מאזינים', num: 1, fmt: r => N(r.listeners) },
+          { key: 'listen_s', name: 'זמן האזנה', num: 1, fmt: r => dur(r.listen_s) },
+          { key: 'reach', name: 'הגיעו עד', num: 1, fmt: r => `<div class="progress" title="${Math.round(r.reach * 100)}%"><i style="width:${Math.round(r.reach * 100)}%"></i></div>${Math.round(r.reach * 100)}%` },
+          { key: 'completed', name: 'הושלמו', num: 1, fmt: r => `${N(r.completed)} (${pct(r.completed, r.plays)})` },
+          { key: 'duration_s', name: 'אורך', num: 1, fmt: r => dur(r.duration_s) },
+          { key: 'download', name: 'הורדות', num: 1, fmt: r => N(r.download) },
+          { key: 'pdf_open', name: 'סיכום', num: 1, fmt: r => N(r.pdf_open) },
+          { key: 'share', name: 'שיתופים', num: 1, fmt: r => N(r.share) },
+        ], items, { sort: 'plays' })}</div>
+      <div class="card"><h3>לפי סדרה <span class="sub">מסכת / פרשה / מועד</span></h3>
+        ${table('series', [
+          { key: 'series', name: 'סדרה', fmt: r => `${esc(r.series || '—')} <span class="pill">${esc(KIND[r.kind] || '')}</span>` },
+          { key: 'plays', name: 'השמעות', num: 1, fmt: r => N(r.plays) },
+          { key: 'listeners', name: 'מאזינים', num: 1, fmt: r => N(r.listeners) },
+          { key: 'items', name: 'שיעורים', num: 1, fmt: r => N(r.items) },
+          { key: 'listen_s', name: 'זמן האזנה', num: 1, fmt: r => dur(r.listen_s) },
+        ], DATA.series, { sort: 'listen_s' })}</div>
+      <div class="card"><h3>עד כמה מקשיבים <span class="sub">התפלגות הנקודה הרחוקה שהגיעו אליה בשיעור</span></h3>
+        ${hbars(reachRows, { limit: 11, sub: r => pct(r.n, l.plays) })}
+        <p class="note">ממוצע האזנה להשמעה: ${dur(l.avg_listen)} · זמן אמיתי (בהתחשב במהירות): ${hours(l.wall_s)} שע׳</p></div>
+      <div class="card w4"><h3>מהירות השמעה</h3>${hbars(DATA.speeds.map(r => ({ k: r.k + '×', n: r.n })), { sub: r => pct(r.n, l.plays) })}</div>
+      <div class="card w4"><h3>איך הופעל השיעור</h3>${hbars(DATA.listenSrc.map(r => ({ k: LSRC[r.k] || r.k, n: r.n })), { sub: r => pct(r.n, l.plays) })}</div>
+      <div class="card w4"><h3>פעולות על שיעורים</h3>${hbars(DATA.evTypes.filter(r => ['download', 'pdf_open', 'share', 'comments_open', 'text_open', 'sefaria_open', 'queue_add', 'favorite', 'speed_change', 'error'].includes(r.type)).sort((a, b) => b.n - a.n).map(r => ({ k: EVT[r.type] || r.type, n: r.n, u: r.u })), { sub: r => N(r.u) + ' אנשים' })}</div>
+      <div class="card w12"><h3>הורדות, סיכומים ושיתופים לפי שיעור</h3>
+        ${table('actions', [
+          { key: 'title', name: 'שיעור' },
+          { key: 'download', name: 'הורדות', num: 1, fmt: r => N(r.download) },
+          { key: 'pdf_open', name: 'פתיחת סיכום', num: 1, fmt: r => N(r.pdf_open) },
+          { key: 'share', name: 'שיתופים', num: 1, fmt: r => N(r.share) },
+          { key: 'comments_open', name: 'פתיחת תגובות', num: 1, fmt: r => N(r.comments_open) },
+          { key: 'text_open', name: 'פתיחת טקסט', num: 1, fmt: r => N(r.text_open) },
+          { key: 'queue_add', name: 'לתור', num: 1, fmt: r => N(r.queue_add) },
+          { key: 'favorite', name: 'מועדפים', num: 1, fmt: r => N(r.favorite) },
+        ], actRows, { sort: 'download' })}</div>
+    </div>`;
+  }
+
+  function vTimes() {
+    const byHour = sumBy(DATA.heatS, 'hour'), byDow = sumBy(DATA.heatS, 'dow');
+    const lHour = sumBy(DATA.heatL, 'hour', 's');
+    const B = ['פחות מ-10 שנ׳', '10–60 שנ׳', '1–3 דק׳', '3–10 דק׳', '10–30 דק׳', '30–60 דק׳', 'מעל שעה'];
+    const durRows = B.map((k, b) => ({ k, n: (DATA.durBuckets.find(x => x.b === b) || {}).n || 0 }));
+    const s = DATA.kpiS[0] || {};
+    const peakH = Object.entries(byHour).sort((a, b) => b[1] - a[1])[0];
+    const peakD = Object.entries(byDow).sort((a, b) => b[1] - a[1])[0];
+    return `<div class="grid">
+      <div class="card w12"><h3>מתי נכנסים לאתר <span class="sub">שעת תחילת הביקור, שעון ישראל${peakH ? ` · שעת השיא: ${peakH[0]}:00` : ''}${peakD ? ` · יום השיא: ${DAYS[peakD[0]]}` : ''}</span></h3>${heatmap(DATA.heatS)}</div>
+      <div class="card w12"><h3>מתי מאזינים <span class="sub">דקות האזנה לפי יום ושעה</span></h3>${heatmap(DATA.heatL, 's', v => dur(v))}</div>
+      <div class="card"><h3>כניסות לפי שעה</h3>${hbars(Array.from({ length: 24 }, (_, h) => ({ k: `${String(h).padStart(2, '0')}:00`, n: byHour[h] || 0 })), { limit: 24, sub: r => `${dur(lHour[parseInt(r.k)] || 0)} האזנה` })}</div>
+      <div class="card"><h3>כניסות לפי יום בשבוע</h3>${hbars(DAYS.map((k, d) => ({ k, n: byDow[d] || 0 })), { limit: 7, sub: r => pct(r.n, s.sessions) })}
+        <h3 style="margin-top:18px">משך הביקורים</h3>${hbars(durRows, { limit: 7, sub: r => pct(r.n, s.sessions) })}</div>
+    </div>`;
+  }
+
+  function vAudience() {
+    const s = DATA.kpiS[0] || {};
+    const freq = DATA.freq.map(r => ({ k: r.c >= 10 ? '10 ביקורים ומעלה' : r.c === 1 ? 'ביקור אחד' : `${r.c} ביקורים`, n: r.n, c: r.c })).sort((a, b) => a.c - b.c);
+    const days = DATA.activeDays.map(r => ({ k: r.c >= 15 ? '15 ימים ומעלה' : r.c === 1 ? 'יום אחד' : `${r.c} ימים`, n: r.n, c: r.c })).sort((a, b) => a.c - b.c);
+    const app = DATA.appMode.map(r => ({ k: r.k ? 'אפליקציה מותקנת' : 'דפדפן', n: r.n, u: r.u }));
+    return `<div class="grid">
+      <div class="card w4"><h3>כמה פעמים כל מבקר נכנס <span class="sub">בטווח</span></h3>${hbars(freq, { limit: 12, sub: r => pct(r.n, s.visitors) })}</div>
+      <div class="card w4"><h3>בכמה ימים שונים נכנסו</h3>${hbars(days, { limit: 15, sub: r => pct(r.n, s.visitors) })}</div>
+      <div class="card w4"><h3>אפליקציה מול דפדפן</h3>${hbars(app, { sub: r => N(r.u) + ' מבקרים' })}
+        <h3 style="margin-top:18px">מכשיר</h3>${hbars(DATA.devices.map(r => ({ ...r, k: DEVICE[r.k] || r.k })), { sub: r => N(r.u) + ' מבקרים' })}</div>
+      <div class="card w4"><h3>מערכת הפעלה</h3>${hbars(DATA.os, { sub: r => N(r.u) + ' מבקרים' })}</div>
+      <div class="card w4"><h3>דפדפן</h3>${hbars(DATA.browsers, { sub: r => N(r.u) + ' מבקרים' })}</div>
+      <div class="card w4"><h3>שפת המכשיר</h3>${hbars(DATA.langs.map(r => ({ k: r.k || '—', n: r.n })))}</div>
+      <div class="card"><h3>מדינות</h3>${hbars(DATA.countries.map(r => ({ ...r, k: country(r.k) })), { sub: r => N(r.u) + ' מבקרים', limit: 20 })}</div>
+      <div class="card"><h3>ערים <span class="sub">לפי Cloudflare — משוער, לפי ספק האינטרנט</span></h3>${hbars(DATA.cities.map(r => ({ ...r, k: `${r.k} (${country(r.c)})` })), { sub: r => N(r.u) + ' מבקרים', limit: 25 })}</div>
+      <div class="card w12"><h3>המאזינים הקבועים <span class="sub">מבקרים אנונימיים לפי זמן האזנה · לחיצה פותחת את כל ההיסטוריה</span></h3>
+        ${table('visitors', [
+          { key: 'visitor_id', name: 'מבקר', fmt: r => `<code>${esc(r.visitor_id.slice(0, 8))}</code>` },
+          { key: 'sessions', name: 'ביקורים', num: 1, fmt: r => N(r.sessions) },
+          { key: 'plays', name: 'השמעות', num: 1, fmt: r => N(r.plays) },
+          { key: 'listen_s', name: 'זמן האזנה', num: 1, fmt: r => dur(r.listen_s) },
+          { key: 'device', name: 'מכשיר', fmt: r => esc(`${DEVICE[r.device] || r.device || ''} · ${r.os || ''}`) },
+          { key: 'city', name: 'עיר' },
+          { key: 'last_seen', name: 'נראה לאחרונה', num: 1, fmt: r => ago(r.last_seen) },
+        ], DATA.topVisitors, { sort: 'listen_s', click: 'visitor' })}</div>
+    </div>`;
+  }
+
+  function vSources() {
+    const s = DATA.kpiS[0] || {};
+    return `<div class="grid">
+      <div class="card"><h3>מקורות תנועה <span class="sub">מאיפה הגיעו לאתר</span></h3>${hbars(DATA.sources, { k: r => srcName(r.k), limit: 25, sub: r => `${N(r.u)} מבקרים · ${N(r.plays)} השמעות` })}
+        <p class="note">טיפ: בקישורים שאתם שולחים אפשר להוסיף <code>?utm_source=whatsapp</code> או <code>?utm_source=mail</code> כדי לדעת בדיוק מאיפה הגיעו.</p></div>
+      <div class="card"><h3>דפי כניסה <span class="sub">הדף הראשון בביקור</span></h3>${hbars(DATA.entries.map(r => ({ k: routeName(r.k), n: r.n })), { limit: 20, sub: r => pct(r.n, s.sessions) })}</div>
+      <div class="card"><h3>הדפים הנצפים ביותר</h3>${hbars(DATA.pages.map(r => ({ ...r, k: routeName(r.k) })), { limit: 30, sub: r => N(r.u) + ' מבקרים' })}</div>
+      <div class="card"><h3>מה חיפשו <span class="sub">מספר בסוגריים = תוצאות שהוצגו בממוצע</span></h3>${hbars(DATA.searches.map(r => ({ ...r, k: `${r.k} (${Math.round(r.results || 0)})` })), { limit: 40, sub: r => N(r.u) + ' אנשים' })}
+        <p class="note">חיפושים עם 0 תוצאות מראים מה אנשים מחפשים ואין באתר.</p></div>
+      ${DATA.campaigns.length ? `<div class="card"><h3>קמפיינים (utm_campaign)</h3>${hbars(DATA.campaigns, { sub: r => N(r.u) + ' מבקרים' })}</div>` : ''}
+      <div class="card"><h3>כל סוגי האירועים</h3>${hbars(DATA.evTypes.map(r => ({ k: EVT[r.type] || r.type, n: r.n, u: r.u })).sort((a, b) => b.n - a.n), { limit: 30, sub: r => N(r.u) + ' אנשים' })}</div>
+    </div>`;
+  }
+
+  let sessRows = [], sessOffset = 0;
+  function vSessions() {
+    return `<div class="grid"><div class="card w12"><h3>כל הביקורים <span class="sub">מהחדש לישן · לחיצה על שורה פותחת את מסלול הביקור המלא</span></h3>
+      <div id="sessTable">${sessTable()}</div>
+      <p style="text-align:center"><button class="btn" id="moreSess"${sessRows.length && sessRows.length % 200 === 0 ? '' : ' hidden'}>טעינת עוד</button></p></div></div>`;
+  }
+  function sessTable() {
+    if (!sessRows.length) return '<div class="empty">טוען…</div>';
+    return table('sessions', [
+      { key: 'started_at', name: 'התחלה', num: 1, fmt: r => tFmt.format(r.started_at) },
+      { key: 'duration_s', name: 'משך', num: 1, fmt: r => dur(r.duration_s) },
+      { key: 'active_s', name: 'פעיל', num: 1, fmt: r => dur(r.active_s) },
+      { key: 'pageviews', name: 'דפים', num: 1, fmt: r => N(r.pageviews) },
+      { key: 'plays', name: 'השמעות', num: 1, fmt: r => N(r.plays) },
+      { key: 'listen_s', name: 'האזנה', num: 1, fmt: r => dur(r.listen_s) },
+      { key: 'device', name: 'מכשיר', fmt: r => esc(`${DEVICE[r.device] || r.device || ''} · ${r.os || ''} · ${r.browser || ''}`) + (r.standalone ? ' <span class="pill y">אפליקציה</span>' : '') },
+      { key: 'city', name: 'מיקום', fmt: r => esc(`${r.city || ''}${r.city ? ', ' : ''}${country(r.country)}`) },
+      { key: 'source', name: 'מקור', fmt: r => esc(srcName(r.source)) },
+      { key: 'entry_route', name: 'כניסה', fmt: r => esc(routeName(r.entry_route)) },
+      { key: 'is_new', name: '', fmt: r => r.is_new ? '<span class="pill g">חדש</span>' : '' },
+    ], sessRows, { sort: 'started_at', click: 'session' });
+  }
+  async function loadSessions(reset) {
+    if (reset) { sessRows = []; sessOffset = 0; }
+    const d = await (await api(`/api/sessions?from=${range.from}&to=${range.to}&limit=200&offset=${sessOffset}`)).json();
+    sessRows = sessRows.concat(d.rows); sessOffset += d.rows.length;
+    if (tab === 'sessions') render();
+  }
+
+  function vExport() {
+    const T = [
+      ['sessions', 'ביקורים', 'שורה לכל ביקור: זמן התחלה וסיום, משך, זמן פעיל, דפים, השמעות, מכשיר, דפדפן, מיקום, מקור, דף כניסה ויציאה.'],
+      ['listens', 'האזנות', 'שורה לכל השמעה של שיעור: איזה שיעור, מתי, כמה שניות נשמעו, מאיפה התחיל ועד איפה הגיע, מהירות, האם הושלם.'],
+      ['events', 'אירועים', 'שורה לכל פעולה: צפייה בדף, הורדה, סיכום, שיתוף, חיפוש (כולל מה חיפשו), התקנה, תגובות ועוד.'],
+      ['visitors', 'מבקרים', 'שורה לכל מבקר אנונימי שנכנס בטווח: מתי נראה לראשונה ולאחרונה, כמה ביקורים, כמה האזין, ומאיפה הגיע בפעם הראשונה.'],
+    ];
+    return `<div class="exports">${T.map(([k, n, d]) => `<div class="card"><h3>${n}</h3><p class="note">${d}</p><button class="btn primary" data-export="${k}">הורדת CSV (${range.from} – ${range.to})</button></div>`).join('')}</div>
+      <div class="card w12" style="margin-top:14px"><h3>שימוש בנתונים</h3>
+        <p class="note">הקבצים נפתחים ישירות ב-Excel / Google Sheets (עברית נתמכת). הזמנים בשעון ישראל. המזהים (visitor_id, session_id) מקשרים בין הטבלאות — אפשר לבנות טבלאות ציר (Pivot) לכל שאלה.
+        <br>פרטיות: אין שמות, טלפונים או כתובות IP — רק מזהה אקראי לכל מכשיר.
+        <br>כדי שהכניסות שלכם לא ייספרו: לפתוח בכל מכשיר פעם אחת את <code>https://danvlado1234-sketch.github.io/?no_track=1</code></p></div>`;
+  }
+
+  function render() {
+    if (!DATA) return;
+    renderKpis();
+    $$('#tabs button').forEach(b => b.classList.toggle('on', b.dataset.tab === tab));
+    const V = { overview: vOverview, lessons: vLessons, times: vTimes, audience: vAudience, sources: vSources, sessions: vSessions, export: vExport }[tab] || vOverview;
+    $('#main').innerHTML = V();
+    bindTables($('#main'));
+    $$('[data-metric]').forEach(b => b.addEventListener('click', () => { dailyMetric = b.dataset.metric; render(); }));
+    $$('[data-export]').forEach(b => b.addEventListener('click', () => exportCsv(b.dataset.export, b)));
+    $$('table[data-table=sessions] tr.click').forEach(tr => tr.addEventListener('click', () => openSession(sessRows[tr.dataset.row].session_id)));
+    $$('table[data-table=visitors] tr.click').forEach(tr => tr.addEventListener('click', () => openVisitor(DATA.topVisitors[tr.dataset.row].visitor_id)));
+    $('#moreSess')?.addEventListener('click', () => loadSessions(false));
+    if (tab === 'sessions' && !sessRows.length && !loadSessions.busy) { loadSessions.busy = true; loadSessions(true).finally(() => { loadSessions.busy = false; }); }
+  }
+
+  async function exportCsv(table, btn) {
+    const old = btn.textContent; btn.textContent = 'מכין קובץ…'; btn.disabled = true;
+    try {
+      const r = await api(`/api/export?table=${table}&from=${range.from}&to=${range.to}`);
+      const blob = await r.blob(); const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob); a.download = `shiurim-${table}-${range.from}_${range.to}.csv`;
+      document.body.append(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 5000);
+    } catch (e) { alert('הייצוא נכשל: ' + e.message); }
+    btn.textContent = old; btn.disabled = false;
+  }
+
+  // ---------- חלון פרטים ----------
+  const dlg = $('#dlg');
+  $('#dlgClose').addEventListener('click', () => dlg.close());
+  dlg.addEventListener('click', e => { if (e.target === dlg) dlg.close(); });
+  function openDlg(title, html) { $('#dlgTitle').textContent = title; $('#dlgBody').innerHTML = html; if (!dlg.open) dlg.showModal(); }
+
+  function evText(e) {
+    const t = EVT[e.type] || e.type;
+    if (e.type === 'pageview') return `${t}: <b>${esc(routeName(e.route))}</b>`;
+    if (e.type === 'search') return `${t}: <b>"${esc(e.label)}"</b> <span class="pill">${N(e.value)} תוצאות</span>`;
+    if (e.type === 'outbound') return `${t}: ${esc(e.label)}`;
+    if (e.type === 'speed_change') return `${t}: ${e.value}×`;
+    return `${t}${e.title ? ': <b>' + esc(e.title) + '</b>' : ''}${e.type === 'error' ? ' ' + esc(e.label || '') : ''}`;
+  }
+  function listenText(l) {
+    const reach = l.duration_s ? Math.round(l.max_pos_s / l.duration_s * 100) : 0;
+    return `🎧 האזנה: <b>${esc(l.title || l.item_id)}</b> — ${dur(l.listened_s)} נשמעו, הגיע עד ${reach}%${l.completed ? ' <span class="pill g">הושלם</span>' : ''}${l.resumed ? ' <span class="pill">המשך מנקודה שמורה</span>' : ''}${l.speed !== 1 ? ` <span class="pill">${l.speed}×</span>` : ''} <span class="pill">${esc(LSRC[l.source] || l.source || '')}</span>`;
+  }
+
+  async function openSession(id) {
+    openDlg('ביקור', '<div class="empty">טוען…</div>');
+    const d = await (await api('/api/session?id=' + encodeURIComponent(id))).json();
+    const s = d.session; if (!s) return openDlg('ביקור', '<div class="empty">לא נמצא</div>');
+    const tl = [...d.events.map(e => ({ ts: e.ts, html: evText(e) })), ...d.listens.map(l => ({ ts: l.started_at, html: listenText(l) }))].sort((a, b) => a.ts - b.ts);
+    openDlg(`ביקור · ${fullFmt.format(s.started_at)}`, `
+      <div class="facts">
+        <div><span>משך</span>${dur(s.duration_s)}</div><div><span>זמן פעיל על המסך</span>${dur(s.active_s)}</div>
+        <div><span>האזנה</span>${dur(s.listen_s)} · ${N(s.plays)} השמעות</div><div><span>דפים</span>${N(s.pageviews)}</div>
+        <div><span>מכשיר</span>${esc(`${DEVICE[s.device] || s.device} · ${s.os} · ${s.browser}`)}${s.standalone ? ' · אפליקציה' : ''}</div>
+        <div><span>מסך / שפה / רשת</span>${esc(`${s.screen || ''} · ${s.lang || ''} · ${s.connection || ''}`)}</div>
+        <div><span>מיקום</span>${esc(`${s.city || ''} ${s.region ? '(' + s.region + ')' : ''} ${country(s.country)}`)}</div>
+        <div><span>מקור</span>${esc(srcName(s.source))}${s.referrer && s.referrer !== s.source ? ' · ' + esc(s.referrer) : ''}${s.campaign ? ' · ' + esc(s.campaign) : ''}</div>
+        <div><span>מבקר</span><a href="#" data-visitor="${esc(s.visitor_id)}">${s.is_new ? 'ביקור ראשון · ' : ''}כל ההיסטוריה ←</a></div>
+      </div>
+      <h3>מה עשה בביקור</h3>
+      <ul class="tl">${tl.map(x => `<li><time>${timeFmt.format(x.ts)}</time><span>${x.html}</span></li>`).join('') || '<li class="empty">אין אירועים</li>'}</ul>`);
+    $('[data-visitor]', dlg)?.addEventListener('click', e => { e.preventDefault(); openVisitor(e.currentTarget.dataset.visitor); });
+  }
+
+  async function openVisitor(id) {
+    openDlg('מבקר', '<div class="empty">טוען…</div>');
+    const d = await (await api('/api/visitor?id=' + encodeURIComponent(id))).json();
+    const v = d.visitor; if (!v) return openDlg('מבקר', '<div class="empty">לא נמצא</div>');
+    const byItem = {};
+    for (const l of d.listens) { const o = (byItem[l.item_id] ||= { title: l.title || l.item_id, n: 0, s: 0, c: 0, last: 0 }); o.n++; o.s += l.listened_s; o.c += l.completed; o.last = Math.max(o.last, l.started_at); }
+    const items = Object.values(byItem).sort((a, b) => b.last - a.last);
+    openDlg(`מבקר ${id.slice(0, 8)}`, `
+      <div class="facts">
+        <div><span>נראה לראשונה</span>${fullFmt.format(v.first_seen)}</div><div><span>נראה לאחרונה</span>${fullFmt.format(v.last_seen)}</div>
+        <div><span>ביקורים</span>${N(v.sessions)}</div><div><span>השמעות</span>${N(v.plays)}</div><div><span>זמן האזנה כולל</span>${dur(v.listen_s)}</div>
+        <div><span>מכשיר</span>${esc(`${DEVICE[v.device] || v.device} · ${v.os} · ${v.browser}`)}</div>
+        <div><span>מיקום</span>${esc(`${v.city || ''} ${country(v.country)}`)}</div><div><span>הגיע לראשונה מ</span>${esc(srcName(v.first_source))}</div>
+      </div>
+      <h3>שיעורים ששמע (${items.length})</h3>
+      <table><thead><tr><th>שיעור</th><th>פעמים</th><th>זמן</th><th>הושלם</th><th>לאחרונה</th></tr></thead><tbody>
+        ${items.map(i => `<tr><td>${esc(i.title)}</td><td class="num">${i.n}</td><td class="num">${dur(i.s)}</td><td class="num">${i.c ? '✓' : ''}</td><td class="num">${tFmt.format(i.last)}</td></tr>`).join('') || '<tr><td colspan="5" class="empty">לא האזין</td></tr>'}
+      </tbody></table>
+      <h3 style="margin-top:16px">ביקורים (${d.sessions.length})</h3>
+      <table><tbody>${d.sessions.map(s => `<tr class="click" data-sid="${esc(s.session_id)}"><td class="num">${tFmt.format(s.started_at)}</td><td class="num">${dur(s.duration_s)}</td><td>${N(s.pageviews)} דפים · ${N(s.plays)} השמעות</td><td>${esc(srcName(s.source))}</td></tr>`).join('')}</tbody></table>
+      <p style="margin-top:18px"><button class="btn danger" id="delVisitor">מחיקת כל הנתונים של המבקר הזה</button> <span class="note">למשל אם זה המכשיר שלך והכניסות שלך מעוותות את הנתונים</span></p>`);
+    $$('[data-sid]', dlg).forEach(tr => tr.addEventListener('click', () => openSession(tr.dataset.sid)));
+    $('#delVisitor').addEventListener('click', async () => {
+      if (!confirm('למחוק לצמיתות את כל הביקורים, ההאזנות והאירועים של המבקר הזה?')) return;
+      await api('/api/delete-visitor', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ visitor_id: id }) });
+      dlg.close(); sessRows = []; load();
+    });
+  }
+
+  // ---------- התחלה ----------
+  let liveTimer = null, statsTimer = null;
+  function start() {
+    $('#login').hidden = true; $('#app').hidden = false;
+    $('#from').value = range.from; $('#to').value = range.to;
+    load(); loadLive();
+    clearInterval(liveTimer); liveTimer = setInterval(() => { if (!document.hidden) loadLive(); }, 30e3);
+    clearInterval(statsTimer); statsTimer = setInterval(() => { if (!document.hidden && range.to === todayIL() && !dlg.open) load(); }, 5 * 60e3);
+  }
+  const _load = load;
+  load = async function () { sessRows = []; return _load(); };
+  if (PW) api('/api/ping').then(start).catch(() => {}); else showLogin();
+})();
+</script>
+</body>
+</html>
