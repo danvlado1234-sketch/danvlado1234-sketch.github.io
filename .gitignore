@@ -1,6 +1,7 @@
 # הגדרות מקומיות וסודות אינם תוכן לפרסום
 rclone.conf
 *mail-config*.json
+*mail-cred*.xml
 
 node_modules/
 .wrangler/
