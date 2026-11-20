@@ -35,18 +35,28 @@ function server() {
   let now = stamp + 3600000;
   class Clock extends Date { static now() { return now; } }
   const context = vm.createContext({ Request, Response, URL, TextEncoder, TextDecoder, Intl, Date: Clock,
-    crypto: { randomUUID, subtle: { digest: webcrypto.subtle.digest.bind(webcrypto.subtle),
-      timingSafeEqual: (a, b) => timingSafeEqual(new Uint8Array(a), new Uint8Array(b)) } } });
+    crypto: { randomUUID, subtle: {
+      digest: webcrypto.subtle.digest.bind(webcrypto.subtle),
+      importKey: webcrypto.subtle.importKey.bind(webcrypto.subtle),
+      sign: webcrypto.subtle.sign.bind(webcrypto.subtle),
+      timingSafeEqual: (a, b) => timingSafeEqual(new Uint8Array(a), new Uint8Array(b)),
+    } } });
   vm.runInContext(source.replace("import DASHBOARD from './dashboard.html';", "const DASHBOARD = 'dashboard';")
     .replace('export default {', 'globalThis.worker = {') + '\nglobalThis.queries = STAT_QUERIES;', context);
   const DB = database();
   const env = { DB, ALLOWED_ORIGINS: origin, DASHBOARD_PASSWORD: 'fixture-password-only', RATE_LIMIT_SALT: 'fixture-salt-only',
-    INGEST_LIMITER: limiter(), VISITOR_LIMITER: limiter(), AUTH_LIMITER: limiter(10) };
+    INGEST_LIMITER: limiter(), VISITOR_LIMITER: limiter(), AUTH_LIMITER: limiter(5) };
   return { DB, env, queries: context.queries, setClock: n => { now = n; },
     async post(body, headers = {}) { return context.worker.fetch(new Request('https://test.invalid/e', {
       method: 'POST', headers: { Origin: origin, 'User-Agent': 'Mozilla/5.0', 'CF-Connecting-IP': '192.0.2.1', ...headers }, body: JSON.stringify(body) }), env, {}); },
-    async get(p, authenticated = true) { return context.worker.fetch(new Request('https://test.invalid' + p, {
-      headers: authenticated ? { Authorization: 'Bearer fixture-password-only' } : {} }), env, {}); },
+    async login(password, headers = {}) { return context.worker.fetch(new Request('https://test.invalid/api/login', {
+      method: 'POST', headers: { 'content-type': 'application/json', 'CF-Connecting-IP': '192.0.2.1', ...headers }, body: JSON.stringify({ password }) }), env, {}); },
+    async get(p, auth = true, headers = {}) {
+      const h = { 'CF-Connecting-IP': '192.0.2.1', ...headers };
+      if (auth === true) h.Authorization = 'Bearer fixture-password-only';
+      else if (typeof auth === 'string') h.Cookie = auth;
+      return context.worker.fetch(new Request('https://test.invalid' + p, { headers: h }), env, {});
+    },
   };
 }
 function packet(extra = {}) {
@@ -59,8 +69,19 @@ test('valid ingestion and all statistics queries run on real SQLite', async () =
   const s = server(); assert.equal((await s.post(packet())).status, 204);
   assert.equal(s.DB.raw.prepare('SELECT plays FROM sessions').get().plays, 1);
   for (const sql of Object.values(s.queries)) s.DB.raw.prepare(sql).all('2026-11-12', '2026-11-12');
-  for (const route of ['/api/stats', '/api/sessions', '/api/session?id=session_fixture_01', '/api/visitor?id=visitor_fixture_01', '/api/live', '/api/export?table=events', '/api/ping', '/health'])
-    assert.equal((await s.get(route)).status, 200, route);
+  const loginRes = await s.login('fixture-password-only');
+  assert.equal(loginRes.status, 200);
+  const setCookie = loginRes.headers.get('Set-Cookie');
+  assert.match(setCookie, /HttpOnly/);
+  assert.match(setCookie, /Secure/);
+  assert.match(setCookie, /SameSite=Strict/);
+  const cookie = setCookie.split(';')[0];
+  for (const route of ['/api/stats', '/api/sessions', '/api/session?id=session_fixture_01', '/api/visitor?id=visitor_fixture_01', '/api/live', '/api/export?table=events', '/api/ping', '/health']) {
+    const res = await s.get(route, cookie);
+    assert.equal(res.status, 200, route);
+    assert.match(res.headers.get('Strict-Transport-Security') || '', /max-age=/);
+  }
+  assert.equal((await s.get('/api/export?table=toString', cookie)).status, 400);
 });
 test('duplicate and concurrent retries do not change any counter', async () => {
   const s = server(), p = packet();
@@ -91,14 +112,21 @@ test('bad origins, malformed packets, missing limiter and excess requests fail c
   assert.equal((await s.post(packet({ ver: 1 }))).status, 400);
   assert.equal((await s.post(packet({ ls: [{ id: 'listen_fixture_01', i: 'x', sg: [null] }] }))).status, 400);
   s.env.INGEST_LIMITER = limiter(0); assert.equal((await s.post(packet())).status, 429);
+  assert.equal((await s.get('/health', false)).status, 429);
   delete s.env.INGEST_LIMITER; assert.equal((await s.post(packet())).status, 503);
 });
-test('dashboard is private and failed password attempts are rate limited', async () => {
+test('dashboard is private and auth rate limit blocks brute-force even with the right password', async () => {
   const s = server();
-  for (let i = 0; i < 10; i++) assert.equal((await s.get('/api/stats', false)).status, 401);
-  assert.equal((await s.get('/api/stats', false)).status, 429);
-  assert.equal((await s.get('/api/stats')).status, 200);
-  const r = await s.get('/'); assert.match(r.headers.get('Content-Security-Policy'), /frame-ancestors 'none'/);
+  assert.equal((await s.get('/api/stats', false)).status, 401);
+  for (let i = 0; i < 5; i++) assert.equal((await s.login('wrong-password')).status, 401);
+  // Once rate limited, even the correct password must be rejected with 429 before verification.
+  assert.equal((await s.login('fixture-password-only')).status, 429);
+  assert.equal((await s.get('/api/stats', true)).status, 429);
+  // A different client IP can still log in and receive an HttpOnly session cookie.
+  const ok = await s.login('fixture-password-only', { 'CF-Connecting-IP': '192.0.2.2' });
+  assert.equal(ok.status, 200);
+  const r = await s.get('/', false); assert.match(r.headers.get('Content-Security-Policy'), /frame-ancestors 'none'/);
+  assert.match(r.headers.get('Strict-Transport-Security') || '', /max-age=/);
 });
 test('SQL stays bound and spreadsheet formulas are forced to text', async () => {
   const s = server(); await s.post(packet({ ev: [{ t: 'search', l: '=1+1' }, { t: 'search', l: "x'); DROP TABLE visitors;--" }] }));
@@ -201,8 +229,8 @@ test('browser and dashboard scripts parse; dashboards escape untrusted HTML', ()
   assert.equal(c.esc('<img onerror=alert(1)>'), '&lt;img onerror=alert(1)&gt;');
 });
 
-test('logout clears the password, cached views and polling timers', async () => {
-  const elements = new Map(), values = new Map(), stopped = [];
+test('logout clears session, cached views and polling timers without storing password in web storage', async () => {
+  const elements = new Map(), values = new Map(), stopped = [], calls = [];
   const el = id => {
     if (!elements.has(id)) elements.set(id, { hidden: false, value: '', open: false, textContent: '', listeners: {},
       classList: { add() {}, remove() {} }, addEventListener(t, fn) { this.listeners[t] = fn; }, focus() {},
@@ -212,12 +240,19 @@ test('logout clears the password, cached views and polling timers', async () => 
   const store = { getItem: k => values.get(k) || null, setItem: (k,v) => values.set(k,v), removeItem: k => values.delete(k) };
   const c = vm.createContext({ document: { querySelector: q => el(q), querySelectorAll: () => [] }, sessionStorage: store, localStorage: store,
     location: { hash: '' }, history: { replaceState() {} }, setInterval: () => 1, clearInterval: id => stopped.push(id),
-    fetch: async p => p === '/api/ping' ? new Response('{}') : new Promise(() => {}), Intl, Date });
+    fetch: async p => {
+      calls.push(p);
+      if (p === '/api/ping') return new Response('{}', { status: 401 });
+      if (p === '/api/login' || p === '/api/logout') return new Response('{"ok":true}', { status: 200 });
+      return new Promise(() => {});
+    }, Intl, Date });
   vm.runInContext(dashboard.match(/<script>([\s\S]*?)<\/script>/)[1], c);
   el('#pw').value = 'fixture-password-only';
   await el('#loginForm').listeners.submit({ preventDefault() {} });
   assert.equal(el('#app').hidden, false); assert.equal(el('#pw').value, '');
+  assert.equal(values.get('sa_dash_pw'), undefined);
   el('#dlg').open = true; el('#logout').listeners.click();
+  assert.ok(calls.includes('/api/logout'));
   assert.equal(values.get('sa_dash_pw'), undefined); assert.equal(el('#app').hidden, true); assert.equal(el('#login').hidden, false);
   assert.equal(el('#dlg').open, false); assert.ok(el('#main').cleared); assert.ok(stopped.length >= 2);
 });

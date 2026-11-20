@@ -166,7 +166,9 @@
   const $$ = (s, r = document) => [...r.querySelectorAll(s)];
   const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
   const KEY = 'sa_dash_pw';
-  let PW = sessionStorage.getItem(KEY) || '';
+  // ניקוי שאריות גרסה ישנה ששמרה סיסמה ב-sessionStorage/localStorage
+  try { sessionStorage.removeItem(KEY); localStorage.removeItem(KEY); } catch {}
+  let AUTHED = false;
 
   // ---------- פורמטים ----------
   const TZ = 'Asia/Jerusalem';
@@ -214,8 +216,8 @@
 
   // ---------- API ----------
   async function api(path, opts = {}) {
-    const r = await fetch(path, { ...opts, headers: { ...(opts.headers || {}), Authorization: 'Bearer ' + PW } });
-    if (r.status === 401) { showLogin('הסיסמה שגויה או שפג תוקפה'); throw new Error('unauthorized'); }
+    const r = await fetch(path, { credentials: 'same-origin', ...opts, headers: { ...(opts.headers || {}) } });
+    if (r.status === 401) { AUTHED = false; showLogin('הסיסמה שגויה או שפג תוקפה'); throw new Error('unauthorized'); }
     if (!r.ok) { let m = r.status; try { m = (await r.json()).error || m; } catch {} throw new Error(m); }
     return r;
   }
@@ -226,16 +228,18 @@
   }
   $('#loginForm').addEventListener('submit', async e => {
     e.preventDefault();
-    PW = $('#pw').value;
+    const password = $('#pw').value;
+    $('#pw').value = '';
     try {
-      await api('/api/ping');
-      sessionStorage.setItem(KEY, PW); $('#pw').value = '';
-      localStorage.removeItem(KEY); // Do not persist a dashboard password across browser sessions.
+      await api('/api/login', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ password }) });
+      AUTHED = true;
       start();
     } catch (err) { if (err.message !== 'unauthorized') $('#loginErr').textContent = 'שגיאה: ' + err.message; }
   });
   $('#logout').addEventListener('click', () => {
-    sessionStorage.removeItem(KEY); localStorage.removeItem(KEY); PW = ''; $('#pw').value = '';
+    AUTHED = false; $('#pw').value = '';
+    try { sessionStorage.removeItem(KEY); localStorage.removeItem(KEY); } catch {}
+    fetch('/api/logout', { method: 'POST', credentials: 'same-origin' }).catch(() => {});
     clearInterval(liveTimer); clearInterval(statsTimer); DATA = null; sessRows = [];
     for (const id of ['main', 'kpis', 'live', 'dlgBody']) $('#' + id).replaceChildren();
     if (dlg.open) dlg.close();
@@ -275,7 +279,7 @@
     try {
       const r = await api(`/api/stats?from=${range.from}&to=${range.to}`);
       const nextData = await r.json();
-      if (!PW) return;
+      if (!AUTHED) return;
       DATA = nextData;
       if (range.key === 'all' && DATA.allTime.since && DATA.allTime.since !== range.from) { range.from = DATA.allTime.since; $('#from').value = range.from; }
       render();
@@ -286,7 +290,7 @@
   async function loadLive() {
     try {
       const d = await (await api('/api/live')).json();
-      if (!PW) return;
+      if (!AUTHED) return;
       const listening = d.listening.filter(l => Date.now() - l.last_at < 90e3);
       const lst = listening.slice(0, 6).map(l => `🎧 ${esc(l.title || l.item_id)} <span class="pill">${l.duration_s ? Math.round(l.max_pos_s / l.duration_s * 100) + '%' : ''}</span>`).join(' · ');
       const where = d.sessions.slice(0, 8).map(s => `${esc(DEVICE[s.device] || s.device || '')} ${esc(s.city || country(s.country))} · ${esc(routeName(s.exit_route))}`).join(' · ');
@@ -622,7 +626,7 @@
   const dlg = $('#dlg');
   $('#dlgClose').addEventListener('click', () => dlg.close());
   dlg.addEventListener('click', e => { if (e.target === dlg) dlg.close(); });
-  function openDlg(title, html) { if (!PW) return; $('#dlgTitle').textContent = title; $('#dlgBody').innerHTML = html; if (!dlg.open) dlg.showModal(); }
+  function openDlg(title, html) { if (!AUTHED) return; $('#dlgTitle').textContent = title; $('#dlgBody').innerHTML = html; if (!dlg.open) dlg.showModal(); }
 
   function evText(e) {
     const t = EVT[e.type] || e.type;
@@ -697,7 +701,7 @@
   }
   const _load = load;
   load = async function () { sessRows = []; return _load(); };
-  if (PW) api('/api/ping').then(start).catch(() => {}); else showLogin();
+  fetch('/api/ping', { credentials: 'same-origin' }).then(r => { if (r.ok) { AUTHED = true; start(); } else showLogin(); }).catch(() => showLogin());
 })();
 </script>
 </body>

@@ -31,7 +31,7 @@ enabled = false
 name = "INGEST_LIMITER"
 namespace_id = "11301"
 [ratelimits.simple]
-limit = 120
+limit = 40
 period = 60
 
 [[ratelimits]]
@@ -45,5 +45,8 @@ period = 60
 name = "AUTH_LIMITER"
 namespace_id = "11303"
 [ratelimits.simple]
-limit = 10
+limit = 5
 period = 60
+
+[triggers]
+crons = ["0 3 * * *"]
