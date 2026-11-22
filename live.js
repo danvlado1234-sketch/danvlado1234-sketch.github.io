@@ -1,6 +1,29 @@
 /* הנתונים החיים: list.json + uploads.json של שני הריפואים (אותו דומיין) → window.SNAP, ואז טוען את app.js.
    זה הפענוח של שמות הקבצים באתר (מה שהיה parseFilename ב-index.html של האתרים הקודמים) — חייב להתאים
    ל-upload.ps1 בשני הריפואים. רשימת המועדים — ALL_MOADIM ב-app.js, זהה ל-$MOADIM ב-upload.ps1. */
+(() => {
+  // גרסת הקבצים נקראת מ-live.js?v=... כדי ש-index.html יוכל להפעיל CSP מחמיר ללא script-src 'unsafe-inline'
+  try {
+    const cs = document.currentScript && document.currentScript.src;
+    if (cs && !window.APP_V) window.APP_V = new URL(cs, location.href).searchParams.get('v') || '';
+  } catch {}
+  window.addEventListener('beforeinstallprompt', e => { e.preventDefault(); window.__bip = e; });
+  if (!location.pathname.startsWith('/manage') && 'serviceWorker' in navigator) {
+    navigator.serviceWorker.register('/sw.js').catch(() => {});
+  }
+  const q = new URLSearchParams(location.search);
+  window.WANT_INSTALL = q.has('install');
+  if (!q.toString() || location.hash.length > 2) return;
+  const e = encodeURIComponent; let h = null;
+  if (q.get('parasha')) h = '#/p/' + e(q.get('parasha'));
+  else if (q.get('chumash')) h = '#/book/' + e(q.get('chumash'));
+  else if (q.get('m')) h = '#/m/' + e(q.get('m')) + (parseInt(q.get('p'), 10) ? '/' + parseInt(q.get('p'), 10) : '');
+  else if (q.get('seder')) h = '#/seder/' + e(q.get('seder'));
+  else if (q.has('search') || q.has('q')) h = '#/search';
+  else if (q.has('list')) h = '#/library';
+  else if (q.has('new') || q.has('app') || q.has('install')) h = '#/';
+  if (h) history.replaceState(null, '', location.pathname + h);
+})();
 (async () => {
   // מקור חלופי הוא כלי לפיתוח מקומי בלבד, ותמיד מאותו שרת.
   const ROOT = (() => {

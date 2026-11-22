@@ -89,6 +89,7 @@ CREATE INDEX IF NOT EXISTS idx_listens_day     ON listens(day);
 CREATE INDEX IF NOT EXISTS idx_listens_item    ON listens(item_id);
 CREATE INDEX IF NOT EXISTS idx_listens_session ON listens(session_id);
 CREATE INDEX IF NOT EXISTS idx_listens_last    ON listens(last_at);
+CREATE INDEX IF NOT EXISTS idx_listens_visitor ON listens(visitor_id);
 
 -- אירועים נקודתיים: צפייה בדף, הורדה, פתיחת סיכום, שיתוף, חיפוש, התקנה ועוד
 CREATE TABLE IF NOT EXISTS events (
@@ -109,6 +110,7 @@ CREATE TABLE IF NOT EXISTS events (
 );
 CREATE INDEX IF NOT EXISTS idx_events_day_type ON events(day, type);
 CREATE INDEX IF NOT EXISTS idx_events_session  ON events(session_id);
+CREATE INDEX IF NOT EXISTS idx_events_visitor  ON events(visitor_id);
 
 -- Immutable packet receipts: retained to prevent delayed retries from counting twice.
 CREATE TABLE IF NOT EXISTS ingest_batches (

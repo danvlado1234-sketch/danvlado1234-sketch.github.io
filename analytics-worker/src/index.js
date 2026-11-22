@@ -43,9 +43,16 @@ const EVENT_TYPES = new Set([
 const str = (v, n = 300) => (v == null || v === '' ? null : String(v).slice(0, n));
 const num = (v, min = 0, max = 1e9) => { const x = Number(v); return Number.isFinite(x) ? Math.min(max, Math.max(min, x)) : 0; };
 
+const SECURITY_HEADERS = {
+  'strict-transport-security': 'max-age=31536000; includeSubDomains',
+  'x-content-type-options': 'nosniff',
+};
+const SESSION_COOKIE = 'sa_session';
+const SESSION_TTL_S = 12 * 3600;
+
 function json(data, status = 200, extra = {}) {
   return new Response(JSON.stringify(data), {
-    status, headers: { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'no-store', ...extra },
+    status, headers: { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'no-store', 'x-robots-tag': 'noindex, nofollow', ...SECURITY_HEADERS, ...extra },
   });
 }
 
@@ -77,7 +84,7 @@ function parseUA(ua) {
     : /YaBrowser/.test(ua) ? 'Yandex'
     : /Firefox|FxiOS/.test(ua) ? 'Firefox'
     : /CriOS/.test(ua) ? 'Chrome'
-    : /; wv\)/.test(ua) ? 'WebView (בתוך אפליקציה)'
+    : /; wv\)/.test(ua) ? 'WebView (בתוך האפליקציה)'
     : /Chrome\//.test(ua) ? 'Chrome'
     : /Safari\//.test(ua) ? 'Safari' : 'אחר';
   return { device, os, browser };
@@ -108,14 +115,59 @@ function classifySource(ref, utm, ua) {
 async function sha(s) {
   return crypto.subtle.digest('SHA-256', new TextEncoder().encode(String(s)));
 }
-async function checkAuth(request, env) {
+const toHex = buf => [...new Uint8Array(buf)].map(x => x.toString(16).padStart(2, '0')).join('');
+async function hmacSign(secret, msg) {
+  const key = await crypto.subtle.importKey('raw', new TextEncoder().encode(secret), { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']);
+  return crypto.subtle.sign('HMAC', key, new TextEncoder().encode(msg));
+}
+async function checkPassword(given, env) {
   const pw = env.DASHBOARD_PASSWORD;
-  if (!pw) return false;
-  const h = request.headers.get('Authorization') || '';
-  const given = h.startsWith('Bearer ') ? h.slice(7) : '';
-  if (!given) return false;
+  if (!pw || typeof given !== 'string' || !given) return false;
   const [a, b] = await Promise.all([sha(given), sha(pw)]);
   return crypto.subtle.timingSafeEqual(a, b);
+}
+function parseCookie(request, name) {
+  const raw = request.headers.get('Cookie') || '';
+  for (const part of raw.split(';')) {
+    const i = part.indexOf('=');
+    if (i < 0) continue;
+    if (part.slice(0, i).trim() === name) return part.slice(i + 1).trim();
+  }
+  return '';
+}
+function sessionKey(env) {
+  if (!env.DASHBOARD_PASSWORD || !env.RATE_LIMIT_SALT) throw new Error('session secrets unavailable');
+  return env.DASHBOARD_PASSWORD + ':' + env.RATE_LIMIT_SALT + ':sa_session_v1';
+}
+async function makeSessionCookie(request, env) {
+  const exp = Math.floor(Date.now() / 1000) + SESSION_TTL_S;
+  const nonce = crypto.randomUUID().replace(/-/g, '');
+  const payload = `v1.${exp}.${nonce}`;
+  const sig = toHex(await hmacSign(sessionKey(env), payload));
+  const secure = new URL(request.url).protocol === 'https:' ? '; Secure' : '';
+  return `${SESSION_COOKIE}=${payload}.${sig}; Path=/; HttpOnly${secure}; SameSite=Strict; Max-Age=${SESSION_TTL_S}`;
+}
+function clearSessionCookie(request) {
+  const secure = new URL(request.url).protocol === 'https:' ? '; Secure' : '';
+  return `${SESSION_COOKIE}=; Path=/; HttpOnly${secure}; SameSite=Strict; Max-Age=0`;
+}
+async function verifySessionCookie(request, env) {
+  const token = parseCookie(request, SESSION_COOKIE);
+  if (!token) return false;
+  const m = token.match(/^(v1\.(\d+)\.([a-f0-9]{32}))\.([a-f0-9]{64})$/);
+  if (!m) return false;
+  const nowS = Math.floor(Date.now() / 1000), exp = Number(m[2]);
+  if (!Number.isFinite(exp) || exp <= nowS || exp > nowS + SESSION_TTL_S + 60) return false;
+  try {
+    const expected = await hmacSign(sessionKey(env), m[1]);
+    const given = new Uint8Array(m[4].match(/../g).map(h => parseInt(h, 16)));
+    return given.byteLength === expected.byteLength && crypto.subtle.timingSafeEqual(given, expected);
+  } catch { return false; }
+}
+function isSameOrigin(request) {
+  const origin = request.headers.get('Origin');
+  if (!origin) return true;
+  return origin === new URL(request.url).origin;
 }
 
 
@@ -127,7 +179,7 @@ async function rateAllowed(binding, key) {
 async function clientKey(request, env) {
   if (!env.RATE_LIMIT_SALT) throw new Error('rate salt unavailable');
   const hash = await sha(env.RATE_LIMIT_SALT + ':' + (request.headers.get('CF-Connecting-IP') || 'unknown'));
-  return [...new Uint8Array(hash)].map(x => x.toString(16).padStart(2, '0')).join('');
+  return toHex(hash);
 }
 function csvCell(v) {
   if (v == null) return '';
@@ -190,7 +242,7 @@ async function ingest(request, env, ctx) {
   const source = classifySource(referrer, str(c.src, 80), ua);
   const campaign = str(c.cmp, 120);
 
-  if (!Array.isArray(body.ev) || !Array.isArray(body.ls) || body.ev.length > 50 || body.ls.length > 10)
+  if (!Array.isArray(body.ev) || !Array.isArray(body.ls) || body.ev.length > 25 || body.ls.length > 5)
     return new Response('bad arrays', { status: 400, headers: cors });
   const evs = body.ev;
   const lss = Array.isArray(body.ls) ? body.ls : [];
@@ -220,7 +272,7 @@ async function ingest(request, env, ctx) {
     listenIds.add(String(l.id));
     const st = clampTs(l.st), lt = clampTs(l.t || l.st); const t = il(st);
     firstTs = Math.min(firstTs, st); lastTs = Math.max(lastTs, lt);
-    if (!Array.isArray(l.sg) || l.sg.length > 60) return new Response('bad segments', { status: 400, headers: cors });
+    if (!Array.isArray(l.sg) || l.sg.length > 30) return new Response('bad segments', { status: 400, headers: cors });
     let d = 0, wall = 0;
     for (const g of l.sg) {
       if (!g || !Number.isFinite(g.ts) || g.ts < now - 4 * 864e5 || g.ts > now + 60e3 || !Number.isFinite(g.d) || !Number.isFinite(g.w)
@@ -230,7 +282,7 @@ async function ingest(request, env, ctx) {
       d += g.d; wall += g.w;
       segments.push([String(l.id), sid, vid, g.ts, gt.day, gt.hour, gt.dow, g.d, g.w, g.spd]);
     }
-    if (d > 14400 || wall > 14400 || wall > Math.max(0, (lt - st) / 1000) + 5 || segments.length > 120) return new Response('too much listening', { status: 400, headers: cors });
+    if (d > 14400 || wall > 14400 || wall > Math.max(0, (lt - st) / 1000) + 5 || segments.length > 60) return new Response('too much listening', { status: 400, headers: cors });
     listenSum += d; if (l.n) plays++;
     lsRows.push([String(l.id), sid, vid, str(l.i, 300), str(l.k, 20), str(l.ti, 200), str(l.se, 120), st, lt, t.day, t.hour, t.dow,
       d, num(l.sp, 0, 1e6), num(l.mp, 0, 1e6), num(l.du, 0, 1e6), num(l.spd, 0.25, 4) || 1, l.c ? 1 : 0, l.r ? 1 : 0, str(l.src, 20), wall]);
@@ -443,15 +495,16 @@ async function live(env) {
 }
 
 const TS_COLS = new Set(['ts', 'started_at', 'last_seen', 'last_at', 'first_seen']);
+const EXPORT_SQL = {
+  events: `SELECT * FROM events WHERE day BETWEEN ?1 AND ?2 ORDER BY ts LIMIT 200000`,
+  sessions: `SELECT * FROM sessions WHERE start_day BETWEEN ?1 AND ?2 ORDER BY started_at LIMIT 200000`,
+  listens: `SELECT * FROM listens WHERE day BETWEEN ?1 AND ?2 ORDER BY started_at LIMIT 200000`,
+  visitors: `SELECT * FROM visitors WHERE visitor_id IN (SELECT DISTINCT visitor_id FROM sessions WHERE start_day BETWEEN ?1 AND ?2) ORDER BY first_seen LIMIT 200000`,
+};
 async function exportCsv(env, url) {
   const table = url.searchParams.get('table');
   const { from, to } = rangeOf(url);
-  const sql = {
-    events: `SELECT * FROM events WHERE day BETWEEN ?1 AND ?2 ORDER BY ts LIMIT 200000`,
-    sessions: `SELECT * FROM sessions WHERE start_day BETWEEN ?1 AND ?2 ORDER BY started_at LIMIT 200000`,
-    listens: `SELECT * FROM listens WHERE day BETWEEN ?1 AND ?2 ORDER BY started_at LIMIT 200000`,
-    visitors: `SELECT * FROM visitors WHERE visitor_id IN (SELECT DISTINCT visitor_id FROM sessions WHERE start_day BETWEEN ?1 AND ?2) ORDER BY first_seen LIMIT 200000`,
-  }[table];
+  const sql = table && Object.hasOwn(EXPORT_SQL, table) ? EXPORT_SQL[table] : null;
   if (!sql) return json({ error: 'unknown table' }, 400);
   const r = await env.DB.prepare(sql).bind(from, to).all();
   const rows = r.results || [];
@@ -463,6 +516,7 @@ async function exportCsv(env, url) {
     headers: {
       'content-type': 'text/csv; charset=utf-8', 'cache-control': 'no-store',
       'content-disposition': `attachment; filename="shiurim-${table}-${from}_${to}.csv"`,
+      'x-robots-tag': 'noindex, nofollow', ...SECURITY_HEADERS,
     },
   });
 }
@@ -504,24 +558,52 @@ export default {
         headers: {
           'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-store',
           'content-security-policy': "default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; connect-src 'self'; img-src 'self' data:; frame-ancestors 'none'; base-uri 'none'; form-action 'none'",
-          'x-content-type-options': 'nosniff', 'x-frame-options': 'DENY', 'referrer-policy': 'no-referrer', 'x-robots-tag': 'noindex, nofollow',
+          'x-frame-options': 'DENY', 'referrer-policy': 'no-referrer', 'x-robots-tag': 'noindex, nofollow', ...SECURITY_HEADERS,
         },
       });
     }
     if (path === '/health') {
-      try { await env.DB.prepare('SELECT batch_id FROM ingest_batches LIMIT 1').all(); return json({ ok: true, version: '20261112d', time: il(Date.now()).text }); }
-      catch { return json({ ok: false }, 503); }
+      try {
+        if (!(await rateAllowed(env.INGEST_LIMITER, await clientKey(request, env))))
+          return json({ ok: false }, 429, { 'Retry-After': '60' });
+        await env.DB.prepare('SELECT batch_id FROM ingest_batches LIMIT 1').all();
+        return json({ ok: true });
+      } catch { return json({ ok: false }, 503); }
     }
-    if (path === '/robots.txt') return new Response('User-agent: *\nDisallow: /\n');
+    if (path === '/robots.txt') return new Response('User-agent: *\nDisallow: /\n', { headers: SECURITY_HEADERS });
 
     if (path.startsWith('/api/')) {
       if (!env.DASHBOARD_PASSWORD) return json({ error: 'DASHBOARD_PASSWORD לא הוגדרה בשרת' }, 500);
-      if (!(await checkAuth(request, env))) {
+      if (path === '/api/logout' && request.method === 'POST') {
+        if (!isSameOrigin(request)) return json({ error: 'forbidden origin' }, 403);
+        return json({ ok: true }, 200, { 'Set-Cookie': clearSessionCookie(request) });
+      }
+      if (path === '/api/login' && request.method === 'POST') {
+        if (!isSameOrigin(request)) return json({ error: 'forbidden origin' }, 403);
+        // מגבלת קצב נבדקת לפני אימות הסיסמה — כך חסימת 429 עוצרת ניחוש סיסמה לחלוטין
         try {
           if (!(await rateAllowed(env.AUTH_LIMITER, await clientKey(request, env))))
             return json({ error: 'too many attempts' }, 429, { 'Retry-After': '60' });
         } catch { return json({ error: 'temporarily unavailable' }, 503); }
-        return json({ error: 'unauthorized' }, 401);
+        let body = {};
+        try { body = await request.json(); } catch {}
+        if (!(await checkPassword(body?.password, env))) return json({ error: 'unauthorized' }, 401);
+        try {
+          return json({ ok: true }, 200, { 'Set-Cookie': await makeSessionCookie(request, env) });
+        } catch { return json({ error: 'temporarily unavailable' }, 503); }
+      }
+      const cookieOk = await verifySessionCookie(request, env);
+      if (!cookieOk) {
+        const h = request.headers.get('Authorization') || '';
+        if (!h.startsWith('Bearer ')) return json({ error: 'unauthorized' }, 401);
+        // מגבלת קצב לפני בדיקת Bearer כדי למנוע עקיפת Brute-Force
+        try {
+          if (!(await rateAllowed(env.AUTH_LIMITER, await clientKey(request, env))))
+            return json({ error: 'too many attempts' }, 429, { 'Retry-After': '60' });
+        } catch { return json({ error: 'temporarily unavailable' }, 503); }
+        if (!(await checkPassword(h.slice(7), env))) return json({ error: 'unauthorized' }, 401);
+      } else if (request.method !== 'GET' && !isSameOrigin(request)) {
+        return json({ error: 'forbidden origin' }, 403);
       }
       try {
         if (path === '/api/stats') return await stats(env, url);
@@ -537,6 +619,10 @@ export default {
       }
       return json({ error: 'not found' }, 404);
     }
-    return new Response('not found', { status: 404 });
+    return new Response('not found', { status: 404, headers: SECURITY_HEADERS });
+  },
+  async scheduled(event, env) {
+    // חבילות ישנות מ-3 ימים נדחות מראש בקליטה — מנקים קבלות ישנות מ-4 ימים כדי שהטבלה לא תתנפח
+    await env.DB.prepare('DELETE FROM ingest_batches WHERE received_at < ?1').bind(Date.now() - 4 * 864e5).run();
   },
 };

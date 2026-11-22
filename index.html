@@ -33,27 +33,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="שיעורי הרב">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<script>
-  // גרסת הקבצים — בכל עדכון של app.js / style.css / live.js / gen.js מחליפים את כל המופעים של 20261110a בקובץ הזה
-  // (ה-SW שומר קבצים לפי הכתובת המלאה, אז גרסה חדשה = כתובת חדשה = הקובץ החדש מיד)
-  window.APP_V = '20261122a';
-  // כרום שולח את הצעת ההתקנה מוקדם — שומרים אותה עד ש-app.js נטען (כפתור "התקנה")
-  window.addEventListener('beforeinstallprompt', e => { e.preventDefault(); window.__bip = e; });
-  // קישורים מהאתרים הקודמים (/shiurim-parasha/?parasha=נח, /Shiurim-mishnhyot/?m=ברכות&p=2, המייל) — לכתובת החדשה
-  (() => {
-    const q = new URLSearchParams(location.search); window.WANT_INSTALL = q.has('install'); // ?install=1 — באייפון פותח את הדרכת ההתקנה
-    if (!q.toString() || location.hash.length > 2) return;
-    const e = encodeURIComponent; let h = null;
-    if (q.get('parasha')) h = '#/p/' + e(q.get('parasha'));
-    else if (q.get('chumash')) h = '#/book/' + e(q.get('chumash'));
-    else if (q.get('m')) h = '#/m/' + e(q.get('m')) + (parseInt(q.get('p'), 10) ? '/' + parseInt(q.get('p'), 10) : '');
-    else if (q.get('seder')) h = '#/seder/' + e(q.get('seder'));
-    else if (q.has('search') || q.has('q')) h = '#/search';
-    else if (q.has('list')) h = '#/library';
-    else if (q.has('new') || q.has('app') || q.has('install')) h = '#/';
-    if (h) history.replaceState(null, '', location.pathname + h);
-  })();
-</script>
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://challenges.cloudflare.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https://images.unsplash.com; media-src 'self' https://pub-ebfc0fe34f6e49f5a45ba2d358d2ae0d.r2.dev https://pub-c502103793ec448b9964b8779d053cd4.r2.dev; connect-src 'self' https://shiurim-community.danvlado.workers.dev https://shiurim-analytics.danvlado.workers.dev https://www.sefaria.org https://pub-ebfc0fe34f6e49f5a45ba2d358d2ae0d.r2.dev https://pub-c502103793ec448b9964b8779d053cd4.r2.dev https://challenges.cloudflare.com; frame-src https://challenges.cloudflare.com; object-src 'none'; base-uri 'self'; form-action 'self'">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Frank+Ruhl+Libre:wght@400;500;700;900&family=Rubik:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -415,11 +395,10 @@
   </defs>
 </svg>
 
-<script src="gen.js?v=20261122a" onerror="window.GEN={}"></script>
+<script src="gen.js?v=20261122a"></script>
 <script src="community-config.js?v=20261122a"></script>
 <script src="community.js?v=20261122a"></script>
 <script src="analytics.js?v=20261122a"></script>
 <script src="live.js?v=20261122a"></script>
-<script>if (!location.pathname.startsWith('/manage') && 'serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js').catch(() => {});</script>
 </body>
 </html>

@@ -294,9 +294,12 @@
 
   async function resolveLessonId(mediaPath) {
     if (lessonIdCache.has(mediaPath)) return lessonIdCache.get(mediaPath);
-    const it = app?.byId?.[mediaPath];
-    const sourceKind = it?.kind === 'p' ? 'p' : 'm';
-    const displayTitle = it ? app.fullName(it) : mediaPath;
+    if (!mediaPath || !app?.byId || !Object.hasOwn(app.byId, mediaPath)) {
+      throw new Error('השיעור לא נמצא בקטלוג');
+    }
+    const it = app.byId[mediaPath];
+    const sourceKind = it.kind === 'p' ? 'p' : 'm';
+    const displayTitle = app.fullName(it);
     const res = await apiFetch('/v1/lessons/resolve', {
       method: 'POST',
       body: {
@@ -691,6 +694,10 @@
       app?.toast?.('בחרו שיעור כדי לצפות או להוסיף תגובות');
       return;
     }
+    if (!app?.byId || !Object.hasOwn(app.byId, targetPath)) {
+      app?.toast?.('השיעור המבוקש לא נמצא');
+      return;
+    }
 
     if (currentMediaPath && currentMediaPath !== targetPath) {
       saveCurrentCommentDraft();
@@ -701,7 +708,7 @@
     commentsReturnFocus = triggerEl || document.activeElement;
     commentIdempotencyKey = newUuid();
 
-    const it = app?.byId?.[targetPath];
+    const it = app.byId[targetPath];
     const artEl = $('#commentsArt');
     if (it && app?.artOf && app?.IMG && artEl) {
       artEl.src = app.IMG(app.artOf(it), 160, 160);
@@ -1627,8 +1634,18 @@
     if (!LOCAL_MODE) {
       await productionReady;
       if (!isLocalOrAdmin() || API_BASE) {
-        if (productionConfig?.admin_url) location.assign(productionConfig.admin_url);
-        else app?.toast?.('הכניסה לניהול עדיין אינה זמינה.');
+        const rawUrl = productionConfig?.admin_url;
+        if (rawUrl) {
+          try {
+            const parsed = new URL(rawUrl, location.origin);
+            const trustedOrigin = API_BASE ? new URL(API_BASE, location.origin).origin : location.origin;
+            if (parsed.protocol === 'https:' && (parsed.origin === trustedOrigin || parsed.origin === location.origin)) {
+              location.assign(parsed.href);
+              return;
+            }
+          } catch {}
+        }
+        app?.toast?.('הכניסה לניהול עדיין אינה זמינה.');
         return;
       }
     }
