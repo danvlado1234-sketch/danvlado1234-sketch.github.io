@@ -10,100 +10,190 @@
 <link href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;500;600;700&family=Frank+Ruhl+Libre:wght@700;900&display=swap" rel="stylesheet">
 <style>
   :root {
-    --bg: #121110; --panel: #1b1a18; --panel2: #232120; --line: #2f2c29; --text: #f2ede6; --muted: #a39a8f; --dim: #6f675e;
-    --gold: #d9a441; --gold2: #f0c674; --green: #5fbf7f; --red: #e06c5f; --blue: #6aa7e0; --violet: #b08be0;
-    --r: 14px;
+    --bg: #0f0e0d; --panel: #191816; --panel2: #221f1d; --panel3: #2a2724; --line: #2e2a27; --line2: #3a3531;
+    --text: #f4efe8; --muted: #b0a698; --dim: #7a7166;
+    --gold: #d9a441; --gold2: #f0c674; --gold-ink: #1a1408; --green: #6cc98b; --red: #ec7b6e; --blue: #6aa7e0;
+    /* צבע לכל סוג שיעור — קבוע, לא לפי דירוג */
+    --k-mishna: #b98422; --k-parasha: #3f86c8; --k-moed: #3a9a5c; --k-iyun: #a06ad0; --k-other: #6f675e;
+    --r: 18px; --shadow: 0 1px 0 rgba(255,255,255,.03) inset, 0 12px 32px -18px rgba(0,0,0,.7);
   }
   * { box-sizing: border-box; }
   [hidden] { display: none !important; }
-  html, body { margin: 0; background: var(--bg); color: var(--text); font: 14px/1.5 Rubik, system-ui, sans-serif; }
+  html, body { margin: 0; color: var(--text); font: 14px/1.5 Rubik, system-ui, sans-serif; }
+  body { background: radial-gradient(1100px 520px at 85% -120px, rgba(217,164,65,.13), transparent 70%), radial-gradient(900px 500px at -10% 10%, rgba(63,134,200,.07), transparent 70%), var(--bg); background-attachment: fixed; min-height: 100vh; }
   a { color: var(--gold2); }
   button, input, select { font: inherit; color: inherit; }
-  .wrap { max-width: 1400px; margin: 0 auto; padding: 18px 18px 60px; }
-  header.top { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 18px; margin-bottom: 14px; }
-  .brand { font-family: 'Frank Ruhl Libre', serif; font-size: 26px; font-weight: 900; letter-spacing: .3px; }
-  .brand small { display: block; font: 500 12px Rubik, sans-serif; color: var(--muted); letter-spacing: 0; }
+  .num, .v, .hv { font-variant-numeric: tabular-nums; }
+  .wrap { max-width: 1440px; margin: 0 auto; padding: 22px 22px 70px; }
+
+  /* כותרת */
+  header.top { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 16px; margin-bottom: 18px; }
+  .brand { font-family: 'Frank Ruhl Libre', serif; font-size: 30px; font-weight: 900; line-height: 1.05; }
+  .brand small { display: block; font: 500 12.5px Rubik, sans-serif; color: var(--muted); margin-top: 4px; }
   .spacer { flex: 1; }
-  .chips { display: flex; flex-wrap: wrap; gap: 6px; }
-  .chip { background: var(--panel2); border: 1px solid var(--line); border-radius: 999px; padding: 6px 13px; cursor: pointer; white-space: nowrap; }
-  .chip:hover { border-color: #4a4540; }
-  .chip.on { background: var(--gold); color: #1a1408; border-color: var(--gold); font-weight: 600; }
+  .chips { display: flex; flex-wrap: wrap; gap: 4px; background: var(--panel); border: 1px solid var(--line); border-radius: 999px; padding: 4px; }
+  .chip { background: transparent; border: 0; border-radius: 999px; padding: 6px 13px; cursor: pointer; white-space: nowrap; color: var(--muted); transition: background .15s, color .15s; }
+  .chip:hover { color: var(--text); background: var(--panel2); }
+  .chip.on { background: var(--gold); color: var(--gold-ink); font-weight: 600; }
   .range-custom { display: flex; gap: 6px; align-items: center; color: var(--muted); }
-  .range-custom input { background: var(--panel2); border: 1px solid var(--line); border-radius: 8px; padding: 5px 8px; color-scheme: dark; }
-  .btn { background: var(--panel2); border: 1px solid var(--line); border-radius: 10px; padding: 7px 14px; cursor: pointer; }
+  .range-custom input { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 6px 8px; color-scheme: dark; }
+  .btn { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 7px 14px; cursor: pointer; transition: border-color .15s; }
   .btn:hover { border-color: var(--gold); }
-  .btn.primary { background: var(--gold); color: #1a1408; border-color: var(--gold); font-weight: 600; }
+  .btn.primary { background: var(--gold); color: var(--gold-ink); border-color: var(--gold); font-weight: 600; }
   .btn.danger { border-color: #6a2f2a; color: #f2a59c; }
-  .live { display: flex; flex-wrap: wrap; gap: 10px 22px; align-items: center; background: linear-gradient(90deg, #1f1c16, var(--panel)); border: 1px solid var(--line);
-          border-radius: var(--r); padding: 12px 16px; margin-bottom: 14px; }
-  .dot { width: 9px; height: 9px; border-radius: 50%; background: var(--green); display: inline-block; box-shadow: 0 0 0 0 rgba(95,191,127,.6); animation: pulse 2s infinite; margin-inline-end: 6px; }
-  @keyframes pulse { 70% { box-shadow: 0 0 0 9px rgba(95,191,127,0); } 100% { box-shadow: 0 0 0 0 rgba(95,191,127,0); } }
-  .live b { font-size: 18px; }
-  .live .now-list { color: var(--muted); font-size: 13px; flex-basis: 100%; }
-  .kpis { display: grid; grid-template-columns: repeat(auto-fill, minmax(175px, 1fr)); gap: 10px; margin-bottom: 14px; }
-  .kpi { background: var(--panel); border: 1px solid var(--line); border-radius: var(--r); padding: 12px 14px; }
-  .kpi .l { color: var(--muted); font-size: 12.5px; }
-  .kpi .v { font-size: 25px; font-weight: 700; margin-top: 2px; direction: ltr; text-align: right; }
-  .kpi .d { font-size: 12px; margin-top: 2px; color: var(--dim); }
-  .up { color: var(--green) !important; } .down { color: var(--red) !important; }
-  nav.tabs { display: flex; flex-wrap: wrap; gap: 4px; border-bottom: 1px solid var(--line); margin: 8px 0 14px; }
+
+  /* עכשיו באתר */
+  .live { display: flex; flex-wrap: wrap; gap: 8px 26px; align-items: center; background: linear-gradient(100deg, rgba(108,201,139,.10), rgba(25,24,22,.9) 45%); border: 1px solid var(--line);
+          border-radius: var(--r); padding: 12px 18px; margin-bottom: 16px; box-shadow: var(--shadow); }
+  .dot { width: 9px; height: 9px; border-radius: 50%; background: var(--green); display: inline-block; box-shadow: 0 0 0 0 rgba(108,201,139,.6); animation: pulse 2s infinite; margin-inline-end: 8px; }
+  @keyframes pulse { 70% { box-shadow: 0 0 0 10px rgba(108,201,139,0); } 100% { box-shadow: 0 0 0 0 rgba(108,201,139,0); } }
+  .live b { font-size: 20px; margin-inline-start: 4px; }
+  .live .now-list { color: var(--muted); font-size: 13px; flex-basis: 100%; display: flex; flex-wrap: wrap; gap: 6px; }
+  .now-pill { background: var(--panel2); border: 1px solid var(--line); border-radius: 999px; padding: 2px 10px; }
+
+  /* מדדים */
+  .hero { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 12px; }
+  @media (max-width: 1000px) { .hero { grid-template-columns: repeat(2, 1fr); } }
+  @media (max-width: 600px) { .hk { padding: 12px 12px 0; } .hk .hv { font-size: 28px; } .hk svg { width: calc(100% + 24px); margin: 6px -12px 0; height: 40px; } .hk .d { font-size: 11.5px; } }
+  @media (max-width: 340px) { .hero { grid-template-columns: 1fr; } }
+  .hk { position: relative; overflow: hidden; background: linear-gradient(160deg, var(--panel2), var(--panel)); border: 1px solid var(--line); border-radius: var(--r); padding: 16px 18px 0; box-shadow: var(--shadow); }
+  .hk .l { color: var(--muted); font-size: 13px; display: flex; justify-content: space-between; gap: 8px; }
+  .hk .hv { font-size: 38px; font-weight: 700; line-height: 1.15; margin-top: 4px; letter-spacing: -.5px; }
+  .hk .hv small { font-size: 15px; font-weight: 500; color: var(--muted); margin-inline-start: 6px; letter-spacing: 0; }
+  .hk .d { font-size: 12.5px; color: var(--dim); min-height: 1.5em; }
+  .hk svg { display: block; width: calc(100% + 36px); margin: 8px -18px 0; height: 54px; }
+  .badge { display: inline-flex; align-items: center; gap: 3px; border-radius: 999px; padding: 1px 8px; font-size: 12px; font-weight: 600; background: var(--panel3); color: var(--muted); white-space: nowrap; }
+  .badge.up { background: rgba(108,201,139,.14); color: var(--green); } .badge.down { background: rgba(236,123,110,.14); color: var(--red); }
+  .minor { display: grid; grid-template-columns: repeat(auto-fit, minmax(128px, 1fr)); gap: 8px; margin-bottom: 18px; }
+  .mk { background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 9px 12px; }
+  .mk .l { color: var(--dim); font-size: 12px; }
+  .mk .v { font-size: 18px; font-weight: 600; }
+  .mk .d { font-size: 11.5px; color: var(--dim); }
+
+  /* לשוניות */
+  nav.tabs { display: flex; flex-wrap: wrap; gap: 4px; margin: 4px 0 16px; border-bottom: 1px solid var(--line); }
   nav.tabs button { background: none; border: 0; padding: 10px 14px; cursor: pointer; color: var(--muted); border-bottom: 2px solid transparent; margin-bottom: -1px; font-weight: 500; }
+  nav.tabs button:hover { color: var(--text); }
   nav.tabs button.on { color: var(--text); border-color: var(--gold); }
-  .grid { display: grid; gap: 14px; grid-template-columns: repeat(12, 1fr); }
-  .card { background: var(--panel); border: 1px solid var(--line); border-radius: var(--r); padding: 14px 16px; min-width: 0; grid-column: span 6; }
-  .card.w12 { grid-column: span 12; } .card.w4 { grid-column: span 4; } .card.w8 { grid-column: span 8; } .card.w3 { grid-column: span 3; }
-  @media (max-width: 1000px) { .card, .card.w4, .card.w8, .card.w3 { grid-column: span 12; } }
-  .card h3 { margin: 0 0 10px; font-size: 15px; font-weight: 600; display: flex; align-items: center; gap: 10px; }
+
+  /* כרטיסים */
+  .grid { display: grid; gap: 14px; grid-template-columns: repeat(12, minmax(0, 1fr)); }
+  .card { background: var(--panel); border: 1px solid var(--line); border-radius: var(--r); padding: 16px 18px; min-width: 0; grid-column: span 6; box-shadow: var(--shadow); }
+  .card.w12 { grid-column: span 12; } .card.w4 { grid-column: span 4; } .card.w8 { grid-column: span 8; } .card.w3 { grid-column: span 3; } .card.w5 { grid-column: span 5; } .card.w7 { grid-column: span 7; }
+  @media (max-width: 1000px) { .card, .card.w4, .card.w8, .card.w3, .card.w5, .card.w7 { grid-column: span 12; } }
+  .card h3 { margin: 0 0 12px; font-size: 15.5px; font-weight: 600; display: flex; align-items: center; flex-wrap: wrap; gap: 6px 10px; }
   .card h3 .sub { color: var(--dim); font-weight: 400; font-size: 12.5px; }
-  .card h3 .right { margin-inline-start: auto; display: flex; gap: 6px; }
-  .card h3 .chip { padding: 3px 10px; font-size: 12px; }
+  .card h3 .right { margin-inline-start: auto; display: flex; flex-wrap: wrap; gap: 4px; }
+  .card h3 .chip { padding: 3px 10px; font-size: 12px; background: var(--panel2); }
+  .card h3 .chip.on { background: var(--gold); }
   .note { color: var(--dim); font-size: 12.5px; }
-  .hbars { display: flex; flex-direction: column; gap: 6px; }
-  .hbar { display: grid; grid-template-columns: minmax(90px, 38%) 1fr auto; gap: 10px; align-items: center; font-size: 13px; }
+  .empty { color: var(--dim); padding: 22px 0; text-align: center; }
+
+  /* פסים אופקיים */
+  .hbars { display: flex; flex-direction: column; gap: 7px; }
+  .hbar { display: grid; grid-template-columns: minmax(90px, 36%) 1fr auto; gap: 10px; align-items: center; font-size: 13px; padding: 2px 4px; border-radius: 8px; }
+  .hbar:hover { background: var(--panel2); }
   .hbar .k { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .hbar .bar { height: 10px; background: var(--panel2); border-radius: 6px; overflow: hidden; }
-  .hbar .bar i { display: block; height: 100%; background: linear-gradient(90deg, var(--gold), var(--gold2)); border-radius: 6px; }
+  .hbar .bar { height: 8px; background: var(--panel2); border-radius: 4px; overflow: hidden; }
+  .hbar .bar i { display: block; height: 100%; background: var(--gold); border-radius: 4px; }
   .hbar .n { color: var(--muted); direction: ltr; min-width: 60px; text-align: left; font-variant-numeric: tabular-nums; }
+
+  /* גרף שטח */
+  .area { position: relative; }
+  .area svg { width: 100%; height: 280px; display: block; overflow: visible; }
+  .area .grid-l { stroke: var(--line); stroke-width: 1; }
+  .area .ax { fill: var(--dim); font-size: 11px; font-family: Rubik, sans-serif; }
+  .area .ln { fill: none; stroke: var(--gold); stroke-width: 2; stroke-linejoin: round; stroke-linecap: round; }
+  .area .cross { stroke: var(--muted); stroke-width: 1; stroke-dasharray: 3 3; }
+  .area .pt { fill: var(--gold); stroke: var(--panel); stroke-width: 2; }
+  .area .sat { fill: rgba(255,255,255,.025); }
+
+  /* תובנות */
+  .ins { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 10px; }
+  .ins li { display: grid; grid-template-columns: 34px 1fr; gap: 10px; align-items: start; background: var(--panel2); border-radius: 14px; padding: 10px 12px; font-size: 13.5px; line-height: 1.55; }
+  .ins .ic { width: 34px; height: 34px; border-radius: 10px; display: grid; place-items: center; background: rgba(217,164,65,.14); font-size: 17px; }
+  .ins b { color: var(--gold2); font-weight: 600; }
+
+  /* מובילים */
+  .lb { display: flex; flex-direction: column; gap: 4px; }
+  .lb .row { display: grid; grid-template-columns: 28px 1fr 64px 120px; gap: 12px; align-items: center; padding: 8px 6px; border-radius: 12px; }
+  .lb .row:hover { background: var(--panel2); }
+  .lb .rk { width: 28px; height: 28px; border-radius: 50%; display: grid; place-items: center; font-weight: 700; font-size: 13px; background: var(--panel3); color: var(--muted); }
+  .lb .row:nth-child(1) .rk { background: linear-gradient(140deg, #f0c674, #b98422); color: var(--gold-ink); }
+  .lb .row:nth-child(2) .rk { background: linear-gradient(140deg, #e3e0da, #9c978f); color: #1c1b19; }
+  .lb .row:nth-child(3) .rk { background: linear-gradient(140deg, #d9a07a, #8a5a3a); color: #1c1410; }
+  .lb .t { min-width: 0; }
+  .lb .t b { display: block; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .lb .t span { font-size: 12px; color: var(--dim); }
+  .lb .pn { text-align: left; direction: ltr; font-weight: 600; font-size: 16px; }
+  .lb .pn small { display: block; font-size: 11px; color: var(--dim); font-weight: 400; }
+  .reach { display: flex; flex-direction: column; gap: 3px; font-size: 11.5px; color: var(--dim); }
+  .reach .track { height: 6px; background: var(--panel3); border-radius: 3px; overflow: hidden; }
+  .reach .track i { display: block; height: 100%; background: var(--green); border-radius: 3px; }
+  @media (max-width: 560px) { .lb .row { grid-template-columns: 28px 1fr 56px; } .lb .reach { display: none; } }
+  .kdot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-inline-end: 5px; vertical-align: 0; }
+
+  /* חלוקה לפי סוג (פס מחולק) */
+  .seg { display: flex; height: 22px; border-radius: 8px; overflow: hidden; gap: 2px; margin: 4px 0 14px; }
+  .seg i { display: block; height: 100%; min-width: 3px; }
+  .seg i:first-child { border-radius: 0 8px 8px 0; } .seg i:last-child { border-radius: 8px 0 0 8px; }
+  .klist { display: flex; flex-direction: column; gap: 8px; }
+  .klist div { display: grid; grid-template-columns: 1fr auto auto; gap: 12px; align-items: baseline; font-size: 13.5px; }
+  .klist .pc { color: var(--muted); direction: ltr; font-variant-numeric: tabular-nums; min-width: 40px; text-align: left; }
+  .klist .hv { font-weight: 600; direction: ltr; font-variant-numeric: tabular-nums; }
+
+  /* מפת חום */
+  .heatwrap { overflow-x: auto; scrollbar-width: thin; }
+  .heat { display: grid; grid-template-columns: 50px repeat(24, minmax(0, 1fr)); min-width: 520px; gap: 3px; font-size: 11px; direction: rtl; }
+  .heat .c { aspect-ratio: 1.25; border-radius: 4px; background: var(--panel2); transition: transform .1s; }
+  .heat .c:hover { transform: scale(1.18); outline: 1px solid var(--gold2); }
+  .heat .h { color: var(--dim); text-align: center; }
+  .heat .d { color: var(--muted); display: flex; align-items: center; }
+  .scale { display: flex; align-items: center; gap: 8px; justify-content: flex-end; font-size: 11.5px; color: var(--dim); margin-top: 10px; }
+  .scale i { width: 120px; height: 8px; border-radius: 4px; background: linear-gradient(270deg, rgba(217,164,65,.12), rgba(217,164,65,1)); }
+
+  /* טבלאות */
   table { width: 100%; border-collapse: collapse; font-size: 13px; }
-  th, td { text-align: right; padding: 7px 8px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  th, td { text-align: right; padding: 8px; border-bottom: 1px solid var(--line); vertical-align: top; }
   th { color: var(--muted); font-weight: 500; cursor: pointer; white-space: nowrap; user-select: none; position: sticky; top: 0; background: var(--panel); }
   th.sorted::after { content: ' ▾'; color: var(--gold); }
   th.sorted.asc::after { content: ' ▴'; }
   td.num { direction: ltr; text-align: left; font-variant-numeric: tabular-nums; white-space: nowrap; }
-  tr.click { cursor: pointer; } tr.click:hover td { background: #22201d; }
-  .scroll { max-height: 560px; overflow: auto; }
-  .chart svg { width: 100%; height: 260px; display: block; }
-  .chart .bar { fill: var(--gold); } .chart .bar:hover { fill: var(--gold2); }
-  .chart .bar2 { fill: #5b4a2a; }
-  .chart text { fill: var(--dim); font-size: 11px; font-family: Rubik, sans-serif; }
-  .chart line { stroke: var(--line); }
-  .heat { display: grid; grid-template-columns: 54px repeat(24, 1fr); gap: 2px; font-size: 11px; direction: rtl; }
-  .heat .c { aspect-ratio: 1.3; border-radius: 3px; background: var(--panel2); position: relative; }
-  .heat .h { color: var(--dim); text-align: center; }
-  .heat .d { color: var(--muted); display: flex; align-items: center; }
+  tr.click { cursor: pointer; } tr.click:hover td { background: var(--panel2); }
+  .scroll { max-height: 580px; overflow: auto; }
   .pill { display: inline-block; background: var(--panel2); border: 1px solid var(--line); border-radius: 999px; padding: 1px 8px; font-size: 11.5px; color: var(--muted); white-space: nowrap; }
   .pill.g { color: var(--green); border-color: #2c4a36; } .pill.y { color: var(--gold2); border-color: #4a3d22; }
-  .split { display: flex; height: 14px; border-radius: 7px; overflow: hidden; background: var(--panel2); margin: 6px 0 8px; }
+  .progress { height: 6px; background: var(--panel3); border-radius: 3px; overflow: hidden; min-width: 70px; }
+  .progress i { display: block; height: 100%; background: var(--green); }
+  .split { display: flex; height: 14px; border-radius: 7px; overflow: hidden; background: var(--panel2); margin: 6px 0 8px; gap: 2px; }
   .split i { display: block; height: 100%; }
   .legend { display: flex; gap: 14px; flex-wrap: wrap; font-size: 12.5px; color: var(--muted); }
   .legend span::before { content: ''; display: inline-block; width: 10px; height: 10px; border-radius: 3px; background: var(--c); margin-inline-end: 5px; vertical-align: -1px; }
+
+  /* חלונית ריחוף */
+  #tip { position: fixed; z-index: 50; pointer-events: none; background: rgba(34,31,29,.97); border: 1px solid var(--line2); border-radius: 12px; padding: 8px 11px; font-size: 12.5px; line-height: 1.5;
+         box-shadow: 0 10px 30px -10px rgba(0,0,0,.8); max-width: 280px; white-space: pre-line; opacity: 0; transition: opacity .1s; }
+  #tip.on { opacity: 1; }
+  #tip b { color: var(--gold2); }
+
+  /* כניסה */
   #login { min-height: 100vh; display: grid; place-items: center; }
-  #login form { background: var(--panel); border: 1px solid var(--line); border-radius: 18px; padding: 28px; width: min(380px, 92vw); display: flex; flex-direction: column; gap: 12px; }
-  #login input[type=password] { background: var(--panel2); border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; }
+  #login form { background: var(--panel); border: 1px solid var(--line); border-radius: 22px; padding: 30px; width: min(380px, 92vw); display: flex; flex-direction: column; gap: 12px; box-shadow: var(--shadow); }
+  #login input[type=password] { background: var(--panel2); border: 1px solid var(--line); border-radius: 12px; padding: 11px 12px; }
   #login .err { color: var(--red); min-height: 1.2em; font-size: 13px; }
   .loading { opacity: .5; pointer-events: none; transition: opacity .2s; }
-  dialog { background: var(--panel); color: var(--text); border: 1px solid var(--line); border-radius: 18px; width: min(900px, 95vw); max-height: 88vh; padding: 0; }
-  dialog::backdrop { background: rgba(0,0,0,.6); }
-  dialog .dh { display: flex; align-items: center; gap: 10px; padding: 14px 18px; border-bottom: 1px solid var(--line); position: sticky; top: 0; background: var(--panel); }
+
+  /* חלון פרטים */
+  dialog { background: var(--panel); color: var(--text); border: 1px solid var(--line); border-radius: 20px; width: min(900px, 95vw); max-height: 88vh; padding: 0; }
+  dialog::backdrop { background: rgba(0,0,0,.65); backdrop-filter: blur(2px); }
+  dialog .dh { display: flex; align-items: center; gap: 10px; padding: 14px 18px; border-bottom: 1px solid var(--line); position: sticky; top: 0; background: var(--panel); z-index: 1; }
   dialog .db { padding: 14px 18px; }
+  dialog h3 { font-size: 15px; }
   .tl { list-style: none; margin: 0; padding: 0; }
-  .tl li { display: grid; grid-template-columns: 70px 1fr; gap: 10px; padding: 6px 0; border-bottom: 1px dashed var(--line); }
+  .tl li { display: grid; grid-template-columns: 70px 1fr; gap: 10px; padding: 7px 0; border-bottom: 1px dashed var(--line); }
   .tl time { color: var(--dim); direction: ltr; text-align: right; font-variant-numeric: tabular-nums; }
   .facts { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 8px 16px; margin-bottom: 14px; font-size: 13px; }
   .facts div span { display: block; color: var(--dim); font-size: 12px; }
-  .progress { height: 6px; background: var(--panel2); border-radius: 3px; overflow: hidden; min-width: 70px; }
-  .progress i { display: block; height: 100%; background: var(--green); }
-  .empty { color: var(--dim); padding: 18px 0; text-align: center; }
   .exports { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 12px; }
   .exports .card { grid-column: auto; }
   code { background: var(--panel2); padding: 1px 6px; border-radius: 5px; direction: ltr; display: inline-block; }
@@ -124,7 +214,7 @@
 <div id="app" hidden>
 <div class="wrap">
   <header class="top">
-    <div class="brand">סטטיסטיקות<small>שיעורי הרב · danvlado1234-sketch.github.io</small></div>
+    <div class="brand">סטטיסטיקות<small>שיעורי הרב · האתר והאפליקציה</small></div>
     <div class="spacer"></div>
     <div class="chips" id="ranges">
       <button class="chip" data-r="today">היום</button>
@@ -141,7 +231,7 @@
   </header>
 
   <section class="live" id="live"><span><span class="dot"></span>טוען…</span></section>
-  <section class="kpis" id="kpis"></section>
+  <section id="kpis"></section>
 
   <nav class="tabs" id="tabs">
     <button class="on" data-tab="overview">סקירה</button>
@@ -157,6 +247,7 @@
 </div>
 </div>
 
+<div id="tip" role="tooltip"></div>
 <dialog id="dlg"><div class="dh"><b id="dlgTitle"></b><span class="spacer"></span><button class="btn" id="dlgClose">סגירה</button></div><div class="db" id="dlgBody"></div></dialog>
 
 <script>
@@ -188,11 +279,14 @@
   const tFmt = new Intl.DateTimeFormat('he-IL', { timeZone: TZ, day: 'numeric', month: 'numeric', hour: '2-digit', minute: '2-digit' });
   const timeFmt = new Intl.DateTimeFormat('he-IL', { timeZone: TZ, hour: '2-digit', minute: '2-digit', second: '2-digit' });
   const fullFmt = new Intl.DateTimeFormat('he-IL', { timeZone: TZ, weekday: 'long', day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+  const shortDay = d => `${Number(d.slice(8))}.${Number(d.slice(5, 7))}`;
   const ago = ts => { const s = (Date.now() - ts) / 1000; if (s < 60) return 'עכשיו'; if (s < 3600) return `לפני ${Math.round(s / 60)} דק׳`; if (s < 86400) return `לפני ${Math.round(s / 3600)} שע׳`; return tFmt.format(ts); };
   let regionNames; try { regionNames = new Intl.DisplayNames(['he'], { type: 'region' }); } catch {}
   const country = c => { if (!c) return 'לא ידוע'; if (c === 'XX' || c === 'T1') return 'לא ידוע / Tor'; try { return regionNames ? regionNames.of(c) : c; } catch { return c; } };
   const DAYS = ['ראשון', 'שני', 'שלישי', 'רביעי', 'חמישי', 'שישי', 'שבת'];
   const KIND = { mishna: 'משנה', parasha: 'פרשת שבוע', moed: 'מועדים', iyun: 'עיון' };
+  const KIND_ORDER = ['mishna', 'parasha', 'moed', 'iyun'];
+  const kColor = k => KIND[k] ? `var(--k-${k})` : 'var(--k-other)';
   const DEVICE = { mobile: 'טלפון', tablet: 'טאבלט', desktop: 'מחשב' };
   const LSRC = { direct: 'לחיצה על שיעור', click: 'לחיצה על שיעור', user: 'מהתור שלי', cont: 'המשך אוטומטי (הבא בתור)', back: 'חזרה לשיעור הקודם' };
   const EVT = {
@@ -212,7 +306,11 @@
     if (p[0] === 'iyun' && p[1]) return `עיון · ${p[1]}`;
     return map[p[0]] || r;
   };
-  const srcName = s => s ? s : 'כניסה ישירה / לא ידוע';
+  const srcName = s => {
+    if (!s) return 'כניסה ישירה / לא ידוע';
+    const m = { whatsapp: 'וואטסאפ', mail: 'מייל', email: 'מייל', google: 'גוגל', facebook: 'פייסבוק', telegram: 'טלגרם' };
+    return m[String(s).toLowerCase()] || s;
+  };
 
   // ---------- API ----------
   async function api(path, opts = {}) {
@@ -268,9 +366,25 @@
   });
   $('#refresh').addEventListener('click', () => { load(); loadLive(); });
 
-  // ---------- טאבים ----------
+  // ---------- לשוניות ----------
   let tab = location.hash.slice(1) || 'overview';
   $$('#tabs button').forEach(b => b.addEventListener('click', () => { tab = b.dataset.tab; history.replaceState(null, '', '#' + tab); render(); }));
+
+  // ---------- חלונית ריחוף (לכל רכיב עם data-tip) ----------
+  const tip = $('#tip');
+  function showTip(html, x, y) {
+    tip.innerHTML = html; tip.classList.add('on');
+    const w = tip.offsetWidth || 200, h = tip.offsetHeight || 60, vw = document.documentElement.clientWidth || 1200;
+    tip.style.left = Math.min(Math.max(8, x - w / 2), vw - w - 8) + 'px';
+    tip.style.top = Math.max(8, y - h - 14) + 'px';
+  }
+  const hideTip = () => tip.classList.remove('on');
+  for (const root of [$('#main'), $('#kpis')]) {
+    root.addEventListener('mousemove', e => { const t = e.target.closest && e.target.closest('[data-tip]'); if (t) showTip(t.dataset.tip, e.clientX, e.clientY); else if (!e.target.closest || !e.target.closest('.area')) hideTip(); });
+    root.addEventListener('mouseleave', hideTip);
+  }
+  // התוכן של data-tip נבנה כ-HTML מאובטח (esc) ואז מקודד שוב לתוך המאפיין
+  const tipAttr = html => ` data-tip="${esc(html)}"`;
 
   // ---------- טעינה ----------
   let DATA = null;
@@ -292,89 +406,139 @@
       const d = await (await api('/api/live')).json();
       if (!AUTHED) return;
       const listening = d.listening.filter(l => Date.now() - l.last_at < 90e3);
-      const lst = listening.slice(0, 6).map(l => `🎧 ${esc(l.title || l.item_id)} <span class="pill">${l.duration_s ? Math.round(l.max_pos_s / l.duration_s * 100) + '%' : ''}</span>`).join(' · ');
-      const where = d.sessions.slice(0, 8).map(s => `${esc(DEVICE[s.device] || s.device || '')} ${esc(s.city || country(s.country))} · ${esc(routeName(s.exit_route))}`).join(' · ');
-      $('#live').innerHTML = `<span><span class="dot"></span>עכשיו באתר: <b>${N(d.sessions.length)}</b></span>
-        <span>מאזינים כרגע: <b>${N(listening.length)}</b></span>
-        <span>ב-30 הדקות האחרונות: <b>${N(d.last30min)}</b></span>
-        <span class="note">מתעדכן כל 30 שניות · ${timeFmt.format(d.now)}</span>
-        ${lst || where ? `<div class="now-list">${lst}${lst && where ? '<br>' : ''}${where}</div>` : ''}`;
+      const lst = listening.slice(0, 6).map(l => `<span class="now-pill">🎧 ${esc(l.title || l.item_id)}${l.duration_s ? ` · ${Math.round(l.max_pos_s / l.duration_s * 100)}%` : ''}</span>`).join('');
+      const where = d.sessions.slice(0, 8).map(s => `<span class="now-pill">${esc(DEVICE[s.device] || s.device || '')} · ${esc(s.city || country(s.country))} · ${esc(routeName(s.exit_route))}</span>`).join('');
+      $('#live').innerHTML = `<span><span class="dot"></span>עכשיו באתר<b>${N(d.sessions.length)}</b></span>
+        <span>מאזינים כרגע<b>${N(listening.length)}</b></span>
+        <span>ב-30 הדקות האחרונות<b>${N(d.last30min)}</b></span>
+        <span class="spacer"></span><span class="note">מתעדכן כל 30 שניות · ${timeFmt.format(d.now)}</span>
+        ${lst || where ? `<div class="now-list">${lst}${where}</div>` : ''}`;
     } catch {}
   }
 
   // ---------- רכיבי תצוגה ----------
-  function delta(cur, prev, invert) {
-    if (prev == null || !isFinite(prev) || prev === 0) return cur ? '<span class="note">אין נתון להשוואה</span>' : '';
-    const ch = (cur - prev) / prev * 100;
-    if (Math.abs(ch) < 0.5) return '<span>ללא שינוי</span>';
-    const good = invert ? ch < 0 : ch > 0;
-    return `<span class="${good ? 'up' : 'down'}">${ch > 0 ? '▲' : '▼'} ${Math.abs(ch).toFixed(0)}%</span> מהתקופה הקודמת`;
+  function change(cur, prev) {
+    if (prev == null || !isFinite(prev) || prev === 0) return null;
+    return (cur - prev) / prev * 100;
   }
-  const kpi = (l, v, d, title) => `<div class="kpi" title="${esc(title || '')}"><div class="l">${l}</div><div class="v">${v}</div><div class="d">${d || ''}</div></div>`;
+  function badge(cur, prev, invert) {
+    const ch = change(cur, prev);
+    if (ch == null) return '';
+    if (Math.abs(ch) < 0.5) return '<span class="badge">ללא שינוי</span>';
+    const good = invert ? ch < 0 : ch > 0;
+    return `<span class="badge ${good ? 'up' : 'down'}" title="לעומת התקופה הקודמת באותו אורך">${ch > 0 ? '▲' : '▼'} ${Math.abs(ch).toFixed(0)}%</span>`;
+  }
 
-  function hbars(rows, { k = r => r.k, v = r => r.n, fmt = N, sub, limit = 15, onClick } = {}) {
+  function hbars(rows, { k = r => r.k, v = r => r.n, fmt = N, sub, limit = 15, color } = {}) {
     rows = rows.slice(0, limit);
     if (!rows.length) return '<div class="empty">אין נתונים בטווח הזה</div>';
     const max = Math.max(...rows.map(v), 1);
-    return `<div class="hbars">${rows.map((r, i) => `<div class="hbar"${onClick ? ` data-i="${i}" style="cursor:pointer"` : ''}><span class="k" title="${esc(k(r))}">${esc(k(r))}</span><span class="bar"><i style="width:${(v(r) / max * 100).toFixed(1)}%"></i></span><span class="n">${fmt(v(r))}${sub ? ' · ' + sub(r) : ''}</span></div>`).join('')}</div>`;
+    return `<div class="hbars">${rows.map(r => `<div class="hbar"${tipAttr(`<b>${esc(k(r))}</b>\n${esc(fmt(v(r)))}${sub ? ' · ' + esc(sub(r)) : ''}`)}><span class="k">${esc(k(r))}</span><span class="bar"><i style="width:${(v(r) / max * 100).toFixed(1)}%${color ? ';background:' + color(r) : ''}"></i></span><span class="n">${fmt(v(r))}${sub ? ' · ' + sub(r) : ''}</span></div>`).join('')}</div>`;
   }
 
   function dailySeries() {
     const S = Object.fromEntries(DATA.dailyS.map(r => [r.day, r]));
     const L = Object.fromEntries(DATA.dailyL.map(r => [r.day, r]));
     const out = [];
-    let d = DATA.from;
-    let guard = 0;
+    let d = DATA.from, guard = 0;
     while (d <= DATA.to && guard++ < 2000) { out.push({ day: d, s: S[d] || {}, l: L[d] || {} }); d = addDays(d, 1); }
     let i = 0; while (i < out.length - 1 && !out[i].s.sessions && !out[i].l.plays) i++;
     return out.slice(i);
   }
+  // סדרות ארוכות מקובצות לשבועות כדי שהגרף יישאר קריא
+  function bucketed(rows) {
+    if (rows.length <= 120) return { rows, unit: 'day' };
+    const out = [];
+    for (let i = 0; i < rows.length; i += 7) {
+      const g = rows.slice(i, i + 7), sum = (f, k) => g.reduce((a, r) => a + (r[f][k] || 0), 0);
+      out.push({ day: g[0].day, end: g[g.length - 1].day,
+        s: { visitors: sum('s', 'visitors'), new_visitors: sum('s', 'new_visitors'), sessions: sum('s', 'sessions'), pageviews: sum('s', 'pageviews') },
+        l: { plays: sum('l', 'plays'), listeners: sum('l', 'listeners'), listen_s: sum('l', 'listen_s'), completed: sum('l', 'completed') } });
+    }
+    return { rows: out, unit: 'week' };
+  }
 
-  let dailyMetric = 'visitors';
+  let dailyMetric = 'listen';
   const METRICS = {
+    listen: { name: 'שעות האזנה', get: r => (r.l.listen_s || 0) / 3600, fmt: v => v >= 10 ? N(v) : v.toFixed(1) },
+    listeners: { name: 'מאזינים', get: r => r.l.listeners || 0, fmt: N },
+    plays: { name: 'השמעות', get: r => r.l.plays || 0, fmt: N },
     visitors: { name: 'מבקרים', get: r => r.s.visitors || 0, fmt: N },
     new_visitors: { name: 'מבקרים חדשים', get: r => r.s.new_visitors || 0, fmt: N },
     sessions: { name: 'ביקורים', get: r => r.s.sessions || 0, fmt: N },
-    plays: { name: 'השמעות', get: r => r.l.plays || 0, fmt: N },
-    listeners: { name: 'מאזינים', get: r => r.l.listeners || 0, fmt: N },
-    listen: { name: 'דקות האזנה', get: r => (r.l.listen_s || 0) / 60, fmt: N },
-    pageviews: { name: 'צפיות בדפים', get: r => r.s.pageviews || 0, fmt: N },
   };
-  function dailyChart() {
-    const rows = dailySeries(), m = METRICS[dailyMetric];
+
+  function niceTop(max) {
+    if (max <= 0) return { top: 1, step: 1 };
+    const p = Math.pow(10, Math.floor(Math.log10(max)));
+    const step = [0.1, 0.2, 0.25, 0.5, 1, 2, 2.5, 5, 10].map(x => x * p).find(s => s * 4 >= max) || p;
+    return { top: Math.ceil(max / step) * step, step };
+  }
+  let areaState = null;
+  function areaChart() {
+    const { rows, unit } = bucketed(dailySeries()), m = METRICS[dailyMetric];
     if (!rows.length) return '<div class="empty">אין נתונים</div>';
-    const W = 1000, H = 260, P = { t: 14, r: 8, b: 26, l: 42 };
-    const vals = rows.map(m.get), max = Math.max(...vals, 1);
-    const nice = (() => { const p = Math.pow(10, Math.floor(Math.log10(max))); const s = [1, 2, 2.5, 5, 10].find(x => x * p >= max / 4) * p; return s; })();
-    const top = Math.ceil(max / nice) * nice;
-    const bw = (W - P.l - P.r) / rows.length;
+    const W = 1000, H = 280, P = { t: 16, r: 10, b: 28, l: 44 };
+    const vals = rows.map(m.get), { top, step } = niceTop(Math.max(...vals));
+    const xw = (W - P.l - P.r) / Math.max(1, rows.length - 1);
+    const x = i => rows.length === 1 ? (W + P.l - P.r) / 2 : P.l + i * xw;
     const y = v => H - P.b - v / top * (H - P.t - P.b);
     let g = '';
-    for (let v = 0; v <= top + 1e-9; v += nice) g += `<line x1="${P.l}" x2="${W - P.r}" y1="${y(v)}" y2="${y(v)}"/><text x="${P.l - 6}" y="${y(v) + 4}" text-anchor="end">${N(v)}</text>`;
-    const step = Math.ceil(rows.length / 14);
-    // ציר X משמאל לימין (התאריך המוקדם משמאל) — הכי קריא לגרף זמן
-    rows.forEach((r, i) => {
-      const x = P.l + i * bw, v = vals[i], dow = new Date(r.day + 'T12:00:00Z').getUTCDay();
-      const h = Math.max(0, H - P.b - y(v));
-      g += `<rect class="bar${dow === 6 ? ' bar2' : ''}" x="${x + bw * 0.12}" y="${y(v)}" width="${Math.max(1, bw * 0.76)}" height="${h}" rx="2"><title>${r.day} (${DAYS[dow]})\n${m.name}: ${m.fmt(v)}\nמבקרים: ${N(r.s.visitors)} · ביקורים: ${N(r.s.sessions)}\nהשמעות: ${N(r.l.plays)} · האזנה: ${dur(r.l.listen_s)}</title></rect>`;
-      if (i % step === 0) g += `<text x="${x + bw / 2}" y="${H - 8}" text-anchor="middle">${r.day.slice(8)}/${r.day.slice(5, 7)}</text>`;
-    });
-    return `<div class="chart"><svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" style="direction:ltr">${g}</svg></div>`;
+    for (let v = 0; v <= top + 1e-9; v += step) g += `<line class="grid-l" x1="${P.l}" x2="${W - P.r}" y1="${y(v).toFixed(1)}" y2="${y(v).toFixed(1)}"/><text class="ax" x="${P.l - 8}" y="${(y(v) + 4).toFixed(1)}" text-anchor="end">${m.fmt(v)}</text>`;
+    // שבתות ברקע (בתצוגה יומית)
+    if (unit === 'day' && rows.length > 1) rows.forEach((r, i) => { if (new Date(r.day + 'T12:00:00Z').getUTCDay() === 6) g += `<rect class="sat" x="${(x(i) - xw / 2).toFixed(1)}" y="${P.t}" width="${xw.toFixed(1)}" height="${H - P.t - P.b}"/>`; });
+    const pts = vals.map((v, i) => [x(i), y(v)]);
+    const line = pts.map((p, i) => (i ? 'L' : 'M') + p[0].toFixed(1) + ' ' + p[1].toFixed(1)).join(' ');
+    const areaPath = `${line} L${pts[pts.length - 1][0].toFixed(1)} ${H - P.b} L${pts[0][0].toFixed(1)} ${H - P.b} Z`;
+    const every = Math.ceil(rows.length / 12);
+    rows.forEach((r, i) => { if (i % every === 0 || i === rows.length - 1) g += `<text class="ax" x="${x(i).toFixed(1)}" y="${H - 8}" text-anchor="middle">${shortDay(r.day)}</text>`; });
+    areaState = { rows, vals, x, y, W, H, P, m, unit };
+    return `<div class="area"><svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" style="direction:ltr" aria-label="${esc(m.name)} לאורך זמן">
+      <defs><linearGradient id="ag" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#d9a441" stop-opacity=".45"/><stop offset="1" stop-color="#d9a441" stop-opacity="0"/></linearGradient></defs>
+      ${g}<path d="${areaPath}" fill="url(#ag)"/><path class="ln" d="${line}" vector-effect="non-scaling-stroke"/>
+      <line class="cross" id="acx" y1="${P.t}" y2="${H - P.b}" x1="-10" x2="-10" vector-effect="non-scaling-stroke" visibility="hidden"/>
+      <circle class="pt" id="apt" r="5" cx="-10" cy="-10" visibility="hidden"/>
+      <rect id="ahit" x="0" y="0" width="${W}" height="${H}" fill="transparent"/></svg></div>`;
+  }
+  function bindArea() {
+    const hit = $('#ahit'); if (!hit || !areaState) return;
+    const svg = hit.ownerSVGElement, { rows, vals, x, y, W, m, unit } = areaState;
+    const move = e => {
+      const b = svg.getBoundingClientRect(), px = (e.clientX - b.left) / b.width * W;
+      let i = 0, best = Infinity; rows.forEach((_, j) => { const d = Math.abs(x(j) - px); if (d < best) { best = d; i = j; } });
+      const r = rows[i], cx = x(i), cy = y(vals[i]);
+      $('#acx').setAttribute('x1', cx); $('#acx').setAttribute('x2', cx); $('#acx').setAttribute('visibility', 'visible');
+      const pt = $('#apt'); pt.setAttribute('cx', cx); pt.setAttribute('cy', cy); pt.setAttribute('visibility', 'visible');
+      const when = unit === 'week' ? `שבוע ${shortDay(r.day)}–${shortDay(r.end)}` : `${DAYS[new Date(r.day + 'T12:00:00Z').getUTCDay()]} ${shortDay(r.day)}`;
+      showTip(`<b>${esc(when)}</b>\n${esc(m.name)}: ${esc(m.fmt(vals[i]))}\nמבקרים ${N(r.s.visitors)} · השמעות ${N(r.l.plays)}\nהאזנה ${esc(dur(r.l.listen_s))}`, b.left + cx / W * b.width, b.top + cy / areaState.H * b.height);
+    };
+    const out = () => { $('#acx').setAttribute('visibility', 'hidden'); $('#apt').setAttribute('visibility', 'hidden'); hideTip(); };
+    hit.addEventListener('mousemove', move); hit.addEventListener('mouseleave', out);
+    hit.addEventListener('touchstart', e => move(e.touches[0]), { passive: true }); hit.addEventListener('touchmove', e => move(e.touches[0]), { passive: true });
+  }
+
+  function sparkline(vals) {
+    if (vals.length < 2) return '<svg viewBox="0 0 100 54"></svg>';
+    const max = Math.max(...vals, 1), W = 100, H = 54;
+    const pts = vals.map((v, i) => [i / (vals.length - 1) * W, H - 4 - v / max * (H - 12)]);
+    const line = pts.map((p, i) => (i ? 'L' : 'M') + p[0].toFixed(2) + ' ' + p[1].toFixed(2)).join(' ');
+    return `<svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" style="direction:ltr" aria-hidden="true"><defs><linearGradient id="sg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#d9a441" stop-opacity=".35"/><stop offset="1" stop-color="#d9a441" stop-opacity="0"/></linearGradient></defs>
+      <path d="${line} L${W} ${H} L0 ${H} Z" fill="url(#sg)"/><path d="${line}" fill="none" stroke="#d9a441" stroke-width="2" vector-effect="non-scaling-stroke" stroke-linejoin="round"/></svg>`;
   }
 
   function heatmap(rows, valKey = 'n', fmt = N) {
     const M = {}; let max = 1;
     for (const r of rows) { const v = r[valKey] || 0; M[r.dow + '-' + r.hour] = v; max = Math.max(max, v); }
-    let h = '<div class="heat"><span></span>';
+    let h = '<div class="heatwrap"><div class="heat"><span></span>';
     for (let hr = 0; hr < 24; hr++) h += `<span class="h">${hr % 3 === 0 ? hr : ''}</span>`;
     for (let d = 0; d < 7; d++) {
       h += `<span class="d">${DAYS[d]}</span>`;
       for (let hr = 0; hr < 24; hr++) {
         const v = M[d + '-' + hr] || 0, a = v ? 0.12 + 0.88 * Math.sqrt(v / max) : 0;
-        h += `<span class="c" style="${v ? `background:rgba(217,164,65,${a.toFixed(2)})` : ''}" title="יום ${DAYS[d]} · ${String(hr).padStart(2, '0')}:00–${String(hr).padStart(2, '0')}:59\n${fmt(v)}"></span>`;
+        h += `<span class="c" style="${v ? `background:rgba(217,164,65,${a.toFixed(2)})` : ''}"${tipAttr(`<b>יום ${DAYS[d]} · ${String(hr).padStart(2, '0')}:00</b>\n${esc(fmt(v))}`)}></span>`;
       }
     }
-    return h + '</div>';
+    return h + '</div></div><div class="scale">מעט<i></i>הרבה</div>';
   }
 
   function sumBy(rows, key, valKey = 'n') { const o = Object.create(null); for (const r of rows) o[r[key]] = (o[r[key]] || 0) + (r[valKey] || 0); return o; }
@@ -390,10 +554,9 @@
     });
     if (!rows.length) return '<div class="empty">אין נתונים בטווח הזה</div>';
     return `<div class="scroll"><table data-table="${id}"><thead><tr>${cols.map(c => `<th data-k="${c.key}" class="${st.key === c.key ? 'sorted' + (st.asc ? ' asc' : '') : ''}">${c.name}</th>`).join('')}</tr></thead>
-      <tbody>${sorted.map((r, i) => `<tr${opts.click ? ` class="click" data-row="${rows.indexOf(r)}"` : ''}>${cols.map(c => `<td class="${c.num ? 'num' : ''}">${c.fmt ? c.fmt(r) : esc(r[c.key])}</td>`).join('')}</tr>`).join('')}</tbody></table></div>`;
+      <tbody>${sorted.map(r => `<tr${opts.click ? ` class="click" data-row="${rows.indexOf(r)}"` : ''}>${cols.map(c => `<td class="${c.num ? 'num' : ''}">${c.fmt ? c.fmt(r) : esc(r[c.key])}</td>`).join('')}</tr>`).join('')}</tbody></table></div>`;
   }
   table.state = {};
-  table.meta = {};
   function bindTables(root) {
     $$('table[data-table] th', root).forEach(th => th.addEventListener('click', () => {
       const id = th.closest('table').dataset.table, st = table.state[id];
@@ -402,46 +565,101 @@
     }));
   }
 
-  // ---------- תצוגות ----------
+  // ---------- מדדים ----------
   function renderKpis() {
     const s = DATA.kpiS[0] || {}, l = DATA.kpiL[0] || {}, ps = DATA.prev.kpiS || {}, pl = DATA.prev.kpiL || {};
     const ret = DATA.returning[0]?.n || 0;
     const ev = Object.fromEntries(DATA.evTypes.map(r => [r.type, r]));
-    $('#kpis').innerHTML = [
-      kpi('מבקרים (ייחודיים)', N(s.visitors), delta(s.visitors, ps.visitors), 'מכשירים/דפדפנים שונים שנכנסו בטווח'),
-      kpi('מבקרים חדשים', N(s.new_visitors), `${pct(s.new_visitors, s.visitors)} מהמבקרים · חוזרים: ${N(ret)}`),
-      kpi('ביקורים (כניסות)', N(s.sessions), delta(s.sessions, ps.sessions), 'הפסקה של 30 דקות מתחילה ביקור חדש'),
-      kpi('משך ביקור ממוצע', dur(s.avg_duration), delta(s.avg_duration, ps.avg_duration), 'מהכניסה ועד הפעולה האחרונה (כולל האזנה ברקע)'),
-      kpi('זמן פעיל ממוצע', dur(s.avg_active), `סה״כ ${hours(s.total_active)} שעות מול המסך`, 'הזמן שהאתר היה גלוי ופעיל על המסך'),
-      kpi('השמעות שיעורים', N(l.plays), delta(l.plays, pl.plays), 'השמעה = לפחות 3 שניות האזנה'),
-      kpi('שעות האזנה', hours(l.listen_s), delta(l.listen_s, pl.listen_s), 'זמן מתוך תוכן השיעורים, ללא דילוגים; זמן שעון מוצג בנפרד'),
-      kpi('שעות האזנה בפועל', hours(l.wall_s), delta(l.wall_s, pl.wall_s), 'זמן שעון, תוך שקלול שינויי מהירות'),
-      kpi('מאזינים ייחודיים', N(l.listeners), `${pct(l.listeners, s.visitors)} מהמבקרים האזינו`),
-      kpi('שיעורים שהושלמו', N(l.completed), `${pct(l.completed, l.plays)} מההשמעות הגיעו ל-90%`),
-      kpi('האזנה ממוצעת להשמעה', dur(l.avg_listen), `${N(l.items)} שיעורים שונים הושמעו`),
-      kpi('צפיות בדפים', N(s.pageviews), `${s.sessions ? (s.pageviews / s.sessions).toFixed(1) : 0} לביקור`),
-      kpi('נטישה מיידית', pct(s.bounces, s.sessions), 'ביקור קצר מ-30 שנ׳ בלי השמעה ובלי מעבר דף'),
-      kpi('הורדות', N(ev.download?.n), `סיכומי PDF: ${N(ev.pdf_open?.n)} · שיתופים: ${N(ev.share?.n)}`),
-      kpi('כניסות מהאפליקציה', pct(s.app_sessions, s.sessions), `התקנות חדשות: ${N(ev.app_installed?.n)}`),
-    ].join('');
+    const rows = dailySeries();
+    const hk = (label, value, unit, cur, prev, series, sub, title) => `<div class="hk" title="${esc(title || '')}">
+      <div class="l"><span>${label}</span>${badge(cur, prev)}</div>
+      <div class="hv">${value}${unit ? `<small>${unit}</small>` : ''}</div>
+      <div class="d">${sub || ''}</div>${sparkline(series)}</div>`;
+    const mk = (l, v, d, title) => `<div class="mk" title="${esc(title || '')}"><div class="l">${l}</div><div class="v">${v}</div>${d ? `<div class="d">${d}</div>` : ''}</div>`;
+    $('#kpis').innerHTML = `<div class="hero">
+      ${hk('מאזינים', N(l.listeners), '', l.listeners, pl.listeners, rows.map(r => r.l.listeners || 0), `${pct(l.listeners, s.visitors)} מהמבקרים האזינו`, 'מכשירים שונים שהאזינו לפחות 3 שניות')}
+      ${hk('שעות האזנה', hours(l.listen_s), 'שעות', l.listen_s, pl.listen_s, rows.map(r => r.l.listen_s || 0), `ממוצע ${dur(l.avg_listen)} להשמעה`, 'זמן מתוך תוכן השיעורים, ללא דילוגים')}
+      ${hk('השמעות', N(l.plays), '', l.plays, pl.plays, rows.map(r => r.l.plays || 0), `${pct(l.completed, l.plays)} הגיעו לסוף · ${N(l.items)} שיעורים שונים`, 'השמעה = לפחות 3 שניות האזנה')}
+      ${hk('מבקרים', N(s.visitors), '', s.visitors, ps.visitors, rows.map(r => r.s.visitors || 0), `${N(s.new_visitors)} חדשים · ${N(ret)} חוזרים`, 'מכשירים/דפדפנים שונים שנכנסו בטווח')}
+    </div><div class="minor">
+      ${mk('ביקורים', N(s.sessions), `${badge(s.sessions, ps.sessions)}`, 'הפסקה של 30 דקות מתחילה ביקור חדש')}
+      ${mk('משך ביקור ממוצע', dur(s.avg_duration), '', 'מהכניסה ועד הפעולה האחרונה (כולל האזנה ברקע)')}
+      ${mk('זמן פעיל ממוצע', dur(s.avg_active), `סה״כ ${hours(s.total_active)} שעות`, 'הזמן שהאתר היה גלוי על המסך')}
+      ${mk('שעות האזנה בפועל', hours(l.wall_s), 'לפי מהירות ההשמעה', 'זמן שעון, תוך שקלול שינויי מהירות')}
+      ${mk('שיעורים שהושלמו', N(l.completed), pct(l.completed, l.plays) + ' מההשמעות')}
+      ${mk('צפיות בדפים', N(s.pageviews), `${s.sessions ? (s.pageviews / s.sessions).toFixed(1) : 0} לביקור`)}
+      ${mk('נטישה מיידית', pct(s.bounces, s.sessions), 'פחות מ-30 שנ׳, בלי השמעה', 'ביקור קצר מ-30 שנ׳ בלי השמעה ובלי מעבר דף')}
+      ${mk('הורדות', N(ev.download?.n), `סיכומים ${N(ev.pdf_open?.n)} · שיתופים ${N(ev.share?.n)}`)}
+      ${mk('מהאפליקציה', pct(s.app_sessions, s.sessions), `התקנות חדשות: ${N(ev.app_installed?.n)}`)}
+    </div>`;
   }
 
+  // ---------- תובנות כתובות ----------
+  function insights() {
+    const s = DATA.kpiS[0] || {}, l = DATA.kpiL[0] || {}, pl = DATA.prev.kpiL || {}, ps = DATA.prev.kpiS || {};
+    const out = [];
+    const ch = change(l.listen_s, pl.listen_s);
+    if (l.listen_s) out.push(['🎧', `<b>${N(l.listeners)}</b> מאזינים שמעו <b>${hours(l.listen_s)} שעות</b> שיעורים${ch != null && Math.abs(ch) >= 5 ? ` — ${ch > 0 ? 'עלייה' : 'ירידה'} של ${Math.abs(ch).toFixed(0)}% מהתקופה הקודמת` : ''}.`]);
+    else if (s.visitors) out.push(['👀', `<b>${N(s.visitors)}</b> מבקרים נכנסו, אבל עוד לא הושמע שיעור בטווח הזה.`]);
+    const top = DATA.topItems[0];
+    if (top) out.push(['🏆', `השיעור המבוקש: <b>${esc(top.title || top.item_id)}</b> — ${N(top.plays)} השמעות, ${N(top.listeners)} מאזינים.`]);
+    const byDow = sumBy(DATA.heatL, 'dow', 's'), byHour = sumBy(DATA.heatL, 'hour', 's');
+    const pd = Object.entries(byDow).sort((a, b) => b[1] - a[1])[0], ph = Object.entries(byHour).sort((a, b) => b[1] - a[1])[0];
+    if (pd && ph) out.push(['🕘', `מאזינים בעיקר ביום <b>${DAYS[pd[0]]}</b>, ובשעות <b>${String(ph[0]).padStart(2, '0')}:00–${String((+ph[0] + 1) % 24).padStart(2, '0')}:00</b>.`]);
+    const kinds = DATA.kinds.filter(k => k.s > 0).sort((a, b) => b.s - a.s);
+    const tot = kinds.reduce((a, k) => a + k.s, 0);
+    if (kinds[0] && tot) out.push(['📚', `<b>${pct(kinds[0].s, tot)}</b> מזמן ההאזנה הוא ${esc(KIND[kinds[0].k] || 'אחר')}${kinds[1] ? `, ואחריו ${esc(KIND[kinds[1].k] || 'אחר')} (${pct(kinds[1].s, tot)})` : ''}.`]);
+    if (l.plays) out.push(['✅', `<b>${pct(l.completed, l.plays)}</b> מההשמעות הגיעו לסוף השיעור; בממוצע שומעים <b>${dur(l.avg_listen)}</b> בכל השמעה.`]);
+    const src = DATA.sources.filter(r => r.k).sort((a, b) => b.n - a.n)[0];
+    if (src && s.sessions) out.push(['🔗', `המקור המוביל לכניסות: <b>${esc(srcName(src.k))}</b> (${pct(src.n, s.sessions)} מהביקורים).`]);
+    const miss = DATA.searches.filter(r => !Math.round(r.results || 0)).slice(0, 3);
+    if (miss.length) out.push(['🔍', `חיפשו ולא מצאו: ${miss.map(r => `<b>${esc(r.k)}</b>`).join(', ')}.`]);
+    const nch = change(s.new_visitors, ps.new_visitors);
+    if (s.new_visitors && nch != null && Math.abs(nch) >= 15) out.push(['✨', `${nch > 0 ? 'יותר' : 'פחות'} מבקרים חדשים מהרגיל: <b>${N(s.new_visitors)}</b> (${nch > 0 ? '+' : '−'}${Math.abs(nch).toFixed(0)}%).`]);
+    if (!out.length) return '<div class="empty">אין עדיין מספיק נתונים בטווח הזה</div>';
+    return `<ul class="ins">${out.slice(0, 6).map(([ic, t]) => `<li><span class="ic" aria-hidden="true">${ic}</span><span>${t}</span></li>`).join('')}</ul>`;
+  }
+
+  function leaderboard(n = 8) {
+    const rows = DATA.topItems.slice(0, n);
+    if (!rows.length) return '<div class="empty">לא הושמעו שיעורים בטווח הזה</div>';
+    return `<div class="lb">${rows.map((r, i) => {
+      const reach = Math.round((r.avg_reach || 0) * 100);
+      return `<div class="row"${tipAttr(`<b>${esc(r.title || r.item_id)}</b>\n${N(r.plays)} השמעות · ${N(r.listeners)} מאזינים\nזמן האזנה ${esc(dur(r.listen_s))} · הושלמו ${N(r.completed)}`)}>
+        <span class="rk">${i + 1}</span>
+        <span class="t"><b>${esc(r.title || r.item_id)}</b><span><i class="kdot" style="background:${kColor(r.kind)}"></i>${esc(KIND[r.kind] || 'אחר')}${r.series ? ' · ' + esc(r.series) : ''} · ${esc(dur(r.listen_s))}</span></span>
+        <span class="pn">${N(r.plays)}<small>השמעות</small></span>
+        <span class="reach">הגיעו בממוצע עד ${reach}%<span class="track"><i style="width:${reach}%"></i></span></span></div>`;
+    }).join('')}</div>`;
+  }
+
+  function kindsBlock() {
+    const by = Object.fromEntries(DATA.kinds.map(r => [r.k, r]));
+    const rows = [...KIND_ORDER, ...DATA.kinds.map(r => r.k).filter(k => !KIND_ORDER.includes(k))].map(k => ({ k, ...(by[k] || { s: 0, n: 0, u: 0 }) })).filter(r => r.s > 0 || r.n > 0);
+    const tot = rows.reduce((a, r) => a + (r.s || 0), 0);
+    if (!tot) return '<div class="empty">אין האזנה בטווח הזה</div>';
+    return `<div class="seg">${rows.map(r => `<i style="flex:${r.s};background:${kColor(r.k)}"${tipAttr(`<b>${esc(KIND[r.k] || 'אחר')}</b>\n${esc(hours(r.s))} שעות · ${pct(r.s, tot)}\n${N(r.n)} השמעות · ${N(r.u)} מאזינים`)}></i>`).join('')}</div>
+      <div class="klist">${rows.map(r => `<div><span><i class="kdot" style="background:${kColor(r.k)}"></i>${esc(KIND[r.k] || 'אחר')} <span class="note">· ${N(r.n)} השמעות</span></span><span class="hv">${hours(r.s)} שע׳</span><span class="pc">${pct(r.s, tot)}</span></div>`).join('')}</div>`;
+  }
+
+  // ---------- תצוגות ----------
+  // טווח שחוצה שנה — עם השנה, כדי ש"23.11 – 22.11" לא ייראה כמו יום אחד
+  const rangeLabel = () => { const y = DATA.from.slice(0, 4) !== DATA.to.slice(0, 4), f = d => shortDay(d) + (y ? '.' + d.slice(2, 4) : ''); return DATA.from === DATA.to ? f(DATA.from) : `${f(DATA.from)} – ${f(DATA.to)}`; };
   function vOverview() {
     const s = DATA.kpiS[0] || {}, ret = DATA.returning[0]?.n || 0;
-    const kinds = DATA.kinds.map(r => ({ ...r, k: KIND[r.k] || r.k || 'אחר' }));
     return `<div class="grid">
-      <div class="card w12"><h3>לפי יום <span class="sub">${DATA.from} – ${DATA.to} · שבת בצבע כהה · מעבר עם העכבר לפרטים</span>
-        <span class="right">${Object.entries(METRICS).map(([k, m]) => `<button class="chip${k === dailyMetric ? ' on' : ''}" data-metric="${k}">${m.name}</button>`).join('')}</span></h3>${dailyChart()}</div>
-      <div class="card w4"><h3>חדשים מול חוזרים</h3>
+      <div class="card w8"><h3>לאורך זמן <span class="sub">${rangeLabel()}${dailySeries().length > 120 ? ' · לפי שבועות' : ''}</span>
+        <span class="right">${Object.entries(METRICS).map(([k, m]) => `<button class="chip${k === dailyMetric ? ' on' : ''}" data-metric="${k}">${m.name}</button>`).join('')}</span></h3>${areaChart()}</div>
+      <div class="card w4"><h3>בקצרה</h3>${insights()}</div>
+      <div class="card w8"><h3>השיעורים המובילים <span class="sub">לפי השמעות · הרשימה המלאה בלשונית "שיעורים והאזנה"</span></h3>${leaderboard(8)}</div>
+      <div class="card w4"><h3>מה שומעים <span class="sub">זמן האזנה לפי סוג</span></h3>${kindsBlock()}
+        <h3 style="margin-top:22px">חדשים מול חוזרים</h3>
         <div class="split"><i style="width:${s.visitors ? (s.new_visitors / s.visitors * 100) : 0}%;background:var(--gold)"></i><i style="flex:1;background:var(--blue)"></i></div>
         <div class="legend"><span style="--c:var(--gold)">חדשים ${N(s.new_visitors)}</span><span style="--c:var(--blue)">חוזרים ${N(ret)}</span></div>
-        <p class="note">סה״כ מבקרים מאז תחילת המדידה: <b>${N(DATA.allTime.visitors)}</b>${DATA.allTime.since ? ` (מ-${DATA.allTime.since})` : ''}</p></div>
-      <div class="card w4"><h3>האזנה לפי סוג</h3>${hbars(kinds, { v: r => r.s / 3600, fmt: v => v.toFixed(1) + ' שע׳', sub: r => N(r.n) + ' השמעות' })}</div>
-      <div class="card w4"><h3>מכשירים</h3>${hbars(DATA.devices.map(r => ({ ...r, k: DEVICE[r.k] || r.k })), { sub: r => pct(r.n, s.sessions) })}</div>
-      <div class="card w8"><h3>השיעורים המושמעים ביותר <span class="sub">עשרת הראשונים · הרשימה המלאה בלשונית "שיעורים"</span></h3>
-        ${hbars(DATA.topItems, { k: r => r.title || r.item_id, v: r => r.plays, limit: 10, sub: r => `${N(r.listeners)} מאזינים · ${dur(r.listen_s)}` })}</div>
-      <div class="card w4"><h3>מאיפה מגיעים</h3>${hbars(DATA.sources, { k: r => srcName(r.k), limit: 8 })}</div>
-      <div class="card w12"><h3>מתי נכנסים <span class="sub">ביקורים לפי יום ושעה (שעון ישראל)</span></h3>${heatmap(DATA.heatS)}</div>
+        <p class="note">מאז תחילת המדידה: <b>${N(DATA.allTime.visitors)}</b> מבקרים${DATA.allTime.since ? ` (מ-${esc(DATA.allTime.since)})` : ''}</p></div>
+      <div class="card w8"><h3>מתי מאזינים <span class="sub">זמן האזנה לפי יום ושעה · שעון ישראל</span></h3>${heatmap(DATA.heatL, 's', v => dur(v))}</div>
+      <div class="card w4"><h3>מאיפה מגיעים</h3>${hbars(DATA.sources, { k: r => srcName(r.k), limit: 6, sub: r => pct(r.n, s.sessions) })}
+        <h3 style="margin-top:22px">באיזה מכשיר</h3>${hbars(DATA.devices.map(r => ({ ...r, k: DEVICE[r.k] || r.k || 'לא ידוע' })), { sub: r => pct(r.n, s.sessions) })}</div>
     </div>`;
   }
 
@@ -455,7 +673,7 @@
     return `<div class="grid">
       <div class="card w12"><h3>כל השיעורים שהושמעו <span class="sub">לחיצה על כותרת עמודה ממיינת · "הגיעו עד" = ממוצע הנקודה הרחוקה ביותר בשיעור</span></h3>
         ${table('items', [
-          { key: 'title', name: 'שיעור', fmt: r => `${esc(r.title || r.item_id)}<br><span class="pill">${esc(KIND[r.kind] || r.kind || '')}</span>` },
+          { key: 'title', name: 'שיעור', fmt: r => `${esc(r.title || r.item_id)}<br><span class="pill"><i class="kdot" style="background:${kColor(r.kind)}"></i>${esc(KIND[r.kind] || r.kind || '')}</span>` },
           { key: 'plays', name: 'השמעות', num: 1, fmt: r => N(r.plays) },
           { key: 'listeners', name: 'מאזינים', num: 1, fmt: r => N(r.listeners) },
           { key: 'listen_s', name: 'זמן האזנה', num: 1, fmt: r => dur(r.listen_s) },
@@ -598,11 +816,13 @@
 
   function render() {
     if (!DATA) return;
+    hideTip();
     renderKpis();
     $$('#tabs button').forEach(b => b.classList.toggle('on', b.dataset.tab === tab));
     const V = { overview: vOverview, lessons: vLessons, times: vTimes, audience: vAudience, sources: vSources, sessions: vSessions, export: vExport }[tab] || vOverview;
     $('#main').innerHTML = V();
     bindTables($('#main'));
+    bindArea();
     $$('[data-metric]').forEach(b => b.addEventListener('click', () => { dailyMetric = b.dataset.metric; render(); }));
     $$('[data-export]').forEach(b => b.addEventListener('click', () => exportCsv(b.dataset.export, b)));
     $$('table[data-table=sessions] tr.click').forEach(tr => tr.addEventListener('click', () => openSession(sessRows[tr.dataset.row].session_id)));
@@ -633,12 +853,12 @@
     if (e.type === 'pageview') return `${t}: <b>${esc(routeName(e.route))}</b>`;
     if (e.type === 'search') return `${t}: <b>"${esc(e.label)}"</b> <span class="pill">${N(e.value)} תוצאות</span>`;
     if (e.type === 'outbound') return `${t}: ${esc(e.label)}`;
-    if (e.type === 'speed_change') return `${t}: ${e.value}×`;
+    if (e.type === 'speed_change') return `${t}: ${esc(e.value)}×`;
     return `${t}${e.title ? ': <b>' + esc(e.title) + '</b>' : ''}${e.type === 'error' ? ' ' + esc(e.label || '') : ''}`;
   }
   function listenText(l) {
     const reach = l.duration_s ? Math.round(l.max_pos_s / l.duration_s * 100) : 0;
-    return `🎧 האזנה: <b>${esc(l.title || l.item_id)}</b> — ${dur(l.listened_s)} נשמעו, הגיע עד ${reach}%${l.completed ? ' <span class="pill g">הושלם</span>' : ''}${l.resumed ? ' <span class="pill">המשך מנקודה שמורה</span>' : ''}${l.speed !== 1 ? ` <span class="pill">${l.speed}×</span>` : ''} <span class="pill">${esc(LSRC[l.source] || l.source || '')}</span>`;
+    return `🎧 האזנה: <b>${esc(l.title || l.item_id)}</b> — ${dur(l.listened_s)} נשמעו, הגיע עד ${reach}%${l.completed ? ' <span class="pill g">הושלם</span>' : ''}${l.resumed ? ' <span class="pill">המשך מנקודה שמורה</span>' : ''}${l.speed !== 1 ? ` <span class="pill">${esc(l.speed)}×</span>` : ''} <span class="pill">${esc(LSRC[l.source] || l.source || '')}</span>`;
   }
 
   async function openSession(id) {

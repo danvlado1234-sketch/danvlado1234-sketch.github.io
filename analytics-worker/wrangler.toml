@@ -12,7 +12,8 @@ fallthrough = false
 
 [vars]
 # מאילו אתרים מותר לשלוח נתונים (מופרד בפסיקים)
-ALLOWED_ORIGINS = "https://danvlado1234-sketch.github.io"
+# גם האתר שבתוך שרת התגובות (אותו אתר, יעד שני) — אחרת הביקורים שם לא נספרים
+ALLOWED_ORIGINS = "https://danvlado1234-sketch.github.io,https://shiurim-community.danvlado.workers.dev"
 ALLOW_LOCALHOST = "false"
 
 [[d1_databases]]
