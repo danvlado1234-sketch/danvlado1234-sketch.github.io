@@ -36,7 +36,7 @@
 <script>
   // גרסת הקבצים — בכל עדכון של app.js / style.css / live.js / gen.js מחליפים את כל המופעים של 20261110a בקובץ הזה
   // (ה-SW שומר קבצים לפי הכתובת המלאה, אז גרסה חדשה = כתובת חדשה = הקובץ החדש מיד)
-  window.APP_V = '20261114a';
+  window.APP_V = '20261122a';
   // כרום שולח את הצעת ההתקנה מוקדם — שומרים אותה עד ש-app.js נטען (כפתור "התקנה")
   window.addEventListener('beforeinstallprompt', e => { e.preventDefault(); window.__bip = e; });
   // קישורים מהאתרים הקודמים (/shiurim-parasha/?parasha=נח, /Shiurim-mishnhyot/?m=ברכות&p=2, המייל) — לכתובת החדשה
@@ -56,8 +56,8 @@
 </script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Frank+Ruhl+Libre:wght@500;700;900&family=Rubik:wght@400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="style.css?v=20261114a">
+<link href="https://fonts.googleapis.com/css2?family=Frank+Ruhl+Libre:wght@400;500;700;900&family=Rubik:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css?v=20261122a">
 </head>
 <body>
 <div class="shell">
@@ -220,9 +220,18 @@
         </div>
       </div>
       <aside class="np-panel" aria-label="טקסט והבא בתור">
-        <div class="np-tabs" role="tablist">
-          <button role="tab" data-pane="text" aria-selected="true" id="npTabText">טקסט המשנה</button>
-          <button role="tab" data-pane="queue" aria-selected="false">הבא בתור</button>
+        <div class="np-panel-head">
+          <div class="np-tabs" role="tablist">
+            <button role="tab" data-pane="text" aria-selected="true" id="npTabText">טקסט המשנה</button>
+            <button role="tab" data-pane="queue" aria-selected="false">הבא בתור</button>
+          </div>
+          <div class="np-read-bar" id="npReadBar" hidden>
+            <button class="read-pill read-bart" id="bartToggle" type="button" aria-pressed="false">פירוש ברטנורא</button>
+            <div class="read-size-grp" role="group" aria-label="גודל גופן">
+              <button class="read-pill" id="fontDown" type="button" aria-label="הקטנת כתב">א-</button>
+              <button class="read-pill" id="fontUp" type="button" aria-label="הגדלת כתב">א+</button>
+            </div>
+          </div>
         </div>
         <div class="np-pane np-text" id="npText" data-pane="text" aria-live="polite"></div>
         <ol class="np-pane np-queue" id="npQueue" data-pane="queue" hidden></ol>
@@ -406,11 +415,11 @@
   </defs>
 </svg>
 
-<script src="gen.js?v=20261114a" onerror="window.GEN={}"></script>
-<script src="community-config.js?v=20261114a"></script>
-<script src="community.js?v=20261114a"></script>
-<script src="analytics.js?v=20261114a"></script>
-<script src="live.js?v=20261114a"></script>
+<script src="gen.js?v=20261122a" onerror="window.GEN={}"></script>
+<script src="community-config.js?v=20261122a"></script>
+<script src="community.js?v=20261122a"></script>
+<script src="analytics.js?v=20261122a"></script>
+<script src="live.js?v=20261122a"></script>
 <script>if (!location.pathname.startsWith('/manage') && 'serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js').catch(() => {});</script>
 </body>
 </html>

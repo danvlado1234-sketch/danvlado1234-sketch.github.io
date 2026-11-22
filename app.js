@@ -393,6 +393,53 @@
       .then(r => r.json()).then(d => { const t = d.versions[0].text.map(s => String(s).replace(/<[^>]+>/g, '').trim()); store.set(key, t); return t; })
       .catch(() => { delete txtCache[ref]; return null; }));
   }
+  function sefariaBartenura(name, perek) {
+    const en = SEFARIA[name]; if (!en) return Promise.resolve(null);
+    const ref = `Bartenura_on_${en}.${perek}`;
+    if (txtCache[ref]) return txtCache[ref];
+    const key = 'bart2.' + ref; const c = store.get(key, null);
+    if (Array.isArray(c) && c.length) return (txtCache[ref] = Promise.resolve(c));
+    return (txtCache[ref] = fetch(`https://www.sefaria.org/api/v3/texts/${ref}?version=hebrew`)
+      .then(r => { if (!r.ok) throw new Error('sefaria ' + r.status); return r.json(); })
+      .then(d => {
+        const arr = d.versions?.[0]?.text;
+        if (!Array.isArray(arr) || !arr.length) throw new Error('empty');
+        const t = arr.map(entry => Array.isArray(entry) ? entry.flat(2).filter(Boolean).map(String) : entry ? [String(entry)] : []);
+        bartRemember(key, t);
+        return t;
+      })
+      // תקלה או תשובה ריקה — לא נשמרת, כדי שבפעם הבאה ינסה שוב
+      .catch(() => { delete txtCache[ref]; return null; }));
+  }
+  // פירוש לפרק תופס כ־11 אלף תווים: שומרים רק את הפרקים האחרונים, כדי שהזיכרון בדפדפן לא יתמלא
+  const BART_KEEP = 30;
+  function bartRemember(key, t) {
+    const idx = store.get('bart2.idx', []).filter(k => k !== key);
+    idx.push(key);
+    while (idx.length > BART_KEEP) { try { localStorage.removeItem('stream.' + idx.shift()); } catch {} }
+    store.set(key, t); store.set('bart2.idx', idx);
+  }
+  function formatBartenuraComment(rawHtml) {
+    const doc = new DOMParser().parseFromString(String(rawHtml || '').replace(/<br\s*\/?>/gi, ' '), 'text/html');
+    let hasBold = false;
+    const walk = (node, inBold = false) => {
+      if (node.nodeType === 3) return esc(node.nodeValue);
+      if (node.nodeType !== 1) return '';
+      const tag = node.tagName;
+      if (!inBold && (tag === 'B' || tag === 'STRONG')) {
+        const inner = [...node.childNodes].map(c => walk(c, true)).join('').trim();
+        if (!inner) return '';
+        hasBold = true;
+        return `<strong class="dh">${inner}</strong>`;
+      }
+      return [...node.childNodes].map(c => walk(c, inBold)).join('');
+    };
+    const out = walk(doc.body).replace(/\s{2,}/g, ' ').trim();
+    if (hasBold) return out;
+    const plain = (doc.body.textContent || '').replace(/\s{2,}/g, ' ').trim();
+    const m = plain.match(/^([^.:\n]{2,70}?(?:\s*[-–—:]|\.(?=\s)))(\s+[\s\S]*)$/);
+    return m ? `<strong class="dh">${esc(m[1])}</strong>${esc(m[2])}` : esc(plain);
+  }
 
   function masechetPage(name, perekArg) {
     const s = masechet[name];
@@ -708,6 +755,8 @@
     else { sf.href = it.pdf || '#'; $('#npSefariaLbl').textContent = 'סיכום'; sf.hidden = !it.pdf; }
     // בפרשה "טקסט" היה רק הפניה לאותו סיכום — כפתור אחד, בולט. במשנה הבולט הוא הטקסט.
     $('#npTextBtn').hidden = it.kind !== 'm'; $('#npTextBtn').classList.toggle('is-key', it.kind === 'm'); sf.classList.toggle('is-key', it.kind !== 'm');
+    $('#bartToggle')?.setAttribute('aria-pressed', bartOn);
+    syncReadBar();
     // הנגן הבינוני
     $('#dockCover').innerHTML = cover(it, 700);
     $('#dockTitle').textContent = npTitle(it); $('#dockSub').textContent = npSub(it); 
@@ -1151,6 +1200,25 @@
   window.addEventListener('popstate', () => { if (!history.state?.np && !np.hidden) shutNP(); });
   // pane: 'text' / 'queue' / null (נייד: null = כריכה; מחשב: הלוח תמיד פתוח, ברירת מחדל טקסט)
   let pane = null;
+  let bartOn = store.get('bartOn', false);
+  // מדרגות קבועות של גודל הכתב; 1 = הגודל הרגיל, כך שתמיד אפשר לחזור אליו בדיוק
+  const TEXT_SIZES = [0.85, 0.92, 1, 1.1, 1.2, 1.32, 1.45];
+  let sizeIdx = TEXT_SIZES.indexOf(store.get('textSize', 1));
+  if (sizeIdx < 0) sizeIdx = TEXT_SIZES.indexOf(1);
+  function applyTextSize() {
+    const s = TEXT_SIZES[sizeIdx];
+    store.set('textSize', s); document.documentElement.style.setProperty('--read-scale', s);
+    const dn = $('#fontDown'), up = $('#fontUp');
+    if (dn) dn.disabled = sizeIdx === 0;
+    if (up) up.disabled = sizeIdx === TEXT_SIZES.length - 1;
+  }
+  applyTextSize();
+  function syncReadBar() {
+    const rb = $('#npReadBar'); if (!rb) return;
+    const it = byId[nowId];
+    const shown = pane || 'text';
+    rb.hidden = !it || it.kind !== 'm' || shown !== 'text';
+  }
   function setPane(p) {
     pane = p;
     const shown = p || 'text';
@@ -1158,7 +1226,16 @@
     $$('.np-tabs [role=tab]').forEach(t => t.setAttribute('aria-selected', t.dataset.pane === shown));
     $$('.np-pane').forEach(x => { x.hidden = x.dataset.pane !== shown; });
     $('#npTextBtn').setAttribute('aria-pressed', p === 'text'); $('#npQueueBtn').setAttribute('aria-pressed', p === 'queue');
+    syncReadBar();
   }
+  $('#bartToggle')?.addEventListener('click', () => {
+    bartOn = !bartOn; store.set('bartOn', bartOn);
+    $('#bartToggle').setAttribute('aria-pressed', bartOn);
+    const it = byId[nowId]; if (!it || it.kind !== 'm') return;
+    if (bartOn) fillBart(it); else $$('#npText .bart-slot').forEach(s => { s.innerHTML = ''; });
+  });
+  $('#fontDown')?.addEventListener('click', () => { if (sizeIdx > 0) { sizeIdx--; applyTextSize(); } });
+  $('#fontUp')?.addEventListener('click', () => { if (sizeIdx < TEXT_SIZES.length - 1) { sizeIdx++; applyTextSize(); } });
   $('#barOpen').addEventListener('click', () => (isMob() ? openNP() : dockMode() === 'now' ? minDock() : openDock('now'))); // נייד: ישר לנגן המלא · מחשב: הכריכה פותחת/סוגרת את הלוח
   $('#barExpand').addEventListener('click', () => openNP());
   // הורדה: שמירה כקובץ עם שם קריא; אם הדפדפן חוסם (הרשאות הדלי) — פותח את הקובץ בלשונית חדשה
@@ -1317,7 +1394,9 @@
     for (const ev of ['pointerup', 'pointercancel', 'blur']) s.addEventListener(ev, () => wrap.classList.remove('is-scrub'));
   }
 
+  let textSeq = 0;
   function renderText(it) {
+    const seq = ++textSeq;
     const box = $('#npText'), dbox = $('#dockText');
     if (it.kind === 'p') {
       box.innerHTML = `<span class="ln-n">${esc(npSub(it))}</span><p class="ln">${esc(it.iyun ? it.iyun : seriesName(it))}</p>
@@ -1327,14 +1406,33 @@
     }
     box.innerHTML = dbox.innerHTML = '<p class="src">טוען את לשון המשנה…</p>';
     sefariaPerek(it.masechet, it.perek).then(t => {
-      if (nowId !== it.id) return;
+      if (nowId !== it.id || seq !== textSeq) return;
       if (!t) { box.innerHTML = dbox.innerHTML = '<p class="src">הטקסט לא נטען כרגע.</p>'; return; }
       dbox.textContent = it.nums.map(n => t[n - 1] || '').join(' ');
+      // המשנה מוצגת מיד; הפירוש נכנס למקומות השמורים כשהוא מגיע (fillBart)
       box.innerHTML = it.nums.map(n => {
         // בלי lookbehind — ספארי לפני 16.4 לא מכיר אותו, ואז כל הקובץ לא נטען (אתר ריק באייפון ישן)
         const lines = (t[n - 1] || '').replace(/([.:])\s+/g, '$1\n').split('\n').filter(Boolean);
-        return `<span class="ln-n">משנה ${heb(n)}</span>${lines.map(l => `<p class="ln">${esc(l)}</p>`).join('')}`;
+        return `<span class="ln-n">משנה ${heb(n)}</span>${lines.map(l => `<p class="ln">${esc(l)}</p>`).join('')}<div class="bart-slot" data-n="${n}"></div>`;
       }).join('') + `<p class="src">הטקסט מספריא · <a href="https://www.sefaria.org.il/${SEFARIA[it.masechet]}.${it.perek}.${it.nums[0]}" target="_blank" rel="noopener" style="text-decoration:underline">לפתוח בספריא</a></p>`;
+      if (bartOn) fillBart(it);
+    });
+  }
+  // ממלא את כרטיסי הברטנורא בטקסט שכבר מוצג. בלי לבנות מחדש את המשנה — המקום בגלילה נשמר
+  function fillBart(it) {
+    const seq = textSeq;
+    const slots = () => $$('#npText .bart-slot');
+    const card = body => `<div class="bart-card"><div class="bart-head">פירוש רבי עובדיה מברטנורא</div>${body}</div>`;
+    slots().forEach(s => { s.innerHTML = card('<p class="bart-empty">טוען את הפירוש…</p>'); });
+    sefariaBartenura(it.masechet, it.perek).then(bart => {
+      if (nowId !== it.id || seq !== textSeq || !bartOn) return;
+      slots().forEach(s => {
+        if (!bart) { s.innerHTML = card('<p class="bart-empty">הפירוש לא נטען כרגע. בדקו את החיבור לרשת ונסו שוב.</p>'); return; }
+        const comments = bart[+s.dataset.n - 1];
+        s.innerHTML = card(comments && comments.length
+          ? comments.map(c => `<p class="bart-p">${formatBartenuraComment(c)}</p>`).join('')
+          : '<p class="bart-empty">לא נמצא פירוש ברטנורא למשנה זו.</p>');
+      });
     });
   }
 
