@@ -763,26 +763,9 @@ body.building .top{ display: none; }
   linear-gradient(to top, var(--page-bg, var(--bg)) 0%, oklch(0.135 0.006 60 / 0.75) 30%, oklch(0.135 0.006 60 / 0.35) 70%, oklch(0.135 0.006 60 / 0.6) 100%),
   linear-gradient(to left, oklch(0.135 0.006 60 / 0.9) 0%, oklch(0.135 0.006 60 / 0.45) 50%, oklch(0.135 0.006 60 / 0.05) 100%); }
 .sys-in{ max-width: 900px; }
-.door span{ white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .sys-title{ font-family: var(--f-title); font-weight: 900; font-size: clamp(2.8rem, 6.6vw, 5.6rem); line-height: 0.95; margin: 0 0 16px; letter-spacing: -0.02em; text-shadow: 0 2px 30px oklch(0 0 0 / 0.6); }
 .sys-title span{ color: var(--accent); }
 .sys-sub{ font-size: clamp(1.05rem, 0.95rem + 0.45vw, 1.35rem); line-height: 1.6; max-width: 40ch; margin: 0 0 26px; text-shadow: 0 1px 14px oklch(0 0 0 / 0.7); }
-.doors{ display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; }
-@media (max-width: 760px){ .doors{ grid-template-columns: repeat(2, minmax(0, 1fr)); } }
-.door{ position: relative; display: grid; gap: 4px; padding: 16px 16px 16px 40px; border-radius: 12px; background: oklch(0.2 0.008 60 / 0.72); backdrop-filter: blur(14px); box-shadow: inset 0 0 0 1px oklch(1 0 0 / 0.09); transition: background .2s, transform .2s var(--ease); }
-.door::before{ content: ""; position: absolute; top: 18px; inset-inline-start: -1px; width: 3px; height: 26px; border-radius: 0 3px 3px 0; background: var(--t); }
-.door b{ font-family: var(--f-title); font-weight: 900; font-size: 1.55rem; line-height: 1.1; }
-.door span{ font-size: var(--fs-small); color: var(--text-2); }
-.door .i{ position: absolute; inset-inline-end: 12px; top: 50%; translate: 0 -50%; width: 22px; height: 22px; color: var(--text-3); transition: color .2s, transform .2s var(--ease); }
-@media (hover: hover){ .door:hover{ background: oklch(0.26 0.01 60 / 0.82); transform: translateY(-2px); } }
-@media (hover: hover){ .door:hover .i{ color: var(--text); transform: translateX(-3px); } }
-.quick{ display: flex; flex-wrap: wrap; gap: 10px; margin-top: 14px; }
-.qk{ display: flex; align-items: center; gap: 12px; padding: 6px 16px 6px 6px; border-radius: 99px; background: oklch(1 0 0 / 0.1); backdrop-filter: blur(10px); text-align: start; transition: background .2s; }
-@media (hover: hover){ .qk:hover{ background: oklch(1 0 0 / 0.18); } }
-.qk .cover{ width: 40px; border-radius: 99px; flex: none; }
-.qk small{ display: block; font-size: 0.78rem; color: var(--text-2); }
-.qk b{ font-weight: 600; font-size: 0.98rem; }
-.qk > .i{ width: 18px; height: 18px; margin-inline-start: 6px; }
 @media (prefers-reduced-motion: reduce){ .wall-in{ animation: none; } }
 
 /* רקע דף הבית: הצילום של הרב — מכוון על הרב, צבע חם וכהה */
@@ -821,17 +804,6 @@ body.building .top{ display: none; }
 /* כפתור פעיל בסרגל — צבע ונקודה, בלי טבעת */
 .bar-end .ib:focus-visible{ outline-offset: 0; }
 
-/* ---------- כרטיס "המשנה האחרונה" בדף הבית ---------- */
-.latest{ display: flex; align-items: center; gap: 14px; margin: 0 0 12px; padding: 12px 12px 12px 14px; border-radius: 14px; background: oklch(0.2 0.008 60 / 0.78); backdrop-filter: blur(14px); box-shadow: inset 0 0 0 1px oklch(1 0 0 / 0.1); max-width: 620px; }
-.latest .cover{ width: 64px; border-radius: 8px; flex: none; }
-.latest > div{ flex: 1; min-width: 0; display: grid; }
-.latest small{ font-size: 0.8rem; color: var(--text-2); }
-.latest b{ font-family: var(--f-title); font-weight: 900; font-size: 1.45rem; line-height: 1.15; }
-.latest > div > span{ font-size: var(--fs-small); color: var(--text-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.latest .btn{ height: 48px; padding: 0 20px 0 24px; font-size: 1.05rem; flex: none; }
-.latest .btn .i{ width: 22px; height: 22px; }
-@media (max-width: 560px){ .latest{ flex-wrap: wrap; } .latest .btn{ width: 100%; } }
-.quick{ margin-top: 12px; }
 
 /* "לימוד עם טקסט" — הפעולה הראשית בלוח */
 .act-main{ background: var(--text); color: var(--bg); box-shadow: none; font-weight: 600; }
@@ -934,17 +906,12 @@ body.building .top{ display: none; }
 :root[data-theme="day"] .sys-in{ grid-column: 1; grid-row: 1; max-width: none; }
 :root[data-theme="day"] .sys-title{ text-shadow: 0 2px 24px oklch(1 0 0 / 0.9); }
 :root[data-theme="day"] .sys-sub{ text-shadow: 0 1px 14px oklch(1 0 0 / 0.95); color: var(--text); }
-:root[data-theme="day"] :is(.latest, .door, .qk){ background: oklch(0.99 0.004 85 / 0.82); backdrop-filter: blur(16px); box-shadow: 0 0 0 1px oklch(1 0 0 / 0.7) inset, 0 8px 24px oklch(0.3 0.04 240 / 0.12); }
-@media (hover: hover){ :root[data-theme="day"] .door:hover{ background: oklch(1 0 0 / 0.95); } }
-:root[data-theme="day"] .latest .btn-play{ background: var(--text); color: var(--bg); }
 @media (max-width: 760px){
   :root[data-theme="day"] .sys{ grid-template-columns: 1fr; padding-top: 6px; }
   :root[data-theme="day"] .sys-photo{ grid-column: 1; grid-row: 1; aspect-ratio: 16 / 10; object-position: 38% 30%; }
   :root[data-theme="day"] .sys-in{ grid-row: 2; }
 }
-/* מצב יום: חיתוך על הרב, דלתות בשתי שורות */
 :root[data-theme="day"] .sys-photo{ content: url("img/rabbi-crop.jpg"); object-position: 50% 30%; filter: saturate(0.92) sepia(0.16) contrast(1.04) brightness(0.98); }
-:root[data-theme="day"] .doors{ grid-template-columns: repeat(2, minmax(0, 1fr)); }
 @media (max-width: 760px){ :root[data-theme="day"] .sys-photo{ aspect-ratio: 16 / 11; object-position: 50% 25%; } }
 
 /* מצב יום: הצילום נמס לתוך השמיים — בלי מסגרת, שוליים רכים, הרב במרכז */
@@ -971,7 +938,6 @@ body.building .top{ display: none; }
 :root[data-theme="day"]:not(.no-day-bg) .pagebg i{ filter: saturate(1.45) contrast(1.06) brightness(0.96); background-position: center top; }
 :root[data-theme="day"]:not(.no-day-bg) .pagebg i.blur{ filter: blur(30px) saturate(1.6) brightness(1); }
 :root[data-theme="day"]:not(.no-day-bg) .main{ background: oklch(0.97 0.01 85 / 0.22); backdrop-filter: none; }
-:root[data-theme="day"]:not(.no-day-bg) :is(.latest, .door, .qk){ background: oklch(0.97 0.012 85 / 0.62); backdrop-filter: blur(20px) saturate(1.3); }
 :root[data-theme="day"]:not(.no-day-bg) :is(.side-top, .side-lib){ background: oklch(0.97 0.012 85 / 0.66); }
 :root[data-theme="day"]:not(.no-day-bg) .chip:not(.is-on), :root[data-theme="day"]:not(.no-day-bg) .theme-btn{ background: oklch(0.97 0.012 85 / 0.6); backdrop-filter: blur(10px); }
 :root[data-theme="day"]:not(.no-day-bg) .season:not(.is-on){ background: oklch(0.97 0.012 85 / 0.6); }
@@ -2203,4 +2169,46 @@ body.building .top{ display: none; }
 }
 @media (prefers-reduced-motion: reduce) {
   .feedback-layer, .feedback-panel { animation: none; }
+}
+
+/* ---------- דף הבית: פתיחה עם מרחב (דניאל, 22.11) — בלי קוביות; גופן הכותרות לכל הפתיחה ---------- */
+.sys-title{ margin: 0 0 14px; }
+.sys-by{ font-family: var(--f-title); font-weight: 500; font-size: clamp(1.1rem, 0.95rem + 0.5vw, 1.4rem); color: var(--text-2); margin: 0 0 clamp(18px, 3vh, 28px); text-shadow: 0 1px 14px oklch(0 0 0 / 0.7); }
+.sys-sub{ font-family: var(--f-title); font-weight: 500; font-size: clamp(1.2rem, 1.05rem + 0.55vw, 1.5rem); line-height: 1.5; max-width: 32ch; margin: 0; text-wrap: pretty; }
+.sys-sub .num{ font-weight: 900; color: var(--accent); }
+:root[data-theme="day"] .sys-by{ text-shadow: 0 1px 14px oklch(1 0 0 / 0.95); }
+/* הפתיחה נמוכה יותר — רואים את תחילת הגלריה כבר במסך הראשון */
+.sys{ min-height: min(74vh, 660px); }
+@media (max-width: 760px){ .sys{ min-height: 0; padding-top: 21vh; padding-bottom: 16px; } .sys-title{ font-size: 2.6rem; margin-bottom: 8px; } .sys-by{ margin-bottom: 14px; } .sys-sub{ font-size: 1.15rem; } .now{ margin-top: 20px; } }
+
+/* ---------- "עכשיו" (22.11, דניאל בחר את ג): מדף ראשון בסגנון הכרטיסים באתר, המשנה האחרונה ופרשת השבוע ---------- */
+.now{ margin-top: clamp(22px, 4vh, 36px); }
+
+/* כמו שורה ראשונה בנטפליקס: אותה שפה כמו הכרטיסים שמתחת, כך שהפתיחה זורמת ישר לגלריה */
+.shelf-head{ font-family: var(--f-ui); font-weight: 700; font-size: var(--fs-row); margin-bottom: 10px; text-shadow: 0 1px 12px oklch(0 0 0 / 0.5); }
+.shelf{ display: grid; grid-template-columns: repeat(2, minmax(0, 300px)); gap: clamp(8px, 1vw, 14px); }
+.sc{ display: grid; gap: 6px; min-width: 0; }
+.sc-pic{ position: relative; aspect-ratio: 16 / 9; border-radius: var(--r-card); overflow: hidden; }
+.sc-pic img{ width: 100%; height: 100%; object-fit: cover; transition: transform .5s var(--ease); }
+.sc:hover .sc-pic img{ transform: scale(1.05); }
+.sc-pic::after{ content: ""; position: absolute; inset: 0; background: linear-gradient(to top, oklch(0 0 0 / 0.75), transparent 58%); }
+.sc-t{ position: absolute; inset-inline: 12px; bottom: 10px; z-index: 1; font-family: var(--f-title); font-weight: 900; font-size: 1.45rem; line-height: 1.05; color: #fff; text-shadow: 0 1px 10px oklch(0 0 0 / 0.6); }
+.sc-play{ position: absolute; inset-inline-end: 10px; bottom: 10px; z-index: 2; width: 36px; height: 36px; display: grid; place-items: center; border-radius: 99px; background: var(--accent); color: var(--accent-ink); }
+.sc-play .i{ width: 15px; height: 15px; }
+.sc-cap{ font-size: var(--fs-small); color: var(--text-2); }
+:root[data-theme="day"] .shelf-head, :root[data-theme="day"] .sc-cap{ text-shadow: 0 1px 10px oklch(1 0 0 / 0.95); color: var(--text); }
+
+/* טלפון: הכל במסך הראשון */
+@media (max-width: 760px){
+  .shelf-head{ font-size: 1.05rem; margin-bottom: 8px; }
+  .shelf{ grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+  .sc-t{ font-size: 1.05rem; inset-inline: 8px; bottom: 8px; }
+  .sc-play{ width: 30px; height: 30px; top: 7px; bottom: auto; inset-inline-end: 7px; }
+  .sc .badge{ font-size: 0.7rem; padding: 2px 7px; top: 7px; inset-inline-start: 7px; }
+  .sc-cap{ font-size: 0.78rem; }
+}
+
+@media (max-width: 760px){
+  :root[data-theme="day"] .sys{ padding-bottom: 16px; }
+  :root[data-theme="day"] .sys-photo{ aspect-ratio: 16 / 7.5; margin-bottom: -48px; object-position: 50% 28%; }
 }

@@ -261,35 +261,38 @@
 
   // רקע דף הבית: בינתיים הצילום של הרב בשיעור (דניאל, 14.10). null = קיר הכריכות
   const HERO_PHOTO = 'img/rabbi.jpg';
-  // דף הבית מציג את המערכת (דניאל): קיר כל הכריכות + מה יש כאן + ארבע דלתות + שני קיצורי "נגן עכשיו"
+  // דף הבית (דניאל, 22.11): בלי קוביות. כותרת, שם הרב, משפט אחד עם המספר, ומדף "עכשיו באתר": המשנה האחרונה ופרשת השבוע.
+  // נבחר מתוך שלושה כיוונים בסטודיו (design-studio/projects/shiurim/DIRECTION.md). הכל במסך הראשון, הגלריה מציצה מתחת.
   function systemHero(latestP, latestM) {
     const covers = [...new Set(Object.values(ART).filter(v => v.startsWith('gen:')))];
     const wall = [];
     while (covers.length && wall.length < 48) wall.push(...covers);
-    const nM = mItems.length, nP = pItems.filter(i => !i.moed && !i.iyun).length, nH = pItems.filter(i => i.moed && !i.iyun).length, nI = pItems.filter(i => i.iyun).length;
-    const door = (attrs, title, sub, tint) => `<a class="door" ${attrs} style="--t:${tint}"><b>${title}</b><span>${sub}</span>${icon('next')}</a>`;
+    const g = groups[weekParasha.name], pit = g ? g.items[0] : latestP;
+    // השיעור על הפרשה עולה כל שבוע לקראת סוף השבוע; עד אז הכרטיס נשאר עם תמונת הפרשה, בלי כפתור.
+    // פרשה שעוד לא הוקלטה — לא מנגנים במקומה את הקודמת (דניאל, 19.10)
+    const pHref = `#/p/${encodeURIComponent(weekParasha.name)}`, pName = `פרשת ${esc(weekParasha.label)}`;
+    const pArt = ART[weekParasha.name] || (pit ? artOf(pit) : FALLBACK);
+    const playBtn = (id, cls) => id ? `<button class="${cls}" data-play="${esc(id)}" aria-label="האזנה">${icon('play')}</button>` : '';
+    // זמן יחסי בלשון נקבה (המשנה עלתה), בלי תאריך לועזי
+    const ago = d => { if (!d) return ''; const n = days(d); if (n <= 0) return 'עלתה היום'; if (n === 1) return 'עלתה אתמול'; if (n === 2) return 'עלתה שלשום';
+      if (n < 7) return `עלתה לפני ${n} ימים`; if (n < 14) return 'עלתה לפני שבוע'; if (n < 21) return 'עלתה לפני שבועיים';
+      if (n < 30) return `עלתה לפני ${Math.round(n / 7)} שבועות`; if (n < 45) return 'עלתה לפני חודש'; if (n < 75) return 'עלתה לפני חודשיים';
+      if (n < 365) return `עלתה לפני ${Math.round(n / 30)} חודשים`; return 'עלתה לפני יותר משנה'; };
+    let mCard = '';
+    if (latestM) {
+      // בלי מקפים: משנה אחת "ג", שתיים "ג, ד", יותר "ג עד ה"
+      const ns = latestM.nums.map(heb), range = ns.length < 3 ? ns.join(', ') : `${ns[0]} עד ${ns[ns.length - 1]}`;
+      mCard = `<a class="sc" href="${seriesHref(latestM)}"><div class="sc-pic"><img src="${IMG(artOf(latestM), 640, 360)}" alt=""><span class="badge">משנה חדשה</span><span class="sc-t">${esc(`${latestM.masechet} ${heb(latestM.perek)}, ${range}`)}</span>${playBtn(latestM.id, 'sc-play')}</div><span class="sc-cap">${ago(latestM.date)}</span></a>`;
+    }
+    const pId = g ? g.items[0].id : null, pSub = g ? `שבת ${esc(hebDate(weekParasha.date))}` : 'השיעור יעלה לקראת שבת';
+    const pCard = `<a class="sc" href="${pHref}"><div class="sc-pic"><img src="${IMG(pArt, 640, 360)}" alt=""><span class="badge">השבוע</span><span class="sc-t">${pName}</span>${playBtn(pId, 'sc-play')}</div><span class="sc-cap">${pSub}</span></a>`;
     return `<section class="sys${HERO_PHOTO ? ' has-photo' : ''}">
       ${HERO_PHOTO ? `<img class="sys-photo" src="${HERO_PHOTO}" alt="">` : `<div class="wall" aria-hidden="true"><div class="wall-in">${wall.slice(0, 48).map(v => `<img src="${IMG(v, 300, 300)}" alt="" loading="lazy">`).join('')}</div></div>`}
       <div class="sys-in">
         <h1 class="sys-title">שיעורי הרב <span>ולדומירסקי</span></h1>
-        <p class="sys-sub">שיעורי הרה״ג רבי יצחק ולדומירסקי שליט״א — משנה, פרשת השבוע, מועדים ועיון. <b class="num">${items.length}</b> שיעורים בקול, עם הטקסט, פתוחים לכולם.</p>
-        ${latestM ? `<div class="latest">
-          <span class="cover sm">${coverHTML(latestM)}</span>
-          <div><small>המשנה האחרונה בספרייה</small><b>${esc(`${latestM.masechet} ${heb(latestM.perek)}, ${latestM.nums.map(heb).join('–')}`)}</b><span>${rel(latestM.date)} · האזנה עם טקסט המשנה</span></div>
-          <button class="btn btn-play" data-play="${esc(latestM.id)}">${icon('play')}להאזנה</button>
-        </div>` : ''}
-        <div class="doors">
-          ${door('href="#/" data-f="m"', 'משנה', `${Object.keys(masechet).length} מסכתות · ${nM} שיעורים`, 'var(--mishna)')}
-          ${door('href="#/" data-f="p"', 'פרשת השבוע', `${nP} שיעורים · 5 חומשים`, 'var(--parasha)')}
-          ${door('href="#/" data-f="h"', 'מועדים', `${nH} שיעורים · מהקרוב`, 'oklch(0.6 0.12 75)')}
-          ${door('href="#/" data-f="i"', 'עיון', `${nI} סוגיות בהלכה`, 'oklch(0.55 0.08 170)')}
-        </div>
-        <div class="quick">
-          ${(() => { const g = groups[weekParasha.name], k = `פרשת השבוע · שבת ${esc(hebDate(weekParasha.date))}`;
-            // פרשה שעוד לא הוקלטה — לא מנגנים במקומה את הקודמת (דניאל, 19.10), רק אומרים שתעלה בקרוב
-            if (!g) return `<a class="qk" href="#/" data-f="p"><span class="cover sm"><img src="${IMG(ART[weekParasha.name] || FALLBACK, 120, 120)}" alt=""></span><span><small>${k}</small><b>פרשת ${esc(weekParasha.label)}</b><small>השיעור יעלה בקרוב</small></span>${icon('next')}</a>`;
-            const it = g.items[0]; return `<button class="qk" data-play="${esc(it.id)}"><span class="cover sm">${coverHTML(it)}</span><span><small>${k}</small><b>פרשת ${esc(weekParasha.label)}</b></span>${icon('play')}</button>`; })()}
-        </div>
+        <p class="sys-by">הרה״ג רבי יצחק ולדומירסקי שליט״א</p>
+        <p class="sys-sub"><b class="num">${items.length}</b> שיעורים במשנה, בפרשת השבוע, במועדים ובעיון, פתוחים לכל אחד להאזנה וללימוד.</p>
+        <div class="now"><div class="shelf-head">עכשיו באתר</div><div class="shelf">${mCard}${pCard}</div></div>
       </div></section>`;
   }
   const coverHTML = it => `<img src="${IMG(artOf(it), 120, 120)}" alt="">`;
