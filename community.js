@@ -951,7 +951,16 @@
       title: 'פנייה בווטסאפ',
       ctx: 'מעבר לוואטסאפ לשליחת הודעה ישירה לדניאל.',
     },
+    mail: {
+      title: 'קבלת השיעורים במייל',
+      ctx: 'הצטרפות לרשימת התפוצה של שיעורי הרב.',
+    },
   };
+  const feedbackMailView = $('#feedbackMailView');
+  const feedbackMailDone = $('#feedbackMailDone');
+  const feedbackMailEmail = $('#feedbackMailEmail');
+  const feedbackMailError = $('#feedbackMailError');
+  const feedbackMailSubmit = $('#feedbackMailSubmit');
 
   function showContactChoicesView() {
     contactKind = null;
@@ -962,6 +971,8 @@
     feedbackWhatsappView.hidden = true;
     feedbackSuccess.hidden = true;
     feedbackError.hidden = true;
+    if (feedbackMailView) feedbackMailView.hidden = true;
+    if (feedbackMailDone) feedbackMailDone.hidden = true;
     $('[data-contact-type]')?.focus();
   }
 
@@ -979,7 +990,14 @@
     feedbackSuccess.hidden = true;
     feedbackError.hidden = true;
 
-    if (kind === 'whatsapp') {
+    if (feedbackMailView) feedbackMailView.hidden = kind !== 'mail';
+    if (feedbackMailDone) feedbackMailDone.hidden = true;
+    if (kind === 'mail') {
+      feedbackForm.hidden = true;
+      feedbackWhatsappView.hidden = true;
+      feedbackMailError.hidden = true;
+      feedbackMailEmail.focus();
+    } else if (kind === 'whatsapp') {
       feedbackForm.hidden = true;
       feedbackWhatsappView.hidden = false;
       updateWhatsappHref();
@@ -1026,6 +1044,38 @@
   });
 
   $('#feedbackBack')?.addEventListener('click', showContactChoicesView);
+  $('#feedbackMailBack')?.addEventListener('click', showContactChoicesView);
+  $('#feedbackMailClose')?.addEventListener('click', () => closeContact());
+
+  // הרשמה לרשימת התפוצה: השרת שומר בקשה; מייל האישור נשלח מהמחשב של דניאל בתוך יממה
+  feedbackMailView?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    feedbackMailError.hidden = true;
+    const email = feedbackMailEmail.value.trim();
+    if (!/^[^\s@<>"'(),;:\\[\]]+@[^\s@<>"'(),;:\\[\]]+\.[^\s@<>"'(),;:\\[\]]{2,}$/.test(email) || email.length > 254) {
+      feedbackMailError.textContent = 'נא לבדוק את כתובת המייל.';
+      feedbackMailError.hidden = false;
+      feedbackMailEmail.focus();
+      return;
+    }
+    feedbackMailSubmit.disabled = true;
+    try {
+      const res = await apiFetch('/v1/subscriptions', {
+        method: 'POST',
+        body: { email, challenge_token: await makeChallengeToken('subscribe', feedbackMailView) },
+      });
+      if (res?.message) $('#feedbackMailDoneText').textContent = res.message;
+      feedbackMailEmail.value = '';
+      feedbackMailView.hidden = true;
+      feedbackMailDone.hidden = false;
+      $('#feedbackMailClose')?.focus();
+    } catch (err) {
+      feedbackMailError.textContent = err.message || 'ההרשמה לא נשלחה. נסו שוב בעוד רגע.';
+      feedbackMailError.hidden = false;
+    } finally {
+      feedbackMailSubmit.disabled = false;
+    }
+  });
   $('#feedbackWhatsappBack')?.addEventListener('click', showContactChoicesView);
   $('#feedbackNewBtn')?.addEventListener('click', () => {
     feedbackText.value = '';
@@ -1776,6 +1826,9 @@
     const q = new URLSearchParams(location.search);
     if (q.get('open_comments')) {
       setTimeout(() => openComments(q.get('open_comments')), 80);
+    } else if (q.has('subscribe')) {
+      // קישור לשיתוף: https://danvlado1234-sketch.github.io/?subscribe פותח ישר את טופס ההרשמה למייל
+      setTimeout(() => { openContact(); openContactChoice('mail'); }, 80);
     } else if (q.has('open_contact')) {
       setTimeout(() => openContact(), 80);
     } else if (q.has('open_admin')) {
