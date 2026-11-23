@@ -37,7 +37,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Frank+Ruhl+Libre:wght@400;500;700;900&family=Rubik:wght@400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="style.css?v=20261123a">
+<link rel="stylesheet" href="style.css?v=20261123b">
 </head>
 <body>
 <div class="shell">
@@ -233,7 +233,7 @@
     <header class="feedback-head"><div class="sheet-head-title"><span class="comments-kicker">פנייה לצוות האתר</span><h2 id="feedbackTitle">יצירת קשר</h2></div><button class="ib" id="feedbackClose" type="button" aria-label="סגירת חלונית יצירת קשר"><svg class="i"><use href="#i-x"/></svg></button></header>
     <p class="feedback-context" id="feedbackContext">פנייה פרטית לצוות האתר — אינה מתפרסמת באתר.</p>
     <div class="contact-choices" id="contactChoices">
-      <button class="contact-choice" type="button" data-contact-type="mail" style="--tone: oklch(0.7 0.12 250)"><span class="contact-choice-icon"><svg class="i"><use href="#i-mail"/></svg></span><span><b>קבלת השיעורים במייל</b><small>הצטרפות לרשימת התפוצה — שיעור חדש יגיע ישר לתיבת המייל</small></span><svg class="i contact-arrow"><use href="#i-next"/></svg></button>
+      <button class="contact-choice" type="button" data-contact-type="mail" style="--tone: oklch(0.7 0.12 250)"><span class="contact-choice-icon"><svg class="i"><use href="#i-mail"/></svg></span><span><b>קבלת השיעורים במייל</b><small>הצטרפות לרשימת התפוצה. כל שיעור חדש יגיע אליכם למייל</small></span><svg class="i contact-arrow"><use href="#i-next"/></svg></button>
       <button class="contact-choice" type="button" data-contact-type="bug" style="--tone: oklch(0.68 0.16 30)"><span class="contact-choice-icon"><svg class="i"><use href="#i-alert"/></svg></span><span><b>דיווח על תקלה</b><small>בעיה בהאזנה, טעות בסיכום או משהו באתר שלא עובד</small></span><svg class="i contact-arrow"><use href="#i-next"/></svg></button>
       <button class="contact-choice" type="button" data-contact-type="improvement" style="--tone: var(--accent)"><span class="contact-choice-icon"><svg class="i"><use href="#i-bulb"/></svg></span><span><b>הצעה לשיפור</b><small>רעיון, בקשה או שיפור שיקל על הלימוד וההאזנה</small></span><svg class="i contact-arrow"><use href="#i-next"/></svg></button>
       <button class="contact-choice" type="button" data-contact-type="whatsapp" style="--tone: oklch(0.7 0.15 150)"><span class="contact-choice-icon"><svg class="i"><use href="#i-whatsapp"/></svg></span><span><b>פנייה בווטסאפ</b><small>מעבר לוואטסאפ לשליחת הודעה ישירה לדניאל</small></span><svg class="i contact-arrow"><use href="#i-next"/></svg></button>
@@ -260,13 +260,13 @@
       <button class="feedback-back" id="feedbackMailBack" type="button"><svg class="i" aria-hidden="true"><use href="#i-next"/></svg>סוג פנייה אחר</button>
       <label class="feedback-input"><span>כתובת המייל שלכם *</span><input id="feedbackMailEmail" type="email" inputmode="email" autocomplete="email" maxlength="254" dir="ltr" required placeholder="name@example.com"></label>
       <p class="feedback-error" id="feedbackMailError" role="alert" hidden></p>
-      <p class="feedback-hint">יישלח אליכם מייל עם קישור לאישור. רק אחרי הלחיצה עליו תצטרפו לרשימה. אפשר לבקש הסרה בכל עת בתשובה לאחד המיילים.</p>
+      <p class="feedback-hint">נשלח אליכם מייל קצר כדי לוודא שהכתובת שלכם, ותצטרפו לרשימה אחרי שתאשרו אותו. אפשר לבקש הסרה בכל עת בתשובה לאחד המיילים.</p>
       <button class="btn feedback-submit-btn" id="feedbackMailSubmit" type="submit"><svg class="i"><use href="#i-check"/></svg><span>הרשמה</span></button>
     </form>
     <div class="feedback-success" id="feedbackMailDone" hidden>
       <div class="feedback-success-icon"><svg class="i"><use href="#i-check"/></svg></div>
-      <h3>כמעט סיימנו</h3>
-      <p id="feedbackMailDoneText">בתוך יממה יגיע אליכם מייל עם קישור לאישור. ההרשמה תושלם רק אחרי הלחיצה עליו.</p>
+      <h3>הבקשה התקבלה</h3>
+      <p id="feedbackMailDoneText">בתוך יממה יגיע אליכם מייל לאישור ההרשמה. אחרי שתאשרו, תתחילו לקבל את השיעורים.</p>
       <div class="feedback-success-acts"><button class="btn feedback-submit-btn" id="feedbackMailClose" type="button">סגירה</button></div>
     </div>
     <div class="feedback-success" id="feedbackSuccess" hidden>
@@ -410,10 +410,10 @@
   </defs>
 </svg>
 
-<script src="gen.js?v=20261123a"></script>
-<script src="community-config.js?v=20261123a"></script>
-<script src="community.js?v=20261123a"></script>
-<script src="analytics.js?v=20261123a"></script>
-<script src="live.js?v=20261123a"></script>
+<script src="gen.js?v=20261123b"></script>
+<script src="community-config.js?v=20261123b"></script>
+<script src="community.js?v=20261123b"></script>
+<script src="analytics.js?v=20261123b"></script>
+<script src="live.js?v=20261123b"></script>
 </body>
 </html>
