@@ -184,7 +184,8 @@ body.has-bar .main{ padding-bottom: 156px; }
 .pic-title small{ display: block; font-family: var(--f-ui); font-weight: 500; font-size: var(--fs-small); color: var(--text-2); margin-top: 4px; }
 .badge{ position: absolute; top: 10px; inset-inline-start: 10px; z-index: 2; padding: 3px 10px; border-radius: 5px; background: oklch(0.13 0.012 60 / 0.74); border: 1px solid oklch(0.84 0.12 84 / 0.38); backdrop-filter: blur(8px); color: oklch(0.91 0.105 85); font-weight: 600; font-size: 0.76rem; line-height: 1.3; letter-spacing: 0.01em; box-shadow: 0 3px 10px oklch(0 0 0 / 0.28); }
 .pic .over{ position: absolute; inset: 0; z-index: 2; display: grid; place-items: center; opacity: 0; transition: opacity .2s; }
-.pic .over span{ width: 54px; height: 54px; border-radius: 99px; display: grid; place-items: center; background: oklch(0 0 0 / 0.45); border: 2px solid var(--text); backdrop-filter: blur(4px); }
+.pic .over span{ width: 54px; height: 54px; border-radius: 999px; display: grid; place-items: center; background: oklch(0.11 0.01 60 / 0.68); color: #fff; border: 1.5px solid oklch(1 0 0 / 0.85); box-shadow: 0 4px 14px oklch(0 0 0 / 0.45); backdrop-filter: blur(6px); transition: transform .18s var(--ease), background .18s; }
+.pic .over .i{ transform: translateX(1px); }
 .wide:focus-visible .over{ opacity: 1; } @media (hover: hover){ .wide:hover .over{ opacity: 1; } }
 .prog{ position: absolute; inset-inline: 0; bottom: 0; height: 4px; background: oklch(1 0 0 / 0.25); z-index: 2; }
 .prog i{ display: block; height: 100%; background: var(--accent); }
@@ -255,6 +256,7 @@ body.has-bar .main{ padding-bottom: 156px; }
 .ep .pic .over{ opacity: 1; background: oklch(0 0 0 / 0.25); }
 .ep .pic .over span{ width: 42px; height: 42px; }
 .ep .pic .over .i{ width: 18px; height: 18px; }
+.ep.is-now .pic .over span{ background: var(--gold-disc); color: var(--gold-disc-ink); border-color: transparent; box-shadow: var(--gold-disc-shadow); }
 .ep-body b{ display: flex; justify-content: space-between; gap: 12px; font-size: 1.1rem; font-weight: 600; }
 .ep-body b span{ font-weight: 400; font-size: var(--fs-meta); color: var(--text-3); }
 .ep-body p{ margin: 6px 0 0; font-family: var(--f-title); font-size: 1.08rem; line-height: 1.55; color: var(--text-2); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
@@ -939,7 +941,7 @@ body.building .top{ display: none; }
 
 /* ---------- מצב יום — פחות לבן: רקע רווי יותר, בלי צעיף, כרטיסים שקופים-צבעוניים ---------- */
 :root[data-theme="day"]:not(.no-day-bg) .pagebg i{ filter: saturate(1.45) contrast(1.06) brightness(0.96); background-position: center top; }
-:root[data-theme="day"]:not(.no-day-bg) .pagebg i.blur{ filter: blur(30px) saturate(1.6) brightness(1); }
+:root[data-theme="day"]:not(.no-day-bg) .pagebg i.blur{ filter: blur(30px) saturate(1.45) brightness(0.86); }
 :root[data-theme="day"]:not(.no-day-bg) .main{ background: oklch(0.97 0.01 85 / 0.22); backdrop-filter: none; }
 :root[data-theme="day"]:not(.no-day-bg) :is(.side-top, .side-lib){ background: oklch(0.97 0.012 85 / 0.66); }
 :root[data-theme="day"]:not(.no-day-bg) .chip:not(.is-on), :root[data-theme="day"]:not(.no-day-bg) .theme-btn{ background: oklch(0.97 0.012 85 / 0.6); backdrop-filter: blur(10px); }
@@ -949,6 +951,50 @@ body.building .top{ display: none; }
   :root[data-theme="day"]:not(.no-day-bg) .tabs{ background: oklch(0.97 0.012 85 / 0.6); }
   :root[data-theme="day"]:not(.no-day-bg) .pagebg i:not(.blur){ background-position: 30% top; }
 }
+/* דפים עם רקע כריכה כהה מטושטש במצב יום — שומרים על הרקע השקוף-העשיר בלי קופסאות לבנות, ומתאימים טקסט ואייקונים לבהיר וחד */
+:root[data-theme="day"].has-blur-bg:not(.no-day-bg) .main{ background: oklch(0.08 0.01 60 / 0.22); }
+@media (max-width: 1023px){
+  :root[data-theme="day"].has-blur-bg:not(.no-day-bg) .main{ background: transparent; }
+  :root[data-theme="day"].has-blur-bg:not(.no-day-bg) .pagebg::after{
+    content: ""; position: absolute; inset: 0; pointer-events: none;
+    background: linear-gradient(to bottom, oklch(0.06 0.01 60 / 0.18), oklch(0.06 0.01 60 / 0.34) 55%, oklch(0.06 0.01 60 / 0.42));
+  }
+}
+:root[data-theme="day"].has-blur-bg:not(.no-day-bg) .view-in{
+  --text: oklch(0.985 0.006 85);
+  --text-2: oklch(0.90 0.012 82);
+  --text-3: oklch(0.80 0.012 80);
+  --line: oklch(1 0 0 / 0.16);
+  --hover: oklch(1 0 0 / 0.1);
+  --surface-2: oklch(1 0 0 / 0.09);
+  --accent: var(--gold-400);
+  --accent-ink: var(--gold-ink);
+  color: var(--text);
+}
+:root[data-theme="day"].has-blur-bg:not(.no-day-bg) .view-in :is(.row-head h2, .page-title, .cap b, .cap span, .note, .ep-head h2, .ep-head span){
+  text-shadow: 0 1px 10px oklch(0 0 0 / 0.55);
+}
+:root[data-theme="day"].has-blur-bg:not(.no-day-bg) .view-in .season:not(.is-on){
+  background: oklch(0.12 0.01 60 / 0.42); color: oklch(0.96 0.008 85);
+  border: 1px solid oklch(1 0 0 / 0.18); backdrop-filter: blur(8px);
+}
+:root[data-theme="day"].has-blur-bg:not(.no-day-bg) .view-in .season.is-on{
+  background: oklch(0.985 0.006 85); color: oklch(0.16 0.01 60);
+}
+:root[data-theme="day"].has-blur-bg:not(.no-day-bg) .view-in .season[aria-disabled="true"]{
+  background: oklch(0.12 0.01 60 / 0.22); color: oklch(1 0 0 / 0.52); opacity: 0.65;
+}
+:root[data-theme="day"].has-blur-bg:not(.no-day-bg) .view-in :is(.ep-cmt, .more){ color: oklch(0.88 0.01 82); }
+@media (hover: hover){
+  :root[data-theme="day"].has-blur-bg:not(.no-day-bg) .view-in :is(.ep-cmt:not(.has-comments), .more):hover{
+    background: oklch(1 0 0 / 0.12); color: #fff;
+  }
+}
+:root[data-theme="day"].has-blur-bg:not(.no-day-bg) .view-in .ep.is-now{ background: oklch(0.83 0.135 84 / 0.14); }
+:root[data-theme="day"].has-blur-bg:not(.no-day-bg) .view-in .pill{ box-shadow: inset 0 0 0 1.5px oklch(1 0 0 / 0.35); color: #fff; }
+:root[data-theme="day"].has-blur-bg:not(.no-day-bg) .view-in .addb{ box-shadow: inset 0 0 0 1.5px oklch(1 0 0 / 0.35); color: #fff; }
+:root[data-theme="day"].has-blur-bg:not(.no-day-bg) .top:not(.is-solid) :is(.brand-mob, .brand-sub, .bsd){ color: oklch(0.98 0.008 85); text-shadow: 0 1px 10px oklch(0 0 0 / 0.6); }
+:root[data-theme="day"].has-blur-bg:not(.no-day-bg) .top:not(.is-solid) .brand-word{ color: var(--gold-400); }
 
 /* טלפון: בלי קפיצה כששורת הכתובת נעלמת — הרקע והדף בגובה המסך המלא (lvh), לא בגובה המשתנה */
 .pagebg{ inset: auto; top: -60px; left: -60px; right: -60px; height: calc(100vh + 120px); height: calc(100lvh + 120px); }

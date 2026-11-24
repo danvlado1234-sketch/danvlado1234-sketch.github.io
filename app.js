@@ -689,6 +689,7 @@
   }
   function setPageBg(a, b) {
     const art = bgFor(a, b);
+    document.documentElement.classList.toggle('has-blur-bg', !!art);
     const url = art ? IMG(art, 900, 900) : (has(DAY_BG, bgKey) ? DAY_BG[bgKey] : null);
     if (!url || url === bgNow) return; bgNow = url;
     const layer = document.createElement('i');
