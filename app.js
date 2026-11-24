@@ -148,7 +148,7 @@
   const inProgress = () => Object.keys(prog).filter(id => byId[id] && fracOf(id) > 0.02 && fracOf(id) < 0.95).sort((a, b) => (prog[b][2] || 0) - (prog[a][2] || 0)).map(id => byId[id]);
 
   // ---------- כרטיסים ----------
-  const wideCard = (it, { showProg, fresh } = {}) => `
+  const wideCard = (it, { showProg } = {}) => `
     <a class="wide" href="${seriesHref(it)}" data-play="${esc(it.id)}" aria-label="${esc(fullName(it))}">
       <div class="pic"><img loading="lazy" src="${IMG(artOf(it), 640, 360)}" alt="">
         ${isNew(it) && !showProg ? '<span class="badge">חדש</span>' : ''}
@@ -156,7 +156,7 @@
         <span class="over"><span>${icon('play')}</span></span>
         ${showProg ? `<span class="prog"><i style="width:${Math.round(fracOf(it.id) * 100)}%"></i></span>` : ''}
       </div>
-      <div class="cap"><span>${showProg ? `נשארו ${remain(it.id)}` : fresh > 1 ? `${fresh} שיעורים חדשים השבוע · האחרונה ${rel(it.date).replace('עלה ', '')}` : rel(it.date)}</span></div>
+      <div class="cap"><span>${showProg ? `נשארו ${remain(it.id)}` : rel(it.date)}</span></div>
     </a>`;
   const remain = id => { const p = prog[id]; const s = Math.max(0, (p[1] - p[0]) | 0); return s >= 60 ? `${Math.round(s / 60)} דק׳` : `${s} שנ׳`; };
   const posterCard = name => {
@@ -371,14 +371,10 @@
     let html = '';
     html += systemHero(latestP, latestM);
     html += row('המשך האזנה', cont.filter(i => filter === 'all' || (filter === 'm' ? i.kind === 'm' : filter === 'i' ? i.iyun : i.kind === 'p' && !i.iyun)).map(i => wideCard(i, { showProg: true })));
-    // סדרה אחת = כרטיס אחד (כמו "פרקים חדשים" בנטפליקס), עם מספר החדשים
-    const seen = {}, freshCards = [];
-    for (const i of fresh.filter(i => filter === 'all' || (filter === 'm' ? i.kind === 'm' : filter === 'i' ? i.iyun : i.kind === 'p' && !i.iyun))) {
-      const k = i.kind === 'm' ? i.masechet : i.id;
-      if (seen[k]) { seen[k].n++; continue; }
-      freshCards.push(seen[k] = { it: i, n: 1 });
-    }
-    html += row('חדש השבוע', freshCards.map(({ it, n }) => wideCard(it, { fresh: n })));
+    // כל שיעור שעלה ב־7 הימים האחרונים מקבל כרטיס משלו (מהחדש לישן), בלי השיעורים שכבר מוצגים למעלה ב"עכשיו באתר"
+    const heroIds = new Set([latestM?.id, groups[weekParasha.name]?.items[0]?.id].filter(Boolean));
+    const freshCards = fresh.filter(i => !heroIds.has(i.id));
+    html += row('חדש השבוע', freshCards.map(it => wideCard(it)));
     if (want('m')) html += row('סדרות המשנה', recorded.map(posterCard), ['כל ששת הסדרים', '#/search']);
     if (want('p')) for (const b of [...books].sort((x, y) => { const last = k => pItems.filter(i => !i.moed && !i.iyun && i.book === k).reduce((m, i) => (i.date || '') > m ? i.date : m, ''); return last(y).localeCompare(last(x)); })) {
       const gs = PARASHA_ORDER.filter(t => groups[t] && groups[t].book === b).map(t => groups[t]);
