@@ -237,7 +237,10 @@
     const n = pItems.filter(i => !i.moed && !i.iyun && i.book === b).length;
     return tile(`#/book/${encodeURIComponent(b)}`, `חומש ${b}`, n ? `${n} שיעורים` : 'טרם הוקלט', BOOK_TINT[b], ART[ps.find(p => ART[p] && ART[p].startsWith('gen:')) || ps[0]] || FALLBACK);
   }).join('')}${tile('#/moadim', 'מועדים', `${pItems.filter(i => i.moed && !i.iyun).length} שיעורים`, 'oklch(0.48 0.1 75)', ART['חנוכה'] || FALLBACK)}${tile('#/iyun', 'עיון · סוגיות', `${pItems.filter(i => i.iyun).length} שיעורים`, 'oklch(0.42 0.07 170)', ART['סוכות'] || FALLBACK)}</div>`;
-  const ghostSq = (name, title) => `<div class="sq-wrap"><div class="sq is-empty"><div class="pic"><img loading="lazy" src="${IMG(ART[name] || FALLBACK, 400, 400)}" alt=""><span class="pic-title">${esc(name)}</span></div><div class="cap"><b>${esc(title)}</b><span>טרם הוקלט</span></div></div></div>`;
+  const ghostSq = (name, title) => {
+    const isWeek = name === weekParasha.name;
+    return `<div class="sq-wrap"><a class="sq ${isWeek ? 'is-soon' : 'is-empty'}" href="#/p/${encodeURIComponent(name)}" aria-label="${esc(title)} — ${isWeek ? 'יעלה בקרוב' : 'טרם הוקלט'}"><div class="pic"><img loading="lazy" src="${IMG(ART[name] || FALLBACK, 400, 400)}" alt="">${isWeek ? `<span class="badge">השבוע</span><span class="sc-soon">${icon('clock')}יעלה בקרוב</span>` : ''}<span class="pic-title">${esc(name)}</span></div><div class="cap"><b>${esc(title)}</b><span>${isWeek ? 'יעלה בקרוב' : 'טרם הוקלט'}</span></div></a></div>`;
+  };
 
   // ---------- תצוגות ----------
   const view = $('#view');
@@ -285,7 +288,7 @@
       mCard = `<a class="sc" href="${seriesHref(latestM)}"><div class="sc-pic"><img src="${IMG(artOf(latestM), 640, 360)}" alt=""><span class="badge">משנה חדשה</span><span class="sc-t">${esc(`${latestM.masechet} ${heb(latestM.perek)}, ${range}`)}</span>${playBtn(latestM.id, 'sc-play')}</div><span class="sc-cap">${ago(latestM.date)}</span></a>`;
     }
     const pId = g ? g.items[0].id : null, pSub = g ? `שבת ${esc(hebDate(weekParasha.date))}` : 'השיעור יעלה לקראת שבת';
-    const pCard = `<a class="sc" href="${pHref}"><div class="sc-pic"><img src="${IMG(pArt, 640, 360)}" alt=""><span class="badge">השבוע</span><span class="sc-t">${pName}</span>${playBtn(pId, 'sc-play')}</div><span class="sc-cap">${pSub}</span></a>`;
+    const pCard = `<a class="sc${g ? '' : ' is-soon'}" href="${pHref}"><div class="sc-pic"><img src="${IMG(pArt, 640, 360)}" alt=""><span class="badge">השבוע</span>${g ? playBtn(pId, 'sc-play') : `<span class="sc-soon">${icon('clock')}יעלה בקרוב</span>`}<span class="sc-t">${pName}</span></div><span class="sc-cap">${pSub}</span></a>`;
     return `<section class="sys${HERO_PHOTO ? ' has-photo' : ''}">
       ${HERO_PHOTO ? `<img class="sys-photo" src="${HERO_PHOTO}" alt="">` : `<div class="wall" aria-hidden="true"><div class="wall-in">${wall.slice(0, 48).map(v => `<img src="${IMG(v, 300, 300)}" alt="" loading="lazy">`).join('')}</div></div>`}
       <div class="sys-in">
@@ -313,12 +316,13 @@
   function weekCard() {
     const w = weekParasha, g = groups[w.name], art = ART[w.name] || FALLBACK;
     const last = g && g.items[0];
-    return `<section class="week">
+    return `<section class="week${g ? '' : ' is-soon'}">
       <img src="${HERO(art)}" alt="">
       <div class="week-in">
         <span class="week-k"><i></i>פרשת השבוע · שבת ${esc(hebDate(w.date))}</span>
         <h2>פרשת ${esc(w.label)}</h2>
-        <p>${g ? `${g.items.length === 1 ? 'שיעור אחד' : `${g.items.length} שיעורים`} על הפרשה · האחרון: ${esc(last.year)}${last.pdf ? ' · עם סיכום כתוב' : ''}` : 'השיעור על הפרשה יעלה בקרוב'}</p>
+        ${g ? '' : `<div class="soon-pill">${icon('clock')}<span>יעלה בקרוב</span></div>`}
+        <p>${g ? `${g.items.length === 1 ? 'שיעור אחד' : `${g.items.length} שיעורים`} על הפרשה · האחרון: ${esc(last.year)}${last.pdf ? ' · עם סיכום כתוב' : ''}` : 'השיעור על הפרשה יעלה לקראת שבת'}</p>
         <div class="week-acts">${g ? `<button class="btn btn-play" data-play="${esc(last.id)}">${icon('play')}להאזנה</button><a class="btn btn-ghost" href="#/p/${encodeURIComponent(w.name)}">לכל השיעורים</a>` : `<a class="btn btn-ghost" href="#/book/${encodeURIComponent(Object.keys(CHUMASH).find(b => CHUMASH[b].includes(w.name)) || 'בראשית')}">לחומש</a>`}</div>
       </div></section>`;
   }
@@ -502,7 +506,31 @@
   function groupPage(title, iy) {
     const map = iy ? iyGroups : groups;
     const g0 = has(map, title) ? map[title] : null;
-    if (!g0 || (iy && !hasIyun(title))) return notFound();
+    if (!g0) {
+      if (iy) return notFound();
+      const book = Object.keys(CHUMASH).find(b => CHUMASH[b].includes(title));
+      const isMoed = !book && ALL_MOADIM.includes(title);
+      if (!book && !isMoed) return notFound();
+      const isWeek = !isMoed && title === weekParasha.name;
+      const name = isMoed ? (MOED_NAME[title] || title) : `פרשת ${isWeek ? weekParasha.label : title}`;
+      const art = (has(ART, title) ? ART[title] : null) || FALLBACK;
+      return `<section class="hero hero-soon"><img src="${HERO(art)}" alt="">
+        <div>
+          <span class="kick">${isMoed ? `מועדים${MOED_MONTH[title] ? ` · ${MOED_MONTH[title]}` : ''}` : `חומש ${esc(book)}${isWeek ? ` · פרשת השבוע · שבת ${esc(hebDate(weekParasha.date))}` : ''}`}</span>
+          <h1>${esc(name)}</h1>
+          <div class="soon-pill">${icon('clock')}<span>יעלה בקרוב</span></div>
+          <p>${isWeek
+            ? `השיעור על ${esc(name)} יעלה בקרוב, לקראת שבת ${esc(hebDate(weekParasha.date))}.`
+            : isMoed
+              ? `השיעור ל${esc(name)} יעלה בקרוב.`
+              : `השיעור על ${esc(name)} יעלה בקרוב.`}</p>
+          <div class="acts">
+            <a class="btn btn-ghost" href="${isMoed ? '#/moadim' : `#/book/${encodeURIComponent(book)}`}">${isMoed ? 'לכל המועדים' : `לכל פרשות חומש ${esc(book)}`}</a>
+            <a class="btn btn-ghost" href="#/">חזרה לדף הבית</a>
+          </div>
+        </div></section>`;
+    }
+    if (iy && !hasIyun(title)) return notFound();
     const g = iy ? { ...g0, items: iyItems(title) } : g0;
     const name = g.moed ? (MOED_NAME[title] || title) : `פרשת ${title}`;
     const art = (iy ? iyArt(title) : (has(ART, title) ? ART[title] : null)) || FALLBACK;

@@ -2198,6 +2198,42 @@ body.building .top{ display: none; }
 .sc-cap{ font-size: var(--fs-small); color: var(--text-2); }
 :root[data-theme="day"] .shelf-head, :root[data-theme="day"] .sc-cap{ text-shadow: 0 1px 10px oklch(1 0 0 / 0.95); color: var(--text); }
 
+/* פרשה שטרם עלתה — תווית "יעלה בקרוב" על הכרטיס ובעמוד הפרשה */
+.sc.is-soon .sc-pic{ box-shadow: inset 0 0 0 1px oklch(1 0 0 / 0.14); }
+.sc.is-soon .sc-pic img, .sq.is-soon .pic img, .week.is-soon > img{ filter: saturate(0.72) brightness(0.74); }
+.sc.is-soon .sc-pic::after, .sq.is-soon .pic::after{ background: linear-gradient(to top, oklch(0 0 0 / 0.84), oklch(0 0 0 / 0.18) 54%, oklch(0 0 0 / 0.38)); }
+.sc.is-soon .badge, .sq.is-soon .badge{ background: oklch(0.16 0.01 60 / 0.64); color: oklch(0.96 0.01 85); border: 1px solid oklch(1 0 0 / 0.18); backdrop-filter: blur(8px); }
+.sc-soon{
+  position: absolute; top: 10px; inset-inline-end: 10px; z-index: 2;
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 3px 10px; border-radius: 999px;
+  background: oklch(0.15 0.015 65 / 0.78);
+  border: 1px solid oklch(0.83 0.135 84 / 0.52);
+  backdrop-filter: blur(10px);
+  color: var(--gold-400);
+  font-weight: 700; font-size: 0.78rem; line-height: 1.25;
+  white-space: nowrap;
+  box-shadow: 0 4px 14px oklch(0 0 0 / 0.35);
+}
+.sc-soon .i{ width: 13px; height: 13px; stroke-width: 2.2; }
+.sq .sc-soon{ top: 36px; inset-inline-start: 8px; inset-inline-end: auto; padding: 2px 8px; gap: 4px; font-size: 0.72rem; }
+.sq .sc-soon .i{ width: 11px; height: 11px; }
+.sq.is-soon .badge{ top: 8px; inset-inline-start: 8px; padding: 2px 8px; font-size: 0.72rem; }
+.sq.is-soon .cap span{ color: var(--accent); font-weight: 500; }
+
+.hero-soon > img{ filter: saturate(0.72) brightness(0.68); }
+.hero-soon .acts{ flex-wrap: wrap; }
+.soon-pill{
+  display: inline-flex; align-items: center; gap: 8px;
+  margin: 4px 0 6px; padding: 6px 14px; border-radius: 999px;
+  background: oklch(0.18 0.02 72 / 0.72);
+  border: 1px solid oklch(0.83 0.135 84 / 0.48);
+  backdrop-filter: blur(10px);
+  color: var(--gold-400);
+  font-weight: 700; font-size: 0.95rem;
+}
+.soon-pill .i{ width: 17px; height: 17px; stroke-width: 2.2; }
+
 /* טלפון: הכל במסך הראשון */
 @media (max-width: 760px){
   .shelf-head{ font-size: 1.05rem; margin-bottom: 8px; }
@@ -2205,6 +2241,8 @@ body.building .top{ display: none; }
   .sc-t{ font-size: 1.05rem; inset-inline: 8px; bottom: 8px; }
   .sc-play{ width: 30px; height: 30px; top: 7px; bottom: auto; inset-inline-end: 7px; }
   .sc .badge{ font-size: 0.7rem; padding: 2px 7px; top: 7px; inset-inline-start: 7px; }
+  .sc-soon{ top: 7px; inset-inline-end: 7px; gap: 4px; padding: 2px 7px; font-size: 0.68rem; }
+  .sc-soon .i{ width: 11px; height: 11px; }
   .sc-cap{ font-size: 0.78rem; }
 }
 
