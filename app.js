@@ -287,10 +287,11 @@
       const ns = latestM.nums.map(heb), range = ns.length < 3 ? ns.join(', ') : `${ns[0]} עד ${ns[ns.length - 1]}`;
       mCard = `<a class="sc" href="${seriesHref(latestM)}"><div class="sc-pic"><img src="${IMG(artOf(latestM), 640, 360)}" alt=""><span class="badge">המשנה היומית</span><span class="sc-t">${esc(`${latestM.masechet} ${heb(latestM.perek)}, ${range}`)}</span>${playBtn(latestM.id, 'sc-play')}</div><span class="sc-cap">${ago(latestM.date)}</span></a>`;
     }
-    const wl = weekLessons(), pSub = g ? `${wl.length > 1 ? 'שני שיעורים · ' : ''}שבת ${esc(hebDate(weekParasha.date))}` : 'השיעור יעלה לקראת שבת';
-    // שני שיעורים (ראשי + שיעור ב׳) — כפתור נגינה לכל אחד, באותו כרטיס
-    const pPlay = wl.length > 1 ? `<span class="sc-plays">${wl.map((x, i) => `<button class="sc-play2" data-play="${esc(x.id)}" aria-label="האזנה לשיעור ${heb(i + 1)}׳">${icon('play')}<b>${heb(i + 1)}</b></button>`).join('')}</span>` : g ? playBtn(g.items[0].id, 'sc-play') : '';
-    const pCard = `<a class="sc${g ? '' : ' is-soon'}" href="${pHref}"><div class="sc-pic"><img src="${IMG(pArt, 640, 360)}" alt=""><span class="badge">השבוע</span>${g ? pPlay : '<span class="sc-soon">יעלה בקרוב</span>'}<span class="sc-t">${pName}</span></div><span class="sc-cap">${pSub}</span></a>`;
+    const wl = weekLessons(), multi = wl.length > 1;
+    const pSub = g ? `${multi ? (wl.length === 2 ? 'שני שיעורים' : `${wl.length} שיעורים`) + ' · ' : ''}שבת ${esc(hebDate(weekParasha.date))}` : 'השיעור יעלה לקראת שבת';
+    // כשיש שני שיעורים לפרשת השבוע — לחיצה על הכרטיס פותחת תיבת בחירה ביניהם
+    const pPlay = multi ? `<button class="sc-play" type="button" data-week-pick aria-label="בחירת שיעור ב${pName}">${icon('play')}</button>` : g ? playBtn(g.items[0].id, 'sc-play') : '';
+    const pCard = `<a class="sc${g ? '' : ' is-soon'}" href="${pHref}"${multi ? ' data-week-pick' : ''}><div class="sc-pic"><img src="${IMG(pArt, 640, 360)}" alt=""><span class="badge">השבוע</span>${g ? pPlay : '<span class="sc-soon">יעלה בקרוב</span>'}<span class="sc-t">${pName}</span></div><span class="sc-cap">${pSub}</span></a>`;
     return `<section class="sys${HERO_PHOTO ? ' has-photo' : ''}">
       ${HERO_PHOTO ? `<img class="sys-photo" src="${HERO_PHOTO}" alt="">` : `<div class="wall" aria-hidden="true"><div class="wall-in">${wall.slice(0, 48).map(v => `<img src="${IMG(v, 300, 300)}" alt="" loading="lazy">`).join('')}</div></div>`}
       <div class="sys-in">
@@ -1497,8 +1498,43 @@
     if (id === nowId && !isBtn && !building) { if (audio.paused) toggle(); openNP(); return; }
     play(id, true);
   }
-  // לחיצה על כל דבר עם data-play
+  // תיבת בחירה כשיש שני שיעורים לפרשת השבוע
+  const closeWeekPick = () => $('#wpBg')?.remove();
+  function openWeekPick() {
+    const wl = weekLessons();
+    if (!wl.length) return;
+    closeWeekPick();
+    const w = weekParasha, pHref = `#/p/${encodeURIComponent(w.name)}`;
+    const art = ART[w.name] || artOf(wl[0]) || FALLBACK;
+    const countTxt = wl.length === 2 ? 'שני שיעורים' : `${wl.length} שיעורים`;
+    const rows = wl.map((it, i) => {
+      const title = it.tag || `שיעור ${heb(i + 1)}`;
+      const meta = [it.year, it.date ? rel(it.date) : '', it.pdf ? 'עם סיכום כתוב' : ''].filter(Boolean).join(' · ');
+      return `<button class="wp-item${nowId === it.id ? ' is-now' : ''}" type="button" data-play="${esc(it.id)}">
+        <span class="wp-play" aria-hidden="true">${icon('play')}</span>
+        <span class="wp-info"><b>${esc(title)}</b><span>${esc(meta)}</span></span>
+      </button>`;
+    }).join('');
+    document.body.insertAdjacentHTML('beforeend', `<div class="wp-bg" id="wpBg">
+      <div class="wp-sh" role="dialog" aria-modal="true" aria-labelledby="wpT">
+        <div class="wp-hd">
+          <img src="${IMG(art, 200, 200)}" alt="">
+          <div><div class="wp-t" id="wpT">פרשת ${esc(w.label)}</div><div class="wp-sub">שבת ${esc(hebDate(w.date))} · ${countTxt}</div></div>
+          <button class="wp-x" id="wpX" type="button" aria-label="סגור">${icon('x')}</button>
+        </div>
+        <div class="wp-list">${rows}</div>
+        <div class="wp-ft"><a class="wp-all" href="${pHref}">לדף הפרשה ולשיעורים משנים קודמות</a></div>
+      </div>
+    </div>`);
+    $('#wpX')?.focus();
+  }
+  // לחיצה על כל דבר עם data-play (או פתיחת/סגירת תיבת פרשת השבוע)
   document.addEventListener('click', e => {
+    if (e.target.closest('[data-week-pick]')) { e.preventDefault(); openWeekPick(); return; }
+    if ($('#wpBg')) {
+      if (e.target.id === 'wpBg' || e.target.closest('#wpX, .wp-all')) { closeWeekPick(); return; }
+      if (e.target.closest('.wp-item')) closeWeekPick();
+    }
     const p = e.target.closest('[data-play]'); if (!p) return;
     // כרטיס עיון = שיעור אחד (נושא משלו) — לחיצה בכל מקום מנגנת אותו, לא פותחת את דף המועד (דניאל, 15.10)
     // תוצאת חיפוש מדויקת ("נגן עכשיו", .res-play) — מנגנת, כמו שכתוב עליה
@@ -1507,6 +1543,7 @@
     e.preventDefault(); tapPlay(p);
   });
   document.addEventListener('keydown', e => {
+    if (e.key === 'Escape' && $('#wpBg')) { closeWeekPick(); return; }
     if (!feedback.hidden) return;
     if (e.key === 'Enter' && e.target.matches('.ep')) { const at = e.target.closest('[data-lat]')?.dataset.lat; if (at) playList(at, +e.target.dataset.lk); else tapPlay(e.target); }
     if (e.key === ' ' && !e.target.matches('input, textarea, button, a, [role=button]')) { e.preventDefault(); toggle(); }

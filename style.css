@@ -2196,11 +2196,56 @@ body.building .top{ display: none; }
 .sc-play{ position: absolute; inset-inline-end: 10px; bottom: 10px; z-index: 2; width: 36px; height: 36px; display: grid; place-items: center; border-radius: 99px; background: var(--accent); color: var(--accent-ink); }
 .sc-play .i{ width: 15px; height: 15px; }
 .sc-cap{ font-size: var(--fs-small); color: var(--text-2); }
-.sc-plays{ position: absolute; top: 10px; inset-inline-end: 10px; z-index: 2; display: flex; gap: 6px; }
-.sc-play2{ display: inline-flex; align-items: center; gap: 5px; height: 30px; padding: 0 11px 0 9px; border-radius: 99px; background: var(--accent); color: var(--accent-ink); font-weight: 700; font-size: 0.82rem; }
-.sc-play2 .i{ width: 12px; height: 12px; }
-.sc-play2 b{ font-weight: 700; }
 :root[data-theme="day"] .shelf-head, :root[data-theme="day"] .sc-cap{ text-shadow: 0 1px 10px oklch(1 0 0 / 0.95); color: var(--text); }
+
+/* תיבת בחירת שיעור כשיש שני שיעורים לפרשת השבוע */
+.wp-bg{
+  position: fixed; inset: 0; z-index: 95;
+  display: flex; align-items: flex-end; justify-content: center;
+  background: oklch(0 0 0 / 0.52); backdrop-filter: blur(4px);
+  animation: iosIn .18s ease-out;
+}
+.wp-sh{
+  width: min(100%, 440px);
+  background: var(--surface); color: var(--text);
+  border: 1px solid var(--line);
+  border-radius: 22px 22px 0 0;
+  padding: 18px 18px calc(18px + env(safe-area-inset-bottom));
+  box-shadow: 0 24px 60px oklch(0 0 0 / 0.45);
+}
+@media (min-width: 700px){
+  .wp-bg{ align-items: center; padding: 16px; }
+  .wp-sh{ border-radius: 20px; padding: 20px; }
+}
+.wp-hd{ display: flex; align-items: center; gap: 12px; margin-bottom: 16px; }
+.wp-hd img{ width: 52px; height: 52px; border-radius: 12px; object-fit: cover; flex: none; }
+.wp-hd > div{ flex: 1; min-width: 0; }
+.wp-t{ font-family: var(--f-title); font-weight: 900; font-size: 1.45rem; line-height: 1.1; }
+.wp-sub{ font-size: var(--fs-small); color: var(--text-2); margin-top: 2px; }
+.wp-x{ width: 38px; height: 38px; flex: none; display: grid; place-items: center; border-radius: 99px; background: oklch(1 0 0 / 0.08); color: var(--text); }
+.wp-x .i{ width: 18px; height: 18px; }
+:root[data-theme="day"] .wp-x{ background: oklch(0 0 0 / 0.06); }
+.wp-list{ display: grid; gap: 10px; }
+.wp-item{
+  width: 100%; display: flex; align-items: center; gap: 12px;
+  padding: 12px 14px; border-radius: 14px; text-align: start;
+  background: oklch(1 0 0 / 0.05); border: 1px solid var(--line);
+  color: var(--text); transition: background .18s, border-color .18s, transform .14s var(--ease);
+}
+:root[data-theme="day"] .wp-item{ background: oklch(0 0 0 / 0.03); }
+@media (hover: hover){
+  .wp-item:hover{ background: color-mix(in oklch, var(--accent) 12%, transparent); border-color: color-mix(in oklch, var(--accent) 45%, var(--line)); }
+}
+.wp-item:active{ transform: scale(0.985); }
+.wp-item.is-now{ border-color: var(--accent); background: color-mix(in oklch, var(--accent) 14%, transparent); }
+.wp-play{ width: 38px; height: 38px; flex: none; display: grid; place-items: center; border-radius: 99px; background: var(--accent); color: var(--accent-ink); }
+.wp-play .i{ width: 15px; height: 15px; }
+.wp-info{ display: grid; gap: 2px; min-width: 0; }
+.wp-info b{ font-size: 1.02rem; font-weight: 700; line-height: 1.25; }
+.wp-info span{ font-size: var(--fs-small); color: var(--text-2); }
+.wp-ft{ margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--line); text-align: center; }
+.wp-all{ font-size: var(--fs-small); font-weight: 600; color: var(--text-2); }
+@media (hover: hover){ .wp-all:hover{ color: var(--text); text-decoration: underline; text-underline-offset: 4px; } }
 
 /* פרשה שטרם עלתה — תווית "יעלה בקרוב" על הכרטיס ובעמוד הפרשה */
 .sc.is-soon .sc-pic{ box-shadow: inset 0 0 0 1px oklch(1 0 0 / 0.14); }
