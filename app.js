@@ -239,7 +239,7 @@
   }).join('')}${tile('#/moadim', 'מועדים', `${pItems.filter(i => i.moed && !i.iyun).length} שיעורים`, 'oklch(0.48 0.1 75)', ART['חנוכה'] || FALLBACK)}${tile('#/iyun', 'עיון · סוגיות', `${pItems.filter(i => i.iyun).length} שיעורים`, 'oklch(0.42 0.07 170)', ART['סוכות'] || FALLBACK)}</div>`;
   const ghostSq = (name, title) => {
     const isWeek = name === weekParasha.name;
-    return `<div class="sq-wrap"><a class="sq ${isWeek ? 'is-soon' : 'is-empty'}" href="#/p/${encodeURIComponent(name)}" aria-label="${esc(title)} — ${isWeek ? 'יעלה בקרוב' : 'טרם הוקלט'}"><div class="pic"><img loading="lazy" src="${IMG(ART[name] || FALLBACK, 400, 400)}" alt="">${isWeek ? `<span class="badge">השבוע</span><span class="sc-soon">${icon('clock')}יעלה בקרוב</span>` : ''}<span class="pic-title">${esc(name)}</span></div><div class="cap"><b>${esc(title)}</b><span>${isWeek ? 'יעלה בקרוב' : 'טרם הוקלט'}</span></div></a></div>`;
+    return `<div class="sq-wrap"><a class="sq ${isWeek ? 'is-soon' : 'is-empty'}" href="#/p/${encodeURIComponent(name)}" aria-label="${esc(title)} — ${isWeek ? 'יעלה בקרוב' : 'טרם הוקלט'}"><div class="pic"><img loading="lazy" src="${IMG(ART[name] || FALLBACK, 400, 400)}" alt="">${isWeek ? `<span class="badge">השבוע</span><span class="sc-soon">יעלה בקרוב</span>` : ''}<span class="pic-title">${esc(name)}</span></div><div class="cap"><b>${esc(title)}</b><span>${isWeek ? 'יעלה בקרוב' : 'טרם הוקלט'}</span></div></a></div>`;
   };
 
   // ---------- תצוגות ----------
@@ -285,10 +285,12 @@
     if (latestM) {
       // בלי מקפים: משנה אחת "ג", שתיים "ג, ד", יותר "ג עד ה"
       const ns = latestM.nums.map(heb), range = ns.length < 3 ? ns.join(', ') : `${ns[0]} עד ${ns[ns.length - 1]}`;
-      mCard = `<a class="sc" href="${seriesHref(latestM)}"><div class="sc-pic"><img src="${IMG(artOf(latestM), 640, 360)}" alt=""><span class="badge">משנה חדשה</span><span class="sc-t">${esc(`${latestM.masechet} ${heb(latestM.perek)}, ${range}`)}</span>${playBtn(latestM.id, 'sc-play')}</div><span class="sc-cap">${ago(latestM.date)}</span></a>`;
+      mCard = `<a class="sc" href="${seriesHref(latestM)}"><div class="sc-pic"><img src="${IMG(artOf(latestM), 640, 360)}" alt=""><span class="badge">המשנה היומית</span><span class="sc-t">${esc(`${latestM.masechet} ${heb(latestM.perek)}, ${range}`)}</span>${playBtn(latestM.id, 'sc-play')}</div><span class="sc-cap">${ago(latestM.date)}</span></a>`;
     }
-    const pId = g ? g.items[0].id : null, pSub = g ? `שבת ${esc(hebDate(weekParasha.date))}` : 'השיעור יעלה לקראת שבת';
-    const pCard = `<a class="sc${g ? '' : ' is-soon'}" href="${pHref}"><div class="sc-pic"><img src="${IMG(pArt, 640, 360)}" alt=""><span class="badge">השבוע</span>${g ? playBtn(pId, 'sc-play') : `<span class="sc-soon">${icon('clock')}יעלה בקרוב</span>`}<span class="sc-t">${pName}</span></div><span class="sc-cap">${pSub}</span></a>`;
+    const wl = weekLessons(), pSub = g ? `${wl.length > 1 ? 'שני שיעורים · ' : ''}שבת ${esc(hebDate(weekParasha.date))}` : 'השיעור יעלה לקראת שבת';
+    // שני שיעורים (ראשי + שיעור ב׳) — כפתור נגינה לכל אחד, באותו כרטיס
+    const pPlay = wl.length > 1 ? `<span class="sc-plays">${wl.map((x, i) => `<button class="sc-play2" data-play="${esc(x.id)}" aria-label="האזנה לשיעור ${heb(i + 1)}׳">${icon('play')}<b>${heb(i + 1)}</b></button>`).join('')}</span>` : g ? playBtn(g.items[0].id, 'sc-play') : '';
+    const pCard = `<a class="sc${g ? '' : ' is-soon'}" href="${pHref}"><div class="sc-pic"><img src="${IMG(pArt, 640, 360)}" alt=""><span class="badge">השבוע</span>${g ? pPlay : '<span class="sc-soon">יעלה בקרוב</span>'}<span class="sc-t">${pName}</span></div><span class="sc-cap">${pSub}</span></a>`;
     return `<section class="sys${HERO_PHOTO ? ' has-photo' : ''}">
       ${HERO_PHOTO ? `<img class="sys-photo" src="${HERO_PHOTO}" alt="">` : `<div class="wall" aria-hidden="true"><div class="wall-in">${wall.slice(0, 48).map(v => `<img src="${IMG(v, 300, 300)}" alt="" loading="lazy">`).join('')}</div></div>`}
       <div class="sys-in">
@@ -313,6 +315,7 @@
   const hebDate = d => { try { const p = new Intl.DateTimeFormat('he-u-ca-hebrew', { day: 'numeric', month: 'long' }).formatToParts(d);
     const n = +p.find(x => x.type === 'day').value, m = p.find(x => x.type === 'month').value.replace(/^ב/, '');
     const g = heb(n); return `${g.length > 1 ? g.slice(0, -1) + '״' + g.slice(-1) : g + '׳'} ב${m}`; } catch { return ''; } };
+  const weekLessons = () => { const g = groups[weekParasha.name]; return g ? g.items.filter(i => i.year === g.items[0].year) : []; };
   function weekCard() {
     const w = weekParasha, g = groups[w.name], art = ART[w.name] || FALLBACK;
     const last = g && g.items[0];
@@ -321,7 +324,7 @@
       <div class="week-in">
         <span class="week-k"><i></i>פרשת השבוע · שבת ${esc(hebDate(w.date))}</span>
         <h2>פרשת ${esc(w.label)}</h2>
-        ${g ? '' : `<div class="soon-pill">${icon('clock')}<span>יעלה בקרוב</span></div>`}
+        ${g ? '' : `<div class="soon-pill">יעלה בקרוב</div>`}
         <p>${g ? `${g.items.length === 1 ? 'שיעור אחד' : `${g.items.length} שיעורים`} על הפרשה · האחרון: ${esc(last.year)}${last.pdf ? ' · עם סיכום כתוב' : ''}` : 'השיעור על הפרשה יעלה לקראת שבת'}</p>
         <div class="week-acts">${g ? `<button class="btn btn-play" data-play="${esc(last.id)}">${icon('play')}להאזנה</button><a class="btn btn-ghost" href="#/p/${encodeURIComponent(w.name)}">לכל השיעורים</a>` : `<a class="btn btn-ghost" href="#/book/${encodeURIComponent(Object.keys(CHUMASH).find(b => CHUMASH[b].includes(w.name)) || 'בראשית')}">לחומש</a>`}</div>
       </div></section>`;
@@ -372,7 +375,7 @@
     html += systemHero(latestP, latestM);
     html += row('המשך האזנה', cont.filter(i => filter === 'all' || (filter === 'm' ? i.kind === 'm' : filter === 'i' ? i.iyun : i.kind === 'p' && !i.iyun)).map(i => wideCard(i, { showProg: true })));
     // כל שיעור שעלה ב־7 הימים האחרונים מקבל כרטיס משלו (מהחדש לישן), בלי השיעורים שכבר מוצגים למעלה ב"עכשיו באתר"
-    const heroIds = new Set([latestM?.id, groups[weekParasha.name]?.items[0]?.id].filter(Boolean));
+    const heroIds = new Set([latestM?.id, ...weekLessons().map(i => i.id)].filter(Boolean));
     const freshCards = fresh.filter(i => !heroIds.has(i.id));
     html += row('חדש השבוע', freshCards.map(it => wideCard(it)));
     if (want('m')) html += row('סדרות המשנה', recorded.map(posterCard), ['כל ששת הסדרים', '#/search']);
@@ -514,7 +517,7 @@
         <div>
           <span class="kick">${isMoed ? `מועדים${MOED_MONTH[title] ? ` · ${MOED_MONTH[title]}` : ''}` : `חומש ${esc(book)}${isWeek ? ` · פרשת השבוע · שבת ${esc(hebDate(weekParasha.date))}` : ''}`}</span>
           <h1>${esc(name)}</h1>
-          <div class="soon-pill">${icon('clock')}<span>יעלה בקרוב</span></div>
+          <div class="soon-pill">יעלה בקרוב</div>
           <p>${isWeek
             ? `השיעור על ${esc(name)} יעלה בקרוב, לקראת שבת ${esc(hebDate(weekParasha.date))}.`
             : isMoed
