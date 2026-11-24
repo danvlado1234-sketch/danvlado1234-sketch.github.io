@@ -289,9 +289,10 @@
     }
     const wl = weekLessons(), multi = wl.length > 1;
     const pSub = g ? `${multi ? (wl.length === 2 ? 'שני שיעורים' : `${wl.length} שיעורים`) + ' · ' : ''}שבת ${esc(hebDate(weekParasha.date))}` : 'השיעור יעלה לקראת שבת';
-    // כשיש שני שיעורים לפרשת השבוע — הכרטיס מציג את מספר השיעורים ונכנס ישירות לדף השיעורים שעלו השבוע
-    const pPlay = multi ? `<span class="sc-count">${wl.length} שיעורים</span>` : g ? playBtn(g.items[0].id, 'sc-play') : '';
-    const pCard = `<a class="sc${g ? '' : ' is-soon'}" href="${multi ? pHref + '/week' : pHref}"><div class="sc-pic"><img src="${IMG(pArt, 640, 360)}" alt=""><span class="badge">השבוע</span>${g ? pPlay : '<span class="sc-soon">יעלה בקרוב</span>'}<span class="sc-t">${pName}</span></div><span class="sc-cap">${pSub}</span></a>`;
+    // כשיש שני שיעורים לפרשת השבוע — הכרטיס שומר על סמל ההפעלה למעלה ומציג "השבוע · 2 שיעורים", ולחיצה פותחת את דף השיעורים שעלו השבוע
+    const pBadge = multi ? `השבוע · ${wl.length} שיעורים` : 'השבוע';
+    const pPlay = multi ? `<span class="sc-play" aria-hidden="true">${icon('play')}</span>` : g ? playBtn(g.items[0].id, 'sc-play') : '';
+    const pCard = `<a class="sc${g ? '' : ' is-soon'}" href="${multi ? pHref + '/week' : pHref}"><div class="sc-pic"><img src="${IMG(pArt, 640, 360)}" alt=""><span class="badge">${pBadge}</span>${g ? pPlay : '<span class="sc-soon">יעלה בקרוב</span>'}<span class="sc-t">${pName}</span></div><span class="sc-cap">${pSub}</span></a>`;
     return `<section class="sys${HERO_PHOTO ? ' has-photo' : ''}">
       ${HERO_PHOTO ? `<img class="sys-photo" src="${HERO_PHOTO}" alt="">` : `<div class="wall" aria-hidden="true"><div class="wall-in">${wall.slice(0, 48).map(v => `<img src="${IMG(v, 300, 300)}" alt="" loading="lazy">`).join('')}</div></div>`}
       <div class="sys-in">
