@@ -9,7 +9,7 @@
 //    ברקע. הקוד נטען עם ?v=<גרסה> (index.html), אז גרסה חדשה = כתובת חדשה = מיד.
 //  - קובצי השמע (R2) וטקסט המשנה (ספריא) לא עוברים כאן בכלל - ישר לרשת.
 // ============================================================
-const CACHE = 'shiurim-v4';
+const CACHE = 'shiurim-v5';
 const CORE = ['/', '/manifest.webmanifest',
   '/icons/icon-192.png', '/icons/icon-512.png', '/icons/apple-touch-icon.png', '/icons/favicon-32.png'];
 
@@ -47,7 +47,20 @@ async function networkFirst(req){
 async function cacheFirst(req){
   const cache = await caches.open(CACHE);
   const hit = await cache.match(req);
-  const refresh = fetch(req).then(res => { if (res.ok || res.type === 'opaque') cache.put(req, res.clone()); return res; });
+  const refresh = fetch(req).then(res => {
+    if (res.ok || res.type === 'opaque') {
+      cache.put(req, res.clone());
+      try {
+        const u = new URL(req.url);
+        if (u.origin === self.location.origin && u.searchParams.has('v')) {
+          cache.keys().then(keys => Promise.all(keys
+            .filter(k => { const ku = new URL(k.url); return ku.origin === u.origin && ku.pathname === u.pathname && ku.search !== u.search; })
+            .map(k => cache.delete(k)))).catch(() => {});
+        }
+      } catch {}
+    }
+    return res;
+  });
   if (hit){ refresh.catch(() => {}); return hit; }
   return refresh;
 }

@@ -286,7 +286,11 @@
     if (c('#installBtn')) { track('install_click'); return; }
     if (c('#contactOpen')) { track('contact_open'); return; }
     if (c('#barSpeed') || c('#npSpeed')) { setTimeout(() => track('speed_change', Object.assign(nowInfo(), { n: A && A.audio ? A.audio.playbackRate : null })), 50); return; }
-    if (c('#npCont')) { track('cont_on'); return; }
+    const ct = c('#npCont') || c('[data-cont]');
+    if (ct) { setTimeout(() => { const on = ct.getAttribute('aria-pressed') === 'true' || ct.getAttribute('aria-checked') === 'true'; track('cont_on', { n: on ? 1 : 0 }); }, 0); return; }
+    const lp = c('[data-loop]');
+    if (lp) { setTimeout(() => { const on = lp.getAttribute('aria-pressed') === 'true'; track('loop_on', Object.assign(nowInfo(), { n: on ? 1 : 0 })); }, 0); return; }
+    if (c('#themeBtn')) { setTimeout(() => track('theme_change', { l: document.documentElement.dataset.theme || '' }), 0); return; }
     const out = c('a[href^="http"]');
     if (out) { try { const u = new URL(out.href); if (u.host !== location.host) track('outbound', { l: u.host }); } catch {} }
   }, true);
@@ -334,5 +338,5 @@
   setTimeout(() => flush(), 4000);
   whenApp(app => { A = app; if (A.audio) hookAudio(); });
 
-  window.SHIURIM_ANALYTICS = { visitorId: vid, track, flush: () => flush(), get sessionId() { return S && S.id; } };
+  window.SHIURIM_ANALYTICS = { visitorId: vid, track, onRoute: () => pageview(), flush: () => flush(), get sessionId() { return S && S.id; } };
 })();

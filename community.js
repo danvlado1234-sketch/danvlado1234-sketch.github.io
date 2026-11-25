@@ -300,11 +300,11 @@
     if (!app) return;
     const badgeEls = $$('[data-cmt-badge]');
     const mediaPaths = new Set();
+    const nowId = app.getNowId?.();
+    if (nowId) mediaPaths.add(nowId);
     for (const el of badgeEls) {
       if (el.dataset.cmtBadge) mediaPaths.add(el.dataset.cmtBadge);
     }
-    const nowId = app.getNowId?.();
-    if (nowId) mediaPaths.add(nowId);
     if (!mediaPaths.size) return;
 
     const itemsPayload = [];
@@ -1313,7 +1313,7 @@
     const exportBtn = $('#adminExportBtn');
     const hiddenFilterBtn = $('[data-cmt-filter="hidden"]');
     const reportedFilterBtn = $('[data-cmt-filter="reported"]');
-    const topBtnLabel = adminOpenBtn?.querySelector('.contact-label');
+    const topBtnLabel = adminOpenBtn?.querySelector('.contact-label, span');
 
     if (kickerEl) kickerEl.textContent = isRabbi ? 'אזור הרב ולדומירסקי' : 'ממשק ניהול (חשבון דניאל)';
     if (titleEl) titleEl.textContent = isRabbi ? 'שאלות ותגובות לשיעורים' : 'ניהול תגובות ופניות';
@@ -1692,11 +1692,13 @@
             const currentRole = getCurrentRole();
             // אם תגובת ההורה עדיין pending — נאשר אותה קודם כדי שהתשובה תופיע תחתיה
             if (item.status === 'pending') {
-              await apiFetch(`/v1/admin/comments/${encodeURIComponent(item.id)}/moderation`, {
+              const modRes = await apiFetch(`/v1/admin/comments/${encodeURIComponent(item.id)}/moderation`, {
                 method: 'POST',
                 headers: getAdminHeaders(currentRole),
                 body: { status: 'published', expected_version: item.version },
               });
+              item.status = modRes?.comment?.status || 'published';
+              if (modRes?.comment?.version) item.version = modRes.comment.version;
             }
             await apiFetch('/v1/comments', {
               method: 'POST',

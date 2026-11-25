@@ -202,7 +202,7 @@ body.has-bar .main{ padding-bottom: 156px; }
 .poster .pic::after{ content: ""; position: absolute; inset: 0; background: linear-gradient(to top, oklch(0 0 0 / 0.85) 4%, transparent 55%); }
 .poster .pic-title{ font-size: clamp(1.7rem, 2.2vw, 2.2rem); bottom: 14px; }
 .poster.is-empty .pic img{ filter: grayscale(1) brightness(0.45); }
-.poster .seder{ position: absolute; top: 10px; inset-inline-end: 10px; z-index: 1; font-size: 0.8rem; font-weight: 600; color: var(--text-2); }
+.poster .seder{ position: absolute; top: 10px; inset-inline-end: 10px; z-index: 2; padding: 2px 8px; border-radius: 5px; background: oklch(0.13 0.01 60 / 0.58); backdrop-filter: blur(6px); font-size: 0.78rem; font-weight: 600; color: oklch(0.95 0.008 85); box-shadow: 0 2px 8px oklch(0 0 0 / 0.24); }
 
 /* ריבוע (פרשה / מועד) */
 .sq{ display: block; width: clamp(150px, 13vw, 190px); }
@@ -898,7 +898,17 @@ body.building .top{ display: none; }
 :root[data-theme="day"] body{ background: oklch(0.93 0.008 80); }
 @media (max-width: 1023px){ :root[data-theme="day"] body{ background: var(--bg); } }
 :root[data-theme="day"] .bar{ box-shadow: 0 -1px 0 var(--line); }
+:root[data-theme="day"] .bsd{ color: var(--text-2); text-shadow: 0 1px 6px oklch(1 0 0 / 0.85); }
+@media (min-width: 1024px){
+  :root[data-theme="day"] .bar input[type=range]::-webkit-slider-runnable-track{ background: linear-gradient(to right, var(--text) var(--p), oklch(0 0 0 / 0.18) var(--p)); }
+  :root[data-theme="day"] .bar input[type=range]::-moz-range-track{ background: oklch(0 0 0 / 0.18); }
+  :root[data-theme="day"] .bar-txt span, :root[data-theme="day"] .bar-scrub .t{ color: var(--text-2); }
+}
 @media (max-width: 1023px){ :root[data-theme="day"] .bar{ box-shadow: 0 10px 30px oklch(0 0 0 / 0.25); } }
+.playbtn.is-loading, .np-play.is-loading{ position: relative; animation: play-pulse 1.1s ease-in-out infinite; }
+.playbtn.is-loading::after, .np-play.is-loading::after{ content: ""; position: absolute; inset: -3px; border-radius: 999px; border: 2px solid transparent; border-top-color: var(--accent); animation: play-spin .85s linear infinite; pointer-events: none; }
+@keyframes play-pulse{ 0%, 100%{ opacity: 1; } 50%{ opacity: 0.72; } }
+@keyframes play-spin{ to{ transform: rotate(360deg); } }
 
 /* ---------- רקע מושקע למצב יום: צילום + לוחות נייר שקופים-למחצה ---------- */
 :root[data-theme="day"]:not(.no-day-bg) body{ background: oklch(0.9 0.015 80); }
