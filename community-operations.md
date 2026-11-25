@@ -1,6 +1,6 @@
 # תפעול תגובות ופניות
 
-מדריך לגרסת מערכת התגובות והפניות. האתר הציבורי: https://danvlado1234-sketch.github.io/ . אזור הניהול: https://shiurim-community.danvlado.workers.dev/manage/#/admin . מצב הפרסום והבדיקות מתועד ב־HANDOFF.md של תיק העבודה.
+מדריך לגרסת מערכת התגובות והפניות. האתר הציבורי: https://vladomirsky.com/ . אזור הניהול: https://shiurim-community.danvlado.workers.dev/manage/#/admin . מצב הפרסום והבדיקות מתועד ב־HANDOFF.md של תיק העבודה.
 
 ## למבקרים
 

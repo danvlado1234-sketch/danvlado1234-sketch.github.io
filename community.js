@@ -1991,7 +1991,7 @@
     } else if (q.get('open_comments')) {
       setTimeout(() => openComments(q.get('open_comments')), 80);
     } else if (q.has('subscribe')) {
-      // קישור לשיתוף: https://danvlado1234-sketch.github.io/?subscribe פותח ישר את טופס ההרשמה למייל
+      // קישור לשיתוף: https://vladomirsky.com/?subscribe פותח ישר את טופס ההרשמה למייל
       setTimeout(() => { openContact(); openContactChoice('mail'); }, 80);
     } else if (q.has('open_contact')) {
       setTimeout(() => openContact(), 80);
