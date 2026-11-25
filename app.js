@@ -801,6 +801,7 @@
   let lastKey = '';
   function route() {
     const { a, b, c, bad, nh } = parseHash(location.hash);
+    if (nh === '#/' && location.hash) history.replaceState(history.state, '', urlFor('#/'));
     renderedHash = nh;
     let html, flat = true, nav = '', activeChip = 'all';
     if (bad) html = notFound();
@@ -873,6 +874,7 @@
       return;
     }
     const nh = normHash(location.hash);
+    if (nh === '#/' && location.hash) history.replaceState(history.state, '', urlFor('#/'));
     if (nh !== renderedHash) route();
   }
   window.addEventListener('popstate', handleHistoryChange);
