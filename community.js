@@ -1010,10 +1010,18 @@
     },
   };
   const feedbackMailView = $('#feedbackMailView');
+  const feedbackMailConfirmView = $('#feedbackMailConfirmView');
+  const feedbackMailConfirmText = $('#feedbackMailConfirmText');
+  const feedbackMailConfirmError = $('#feedbackMailConfirmError');
+  const feedbackMailConfirmBtn = $('#feedbackMailConfirmBtn');
+  const feedbackMailConfirmRetry = $('#feedbackMailConfirmRetry');
   const feedbackMailDone = $('#feedbackMailDone');
+  const feedbackMailDoneTitle = $('#feedbackMailDoneTitle');
+  const feedbackMailClose = $('#feedbackMailClose');
   const feedbackMailEmail = $('#feedbackMailEmail');
   const feedbackMailError = $('#feedbackMailError');
   const feedbackMailSubmit = $('#feedbackMailSubmit');
+  let pendingConfirmToken = '';
 
   function showContactChoicesView() {
     contactKind = null;
@@ -1025,6 +1033,7 @@
     feedbackSuccess.hidden = true;
     feedbackError.hidden = true;
     if (feedbackMailView) feedbackMailView.hidden = true;
+    if (feedbackMailConfirmView) feedbackMailConfirmView.hidden = true;
     if (feedbackMailDone) feedbackMailDone.hidden = true;
     $('[data-contact-type]')?.focus();
   }
@@ -1044,7 +1053,10 @@
     feedbackError.hidden = true;
 
     if (feedbackMailView) feedbackMailView.hidden = kind !== 'mail';
+    if (feedbackMailConfirmView) feedbackMailConfirmView.hidden = true;
     if (feedbackMailDone) feedbackMailDone.hidden = true;
+    if (feedbackMailDoneTitle) feedbackMailDoneTitle.textContent = 'הבקשה התקבלה';
+    if (feedbackMailClose) feedbackMailClose.textContent = 'סגירה';
     if (kind === 'mail') {
       feedbackForm.hidden = true;
       feedbackWhatsappView.hidden = true;
@@ -1062,6 +1074,68 @@
       feedbackText.focus();
     }
   }
+
+  function openMailConfirm(token) {
+    openContact();
+    contactKind = 'mail_confirm';
+    pendingConfirmToken = String(token || '').trim();
+    feedbackTitle.textContent = 'אישור קבלת השיעורים במייל';
+    feedbackContext.textContent = 'הצטרפות לרשימת התפוצה של שיעורי הרב.';
+    contactChoices.hidden = true;
+    feedbackForm.hidden = true;
+    feedbackWhatsappView.hidden = true;
+    feedbackSuccess.hidden = true;
+    feedbackError.hidden = true;
+    if (feedbackMailView) feedbackMailView.hidden = true;
+    if (feedbackMailDone) feedbackMailDone.hidden = true;
+    if (!feedbackMailConfirmView) return;
+    feedbackMailConfirmView.hidden = false;
+    const valid = /^[A-Za-z0-9_-]{30,80}$/.test(pendingConfirmToken);
+    if (valid) {
+      if (feedbackMailConfirmText) feedbackMailConfirmText.hidden = false;
+      if (feedbackMailConfirmError) feedbackMailConfirmError.hidden = true;
+      if (feedbackMailConfirmBtn) { feedbackMailConfirmBtn.hidden = false; setBusy(feedbackMailConfirmBtn, false); }
+      if (feedbackMailConfirmRetry) feedbackMailConfirmRetry.hidden = true;
+      feedbackMailConfirmBtn?.focus();
+    } else {
+      if (feedbackMailConfirmText) feedbackMailConfirmText.hidden = true;
+      if (feedbackMailConfirmError) {
+        feedbackMailConfirmError.textContent = 'הקישור אינו תקף או שפג תוקפו. אפשר להירשם מחדש בקלות.';
+        feedbackMailConfirmError.hidden = false;
+      }
+      if (feedbackMailConfirmBtn) feedbackMailConfirmBtn.hidden = true;
+      if (feedbackMailConfirmRetry) feedbackMailConfirmRetry.hidden = false;
+      feedbackMailConfirmRetry?.focus();
+    }
+  }
+
+  feedbackMailConfirmRetry?.addEventListener('click', () => openContactChoice('mail'));
+  feedbackMailConfirmBtn?.addEventListener('click', async () => {
+    if (!pendingConfirmToken) return;
+    if (feedbackMailConfirmError) feedbackMailConfirmError.hidden = true;
+    setBusy(feedbackMailConfirmBtn, true, 'מאשר…');
+    try {
+      const res = await apiFetch('/v1/subscriptions/confirm', {
+        method: 'POST',
+        body: { token: pendingConfirmToken },
+      });
+      pendingConfirmToken = '';
+      if (feedbackMailConfirmView) feedbackMailConfirmView.hidden = true;
+      if (feedbackMailDoneTitle) feedbackMailDoneTitle.textContent = 'ההרשמה אושרה!';
+      if (res?.message) $('#feedbackMailDoneText').textContent = res.message;
+      if (feedbackMailClose) feedbackMailClose.textContent = 'להאזנה לשיעורים';
+      if (feedbackMailDone) feedbackMailDone.hidden = false;
+      feedbackMailClose?.focus();
+    } catch (err) {
+      if (feedbackMailConfirmError) {
+        feedbackMailConfirmError.textContent = err.message || 'לא ניתן לאשר כרגע. נסו שוב או הירשמו מחדש.';
+        feedbackMailConfirmError.hidden = false;
+      }
+      if (feedbackMailConfirmRetry) feedbackMailConfirmRetry.hidden = false;
+    } finally {
+      setBusy(feedbackMailConfirmBtn, false);
+    }
+  });
 
   function updateWhatsappHref() {
     const msg = feedbackWhatsappText?.value?.trim() || '';
@@ -1882,7 +1956,11 @@
     }
     syncVisibleCommentBadges();
     const q = new URLSearchParams(location.search);
-    if (q.get('open_comments')) {
+    if (q.has('confirm')) {
+      const confirmToken = q.get('confirm') || '';
+      try { history.replaceState(history.state, '', location.pathname + (location.hash || '#/')); } catch {}
+      setTimeout(() => openMailConfirm(confirmToken), 80);
+    } else if (q.get('open_comments')) {
       setTimeout(() => openComments(q.get('open_comments')), 80);
     } else if (q.has('subscribe')) {
       // קישור לשיתוף: https://danvlado1234-sketch.github.io/?subscribe פותח ישר את טופס ההרשמה למייל

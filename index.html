@@ -37,7 +37,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Frank+Ruhl+Libre:wght@400;500;700;900&family=Rubik:wght@400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="style.css?v=20261125a">
+<link rel="stylesheet" href="style.css?v=20261125b">
 </head>
 <body>
 <div class="shell">
@@ -263,10 +263,19 @@
       <p class="feedback-hint">נשלח אליכם מייל קצר כדי לוודא שהכתובת שלכם, ותצטרפו לרשימה אחרי שתאשרו אותו. אפשר לבקש הסרה בכל עת בתשובה לאחד המיילים.</p>
       <button class="btn feedback-submit-btn" id="feedbackMailSubmit" type="submit"><svg class="i"><use href="#i-check"/></svg><span>הרשמה</span></button>
     </form>
+    <div id="feedbackMailConfirmView" hidden>
+      <p class="feedback-hint" id="feedbackMailConfirmText">לחצו לאישור ההצטרפות לרשימת התפוצה. מרגע האישור, השיעורים החדשים יגיעו אליכם במייל.</p>
+      <p class="feedback-error" id="feedbackMailConfirmError" role="alert" hidden></p>
+      <div class="feedback-success-acts" style="margin-top:14px">
+        <button class="btn feedback-submit-btn" id="feedbackMailConfirmBtn" type="button"><svg class="i"><use href="#i-check"/></svg><span>כן, אני רוצה לקבל את השיעורים</span></button>
+        <button class="btn btn-ghost" id="feedbackMailConfirmRetry" type="button" hidden>להרשמה מחדש</button>
+      </div>
+      <p class="feedback-hint" style="margin-top:12px">אם לא אתם נרשמתם, אפשר פשוט לסגור את החלונית ולא יישלח אליכם דבר.</p>
+    </div>
     <div class="feedback-success" id="feedbackMailDone" hidden>
       <div class="feedback-success-icon"><svg class="i"><use href="#i-check"/></svg></div>
-      <h3>הבקשה התקבלה</h3>
-      <p id="feedbackMailDoneText">בתוך יממה יגיע אליכם מייל לאישור ההרשמה. אחרי שתאשרו, תתחילו לקבל את השיעורים.</p>
+      <h3 id="feedbackMailDoneTitle">הבקשה התקבלה</h3>
+      <p id="feedbackMailDoneText">שלחנו אליכם עכשיו מייל לאישור ההרשמה. אחרי שתאשרו, תתחילו לקבל את השיעורים.</p>
       <div class="feedback-success-acts"><button class="btn feedback-submit-btn" id="feedbackMailClose" type="button">סגירה</button></div>
     </div>
     <div class="feedback-success" id="feedbackSuccess" hidden>
@@ -411,10 +420,10 @@
   </defs>
 </svg>
 
-<script src="gen.js?v=20261125a"></script>
-<script src="community-config.js?v=20261125a"></script>
-<script src="community.js?v=20261125a"></script>
-<script src="analytics.js?v=20261125a"></script>
-<script src="live.js?v=20261125a"></script>
+<script src="gen.js?v=20261125b"></script>
+<script src="community-config.js?v=20261125b"></script>
+<script src="community.js?v=20261125b"></script>
+<script src="analytics.js?v=20261125b"></script>
+<script src="live.js?v=20261125b"></script>
 </body>
 </html>
