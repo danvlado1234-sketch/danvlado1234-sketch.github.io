@@ -96,7 +96,7 @@
   for (const x of SNAP.mishna) items.push({ kind: 'm', id: x.f, masechet: x.m, seder: sederOf[x.m], perek: x.p, nums: x.n, date: x.d, url: `${MBASE}/${enc(x.f)}` });
   for (const x of SNAP.parasha) items.push({ kind: 'p', id: x.f, title: x.t, moed: x.moed, book: x.book, year: x.y, tag: x.tag, iyun: x.iyun, date: x.d, pdf: x.pdf ? `${PBASE}/${enc(x.pdf)}${x.pv ? '?v=' + encodeURIComponent(x.pv) : ''}` : null, url: `${PBASE}/${enc(x.f)}` });
   const byId = Object.fromEntries(items.map(i => [i.id, i]));
-  const mItems = items.filter(i => i.kind === 'm').sort((a, b) => a.masechet === b.masechet ? (a.perek - b.perek || a.nums[0] - b.nums[0]) : 0);
+  const mItems = items.filter(i => i.kind === 'm').sort((a, b) => a.masechet.localeCompare(b.masechet, 'he') || a.perek - b.perek || a.nums[0] - b.nums[0] || (a.nums[a.nums.length - 1] - b.nums[b.nums.length - 1]) || a.id.localeCompare(b.id));
   const masechet = {};
   for (const it of mItems) {
     const s = masechet[it.masechet] ||= { name: it.masechet, seder: it.seder, items: [], perakim: {} };
@@ -915,21 +915,71 @@
 
   // ---------- נגן ----------
   const audio = new Audio(); audio.preload = 'metadata';
-  let nowId = null, speed = 1, pendingSeek = null;
+  let nowId = null, speed = 1, pendingSeek = null, audioLoadedId = null, loadSeq = 0, tintSeq = 0;
   // שני דברים נפרדים (דניאל, 14.10):
   //   userQ  — "התור שלך": מה שהמאזין הוסיף, מכל סוג, בסדר שלו. נשמר גם כשמנגנים משהו אחר (כמו ספוטיפיי).
   //   contQ  — "ניגון רציף": המשך המסכת לפי הסדר, רק למשניות, עם מתג. נעצר בסוף המסכת עם הודעה.
   // קודם התור שלך, אחריו הניגון הרציף. בשניהם אפשר למחוק ולגרור (רק מהידית ≡).
-  let userQ = [], contQ = [], contOn = store.get('contOn', true), nowFrom = 'direct';
-  const hist = [];
-  const contFor = it => it.kind === 'm' ? masechet[it.masechet].items.slice(masechet[it.masechet].items.indexOf(it) + 1).map(x => x.id) : [];
+  let userQ = [], contQ = [], contOn = store.get('contOn', true), nowFrom = 'direct', nowOrigin = 'series';
+  const hist = []; // [{ id, origin, via, prevCont?, prevUser? }]
+  const HIST_MAX = 80;
+  const pushHist = entry => {
+    if (!entry || !entry.id) return;
+    hist.push(entry);
+    if (hist.length > HIST_MAX) hist.shift();
+  };
+  const contFor = it => {
+    const arr = it && it.kind === 'm' && masechet[it.masechet]?.items;
+    if (!arr) return [];
+    const k = arr.indexOf(it);
+    return k >= 0 ? arr.slice(k + 1).map(x => x.id) : [];
+  };
   const SPEEDS = [1, 1.25, 1.5, 1.75, 2, 0.75];
   const fmt = s => { s = Math.max(0, s | 0); const h = s / 3600 | 0, m = (s % 3600) / 60 | 0, ss = s % 60; return (h ? h + ':' + String(m).padStart(2, '0') : m) + ':' + String(ss).padStart(2, '0'); };
   const bar = $('#bar'), np = $('#np');
 
-  function queueFor(it) {
-    if (it.kind === 'm') return masechet[it.masechet].items;
-    return it.iyun ? pItems.filter(i => i.iyun) : groups[it.title].items;
+  function seriesFor(it) {
+    if (!it) return [];
+    if (it.kind === 'm') return (masechet[it.masechet]?.items || []).map(x => x.id);
+    if (it.iyun) {
+      const vis = iyunMoadim().flatMap(iyItems).map(x => x.id);
+      if (vis.includes(it.id)) return vis;
+      return Object.values(iyGroups).flatMap(g => g.items).map(x => x.id);
+    }
+    if (it.moed) {
+      const order = [...ALL_MOADIM, ...Object.keys(groups).filter(t => groups[t].moed && !ALL_MOADIM.includes(t))];
+      return order.flatMap(t => groups[t]?.moed ? groups[t].items.map(x => x.id) : []);
+    }
+    const order = [...PARASHA_ORDER, ...Object.keys(groups).filter(t => !groups[t].moed && !PARASHA_ORDER.includes(t))];
+    return order.flatMap(t => (groups[t] && !groups[t].moed) ? groups[t].items.map(x => x.id) : []);
+  }
+  function seriesStep(id, delta) {
+    const it = byId[id]; if (!it) return null;
+    const list = seriesFor(it), k = list.indexOf(id), to = k + delta;
+    return (k >= 0 && to >= 0 && to < list.length) ? list[to] : null;
+  }
+  const nextValid = list => list.find(id => id && id !== nowId && byId[id]) || null;
+  function peekNext(auto = false) {
+    if (!nowId) return null;
+    const u = nextValid(userQ);
+    if (u) return { id: u, from: 'user' };
+    if (contOn) {
+      const c = nextValid(contQ);
+      if (c) return { id: c, from: 'cont' };
+    }
+    if (auto || nowOrigin === 'user') return null;
+    const s = seriesStep(nowId, 1);
+    return s ? { id: s, from: 'cont' } : null;
+  }
+  function peekPrev() {
+    if (!nowId) return null;
+    for (let i = hist.length - 1; i >= 0; i--) {
+      const e = hist[i];
+      if (e && e.id && e.id !== nowId && byId[e.id]) return { id: e.id, histIndex: i };
+    }
+    if (nowOrigin === 'user') return null;
+    const s = seriesStep(nowId, -1);
+    return s ? { id: s, histIndex: -1 } : null;
   }
   // כריכה מעוצבת: צילום + שם הסדרה בגדול + שורת משנה (כמו כריכת אלבום / כרטיס נטפליקס)
   function cover(it, w = 600) {
@@ -944,19 +994,24 @@
   function play(id, open = false) {
     const it = byId[id]; if (!it) return;
     if (nowId === id) { toggle(); return; }
-    if (nowId) hist.push(nowId);
-    nowFrom = 'direct'; contQ = contFor(it); load(it, true);
+    hist.length = 0;
+    userQ = userQ.filter(x => x !== id);
+    nowFrom = 'direct'; nowOrigin = 'series'; contQ = contFor(it); load(it, true);
     if (open && !building) openNP();
   }
   function load(it, autoplay) {
+    if (nowId && audioLoadedId === nowId) saveProg();
+    const seq = ++loadSeq;
+    audioLoadedId = null;
     nowId = it.id;
     const p = prog[it.id];
     pendingSeek = (p && p[1] && p[0] > 0 && p[0] / p[1] < 0.95) ? p[0] : null;
     audio.defaultPlaybackRate = speed;
     audio.src = it.url; audio.playbackRate = speed;
+    updTime();
     setLoading(!!autoplay);
-    const reqId = it.id;
-    if (autoplay) audio.play().catch(() => { if (nowId === reqId) setLoading(false); });
+    setPlayIcons();
+    if (autoplay) audio.play().catch(() => { if (loadSeq === seq) { setLoading(false); setPlayIcons(); } });
     const art = IMG(artOf(it), 600, 600);
     $('#barArt').innerHTML = `<span class="cover sm">${cover(it, 160)}</span>`;
     $('#barTitle').textContent = npTitle(it); $('#barSub').textContent = npSub(it);
@@ -984,30 +1039,79 @@
     renderText(it); renderQueue();
     $$('.ep').forEach(e => e.classList.toggle('is-now', e.dataset.play === it.id));
     if ('mediaSession' in navigator) {
-      navigator.mediaSession.metadata = new MediaMetadata({ title: $('#npTitle').textContent, artist: 'הרה״ג רבי יצחק ולדומירסקי', album: $('#npSub').textContent, artwork: [{ src: art, sizes: '600x600', type: 'image/jpeg' }] });
-      navigator.mediaSession.setActionHandler('seekbackward', () => skip(-15));
-      navigator.mediaSession.setActionHandler('seekforward', () => skip(15));
-      navigator.mediaSession.setActionHandler('nexttrack', () => next());
-      navigator.mediaSession.setActionHandler('previoustrack', () => prev());
+      try {
+        navigator.mediaSession.metadata = new MediaMetadata({ title: $('#npTitle').textContent, artist: 'הרה״ג רבי יצחק ולדומירסקי', album: $('#npSub').textContent, artwork: [{ src: art, sizes: '600x600', type: 'image/jpeg' }] });
+        navigator.mediaSession.setActionHandler('seekbackward', () => skip(-15));
+        navigator.mediaSession.setActionHandler('seekforward', () => skip(15));
+      } catch {}
     }
     window.ShiurimCommunity?.onNowChange(it.id);
   }
-  function next(auto) {
-    let id = null, from = null;
-    if (userQ.length) { id = userQ.shift(); from = 'user'; }
-    else if (contOn && contQ.length) { id = contQ.shift(); from = 'cont'; }
+  function next(auto = false) {
+    if (!nowId) return;
+    let id = null, from = null, origin = 'series', prevCont = null;
+    while (userQ.length) {
+      const cand = userQ.shift();
+      if (cand && cand !== nowId && byId[cand]) { id = cand; from = 'user'; origin = 'user'; break; }
+    }
+    if (!id && contOn) {
+      while (contQ.length) {
+        const cand = contQ.shift();
+        if (cand && cand !== nowId && byId[cand]) { id = cand; from = 'cont'; origin = 'series'; break; }
+      }
+    }
+    if (!id && !auto && nowOrigin !== 'user') {
+      const s = seriesStep(nowId, 1);
+      if (s && byId[s]) {
+        id = s; from = 'cont'; origin = 'series';
+        prevCont = [...contQ];
+        contQ = contFor(byId[s]);
+      }
+    }
     if (!id) {
       if (auto) { const it = byId[nowId]; toast(contOn && it && it.kind === 'm' ? `סיימת את מסכת ${it.masechet}` : 'התור נגמר'); }
       renderQueue(); return;
     }
-    hist.push(nowId); nowFrom = from; load(byId[id], true);
+    pushHist({ id: nowId, origin: nowOrigin, via: from, prevCont, prevUser: null });
+    nowFrom = from; nowOrigin = origin;
+    load(byId[id], true);
   }
   function prev() {
-    if (audio.currentTime > 5 || !hist.length) { audio.currentTime = 0; return; }
-    const back = hist.pop();
-    if (nowFrom === 'user') userQ.unshift(nowId);
-    // הניגון הרציף ממשיך במסכת שחזרת אליה (דניאל, 26.10)
-    nowFrom = 'back'; contQ = contFor(byId[back]); load(byId[back], true);
+    if (!nowId) return;
+    let entry = null;
+    while (hist.length) {
+      const e = hist.pop();
+      if (e && e.id && e.id !== nowId && byId[e.id]) { entry = e; break; }
+    }
+    if (entry) {
+      if (entry.prevUser) {
+        userQ = entry.prevUser;
+      } else if (nowOrigin === 'user') {
+        userQ = [nowId, ...userQ.filter(x => x !== nowId)];
+      }
+      if (entry.prevCont) {
+        contQ = entry.prevCont;
+      } else if (entry.via === 'cont' && byId[nowId]?.kind === 'm' && byId[entry.id]?.kind === 'm' && byId[nowId].masechet === byId[entry.id].masechet) {
+        contQ = [nowId, ...contQ.filter(x => x !== nowId)];
+      } else if (nowOrigin !== 'user') {
+        contQ = contFor(byId[entry.id]);
+      }
+      nowFrom = 'back'; nowOrigin = entry.origin;
+      load(byId[entry.id], true);
+      return;
+    }
+    if (nowOrigin === 'user') { renderQueue(); return; }
+    const backId = seriesStep(nowId, -1);
+    if (!backId || !byId[backId]) { renderQueue(); return; }
+    if (byId[backId].kind === 'm') {
+      contQ = (byId[nowId]?.kind === 'm' && byId[nowId].masechet === byId[backId].masechet)
+        ? [nowId, ...contQ.filter(x => x !== nowId)]
+        : contFor(byId[backId]);
+    } else {
+      contQ = [];
+    }
+    nowFrom = 'back'; nowOrigin = 'series';
+    load(byId[backId], true);
   }
   // ---------- לוח התור: מתנגן עכשיו · התור שלך · ניגון רציף ----------
   const qRow = (x, src) => `<li class="qrow" data-id="${esc(x.id)}"><button class="qi${src === 'now' ? ' is-now' : ''}" ${src === 'now' ? '' : `data-q="${esc(x.id)}" data-src="${src}"`}><span class="cover sm">${cover(x, 120)}</span><span><b>${esc(npTitle(x))}</b><span>${esc(npSub(x))}${src !== 'now' && x.date ? ' · ' + rel(x.date) : ''}</span></span></button>${src === 'now' || src === 'peek' ? '' :
@@ -1026,20 +1130,42 @@
         ${contOn && contQ.length ? `<ol class="qlist" data-ql="cont">${contQ.slice(0, CONT_SHOW).map(id => qRow(byId[id], 'cont')).join('')}</ol>${contQ.length > CONT_SHOW ? `<p class="qempty">ועוד ${contQ.length - CONT_SHOW} שיעורים עד סוף המסכת</p>` : ''}` : ''}</li>`;
   }
   function upNext(n) { return [...userQ, ...(contOn ? contQ : [])].slice(0, n); }
+  function syncNavBtns() {
+    const pv = peekPrev(), nx = peekNext(false);
+    const prevIt = pv && byId[pv.id], nextIt = nx && byId[nx.id];
+    const prevLbl = prevIt ? `השיעור הקודם: ${fullName(prevIt)}` : 'אין שיעור קודם';
+    const nextLbl = nextIt ? `השיעור הבא: ${fullName(nextIt)}` : 'אין שיעור הבא';
+    for (const b of [$('#npPrev'), $('#barPrev'), $('#dockPrev')]) {
+      b.disabled = !prevIt; b.setAttribute('aria-label', prevLbl); b.title = prevLbl;
+    }
+    for (const b of [$('#npNext'), $('#barNext'), $('#dockNext')]) {
+      b.disabled = !nextIt; b.setAttribute('aria-label', nextLbl); b.title = nextLbl;
+    }
+    if ('mediaSession' in navigator) {
+      try {
+        navigator.mediaSession.setActionHandler('previoustrack', prevIt ? () => prev() : null);
+        navigator.mediaSession.setActionHandler('nexttrack', nextIt ? () => next() : null);
+      } catch {}
+    }
+  }
   function renderQueue() {
     if (!nowId) return;
     $('#npQueue').innerHTML = queueHTML();
     $('#dockQ').innerHTML = queueHTML();
     const nx = upNext(3);
     $('#dockQueue').innerHTML = nx.length ? `<ol class="qlist">${nx.map(id => qRow(byId[id], 'peek')).join('')}</ol>` : `<p class="src" style="margin:0;color:oklch(1 0 0 / .7)">אין עוד בתור</p>`;
-    const none = !upNext(1).length;
-    $('#npNext').disabled = $('#barNext').disabled = $('#dockNext').disabled = none;
+    syncNavBtns();
     $('#npCont').setAttribute('aria-pressed', contOn);
   }
   // לחיצה על שיעור בתור: מנגן אותו, ומדלג על מה שלפניו באותו חלק (כמו ספוטיפיי)
   function jump(id, src) {
-    const list = src === 'cont' ? contQ : userQ; const k = list.indexOf(id); if (k < 0) return;
-    list.splice(0, k + 1); hist.push(nowId); nowFrom = src; load(byId[id], true);
+    const list = src === 'cont' ? contQ : userQ; const k = list.indexOf(id); if (k < 0 || !byId[id]) return;
+    const prevCont = src === 'cont' ? [...contQ] : null;
+    const prevUser = src === 'user' ? [...userQ] : null;
+    list.splice(0, k + 1);
+    pushHist({ id: nowId, origin: nowOrigin, via: src, prevCont, prevUser });
+    nowFrom = src; nowOrigin = src === 'user' ? 'user' : 'series';
+    load(byId[id], true);
   }
   function unqueue(id, src) {
     if (src !== 'cont') userQ = userQ.filter(x => x !== id);
@@ -1082,8 +1208,13 @@
   function playList(at, k = 0) {
     const l = listBy(at); if (!l) return;
     const ids = l.ids.filter(id => byId[id]); if (!ids[k]) return;
-    if (ids[k] === nowId) { if (audio.paused) toggle(); } else play(ids[k]);
-    userQ = ids.slice(k + 1); renderQueue();
+    hist.length = 0;
+    for (let i = 0; i < k; i++) pushHist({ id: ids[i], origin: 'user', via: 'user', prevCont: null, prevUser: null });
+    userQ = ids.slice(k + 1);
+    contQ = [];
+    nowOrigin = 'user';
+    if (ids[k] === nowId) { renderQueue(); if (audio.paused) toggle(); }
+    else { nowFrom = 'direct'; load(byId[ids[k]], true); }
     if (!building) openNP();
   }
   // ניהול רשימה מהדף שלה: ניגון משיעור, הסרת שיעור, הוספה, שינוי שם, מחיקה
@@ -1240,7 +1371,11 @@
   $$('[data-feedback]').forEach(b => b.addEventListener('click', () => window.ShiurimCommunity?.openComments(nowId, b)));
 
   function toggle() { if (!nowId) return; audio.paused ? audio.play().catch(() => {}) : audio.pause(); }
-  function skip(s) { audio.currentTime = Math.max(0, Math.min((audio.duration || 0), audio.currentTime + s)); }
+  function skip(s) {
+    if (!nowId || audioLoadedId !== nowId || !isFinite(audio.duration) || !audio.duration) return;
+    pendingSeek = null;
+    audio.currentTime = Math.max(0, Math.min(audio.duration, audio.currentTime + s));
+  }
   function setPlayIcons() {
     const on = !audio.paused;
     for (const b of [$('#barPlay'), $('#npPlay'), $('#dockPlay')]) { b.innerHTML = icon(on ? 'pause' : 'play'); b.setAttribute('aria-label', on ? 'השהה' : 'נגן'); }
@@ -1267,10 +1402,12 @@
   audio.addEventListener('waiting', () => { if (!audio.paused) setLoading(true); });
   for (const ev of ['playing', 'canplay', 'pause', 'ended']) audio.addEventListener(ev, () => setLoading(false));
   audio.addEventListener('error', () => {
+    if (audio.error && audio.error.code === 1) return; // MEDIA_ERR_ABORTED במעבר מהיר בין שיעורים
     setLoading(false); setPlayIcons();
     if (nowId && audio.getAttribute('src')) toast('השמע לא נטען כרגע — בדקו את החיבור לרשת ונסו שוב');
   });
   audio.addEventListener('loadedmetadata', () => {
+    audioLoadedId = nowId;
     audio.playbackRate = speed;
     if (pendingSeek != null && isFinite(audio.duration) && audio.duration > 0) {
       const t = Math.min(pendingSeek, Math.max(0, audio.duration - 1));
@@ -1279,10 +1416,18 @@
     }
     updTime();
   });
-  audio.addEventListener('ended', () => { if (loopOn) { audio.currentTime = 0; audio.play().catch(() => {}); return; } prog[nowId] = [audio.duration, audio.duration, Date.now()]; store.set('prog', prog); next(true); });
+  audio.addEventListener('ended', () => {
+    if (loopOn) { pendingSeek = null; audio.currentTime = 0; audio.play().catch(() => {}); return; }
+    if (nowId && isFinite(audio.duration) && audio.duration > 0) {
+      prog[nowId] = [audio.duration, audio.duration, Date.now()]; store.set('prog', prog);
+    }
+    audioLoadedId = null;
+    next(true);
+  });
   let lastSave = 0;
   function updTime() {
-    const d = audio.duration || 0, t = audio.currentTime, pct = d ? t / d * 100 : 0;
+    const ready = !!(nowId && audioLoadedId === nowId && isFinite(audio.duration) && audio.duration > 0);
+    const d = ready ? audio.duration : 0, t = ready ? audio.currentTime : 0, pct = d ? t / d * 100 : 0;
     $('#barProg').style.width = pct + '%';
     for (const [s, c, du] of [[$('#barSeek'), $('#barCur'), $('#barDur')], [$('#npSeek'), $('#npCur'), $('#npDur')], [$('#dockSeek'), $('#dockCur'), $('#dockDur')]]) {
       if (!s.matches(':active')) { s.value = pct * 10; s.style.setProperty('--p', pct + '%'); }
@@ -1293,7 +1438,7 @@
   // שמירת המקום: תוך כדי ניגון כל 4 שניות, וגם בהשהיה, בקפיצה, וכשיוצאים מהאפליקציה/מהלשונית
   function saveProg() {
     const d = audio.duration, t = audio.currentTime;
-    if (!nowId || !d || !isFinite(d)) return; // באמצע החלפת שיעור אין עדיין אורך — לא שומרים
+    if (!nowId || audioLoadedId !== nowId || !d || !isFinite(d)) return; // באמצע החלפת שיעור אין עדיין אורך — לא שומרים
     lastSave = Date.now(); prog[nowId] = [t, d, Date.now()]; store.set('prog', prog);
   }
   for (const ev of ['timeupdate', 'seeked', 'emptied']) audio.addEventListener(ev, updTime);
@@ -1545,21 +1690,34 @@
     el.addEventListener('pointerup', fin); el.addEventListener('pointercancel', fin);
     el.addEventListener('click', e => { if (el._dragged) { e.preventDefault(); e.stopPropagation(); } }, true);
   }
-  // מעבר עם העקומה של הגיליון, ואז ניקוי
+  // מעבר עם העקומה של הגיליון, ואז ניקוי (מבטל מעבר קודם כדי שמחווה מהירה לא תשבור את התנועה)
+  function cancelSettle(el) {
+    if (el && el._cancelSettle) { el._cancelSettle(); el._cancelSettle = null; }
+  }
   function settle(el, prop, value, after) {
+    cancelSettle(el);
     el.style.transition = prop === 'transform' ? SHEET : `${prop} .5s cubic-bezier(0.32, 0.72, 0, 1)`;
-    requestAnimationFrame(() => { if (prop === 'transform') el.style.transform = value; else el.style.setProperty(prop, value); });
-    let done = false;
-    const fin = () => { if (done) return; done = true; el.style.transition = ''; after && after(); };
+    let done = false, timer = null, raf = null;
+    const cleanup = () => {
+      el.removeEventListener('transitionend', onEnd);
+      if (timer) { clearTimeout(timer); timer = null; }
+      if (raf) { cancelAnimationFrame(raf); raf = null; }
+      if (el._cancelSettle === cancel) el._cancelSettle = null;
+    };
+    const cancel = () => { if (done) return; done = true; cleanup(); el.style.transition = ''; };
+    const fin = () => { if (done) return; done = true; cleanup(); el.style.transition = ''; after && after(); };
     // רק סוף המעבר של האלמנט עצמו — מעבר של כפתור/כריכה בפנים "מבעבע" למעלה וסגר את התנועה באמצע
-    const onEnd = e => { if (e.target === el) { el.removeEventListener('transitionend', onEnd); fin(); } };
-    el.addEventListener('transitionend', onEnd); setTimeout(fin, 600);
+    const onEnd = e => { if (e.target === el) fin(); };
+    el._cancelSettle = cancel;
+    el.addEventListener('transitionend', onEnd);
+    timer = setTimeout(fin, 600);
+    raf = requestAnimationFrame(() => { raf = null; if (done) return; if (prop === 'transform') el.style.transform = value; else el.style.setProperty(prop, value); });
   }
   const noDrag = t => t.closest('button, a, input, .np-panel, .np-tools, .np-ctl');
   const forward = dx => dx < 0; // בעברית "קדימה" זה שמאלה — החלקה שמאלה = השיעור הבא
-  // אין שיעור הבא בתור: ההחלקה קדימה "נמתחת" וחוזרת, במקום לעוף החוצה ולחזור בלי שינוי
-  const noNext = dx => forward(dx) && !upNext(1).length;
-  const pull = dx => noNext(dx) ? dx * 0.25 : dx;
+  // אין שיעור בכיוון ההחלקה: ההחלקה "נמתחת" וחוזרת, במקום לעוף החוצה ולחזור בלי שינוי
+  const blockedSwipe = dx => forward(dx) ? !peekNext(false) : !peekPrev();
+  const pull = dx => blockedSwipe(dx) ? dx * 0.25 : dx;
 
   // 1) הסרגל: החלקה למעלה פותחת את הנגן צמוד לאצבע · החלקה הצידה מחליפה שיעור · נגיעה פותחת
   const barNow = $('#barOpen');
@@ -1567,27 +1725,29 @@
     ok: e => !e.target.closest('.bar-ctl, .bar-end'),
     start(lock, dx, dy) {
       if (lock === 'y') { if (dy > 0) return false; setPane(null); morphBegin(); morphAt(mo.p); return; }
+      cancelSettle(barNow);
       barNow.classList.add('is-drag');
     },
     move(lock, dx, dy) {
       if (lock === 'y') morphAt(clamp01(mo.p0 - dy / mo.top));
       else barNow.style.setProperty('--sx', pull(dx) + 'px');
     },
-    end(lock, dx, dy, vx, vy) {
+    end(lock, dx, dy, vx, vy, cancelled) {
       if (lock === 'y') {
-        const open = -dy > innerHeight * 0.2 || vy < -0.45;
+        const open = !cancelled && (-dy > innerHeight * 0.2 || vy < -0.45);
         // כמו פתיחה בנגיעה: רשומה בהיסטוריה, כדי ש"חזור" בטלפון יסגור את הנגן ולא ייצא מהאתר
         if (open) { buzz(); pushOverlay('np', shutNP); npWant = true; document.body.style.overflow = 'hidden'; morphTo(1); }
         else morphTo(0);
         return;
       }
       barNow.classList.remove('is-drag');
-      const go = (Math.abs(dx) > 70 || Math.abs(vx) > 0.45) && !noNext(dx);
+      const go = !cancelled && (Math.abs(dx) > 70 || Math.abs(vx) > 0.45) && !blockedSwipe(dx);
       if (!go) { settle(barNow, '--sx', '0px'); return; }
       const fwd = forward(dx); buzz();
       settle(barNow, '--sx', (fwd ? -1 : 1) * innerWidth * 0.6 + 'px', () => {
         fwd ? next() : prev();
         barNow.style.setProperty('--sx', (fwd ? 1 : -1) * innerWidth * 0.6 + 'px');
+        void barNow.offsetWidth;
         settle(barNow, '--sx', '0px');
       });
     },
@@ -1598,8 +1758,8 @@
     ok: e => !noDrag(e.target) && np.classList.contains('is-open'),
     start(lock) { if (lock !== 'y') return false; morphBegin(); },
     move(lock, dx, dy) { morphAt(mo.p0 - (dy > 0 ? dy : dy * 0.12) / mo.top); }, // הגיליון צמוד לאצבע; למעלה — התנגדות
-    end(lock, dx, dy, vx, vy) {
-      if (dy > innerHeight * 0.22 || vy > 0.45) {
+    end(lock, dx, dy, vx, vy, cancelled) {
+      if (!cancelled && (dy > innerHeight * 0.22 || vy > 0.45)) {
         buzz(); npWant = false; document.body.style.overflow = '';
         morphTo(0, () => { popOverlay('np'); });
       } else morphTo(1);
@@ -1608,16 +1768,17 @@
   const npCov = $('#npCover');
   gesture(npCov, {
     ok: () => np.classList.contains('is-open'),
-    start(lock) { if (lock !== 'x') return false; npCov.classList.add('is-drag'); },
+    start(lock) { if (lock !== 'x') return false; cancelSettle(npCov); npCov.classList.add('is-drag'); },
     move(lock, dx) { npCov.style.setProperty('--sx', pull(dx) + 'px'); npCov.style.opacity = String(1 - Math.min(0.5, Math.abs(pull(dx)) / innerWidth)); },
-    end(lock, dx, dy, vx) {
+    end(lock, dx, dy, vx, vy, cancelled) {
       npCov.classList.remove('is-drag');
-      const go = (Math.abs(dx) > innerWidth * 0.25 || Math.abs(vx) > 0.45) && !noNext(dx);
+      const go = !cancelled && (Math.abs(dx) > innerWidth * 0.25 || Math.abs(vx) > 0.45) && !blockedSwipe(dx);
       if (!go) { npCov.style.opacity = ''; settle(npCov, '--sx', '0px'); return; }
       const fwd = forward(dx); buzz();
       settle(npCov, '--sx', (fwd ? -1 : 1) * innerWidth + 'px', () => {
         fwd ? next() : prev();
         npCov.style.setProperty('--sx', (fwd ? 1 : -1) * innerWidth + 'px'); npCov.style.opacity = '';
+        void npCov.offsetWidth;
         settle(npCov, '--sx', '0px');
       });
     },
@@ -1674,8 +1835,10 @@
 
   // צבע מהתמונה — כמו בספוטיפיי ובאפל מיוזיק
   function tint(src) {
+    const seq = ++tintSeq;
     const img = new Image(); img.crossOrigin = 'anonymous';
     img.onload = () => {
+      if (seq !== tintSeq) return;
       try {
         const c = document.createElement('canvas'); c.width = c.height = 12; const x = c.getContext('2d'); x.drawImage(img, 0, 0, 12, 12);
         const d = x.getImageData(0, 0, 12, 12).data;

@@ -256,7 +256,7 @@
     a.addEventListener('pause', () => { sampleAudio(); flush(); });
     a.addEventListener('ended', () => { sampleAudio(); if (cur) { cur.c = true; cur.mp = cur.du || cur.mp; } finishListen(); flush(); });
     a.addEventListener('emptied', () => { if (cur && A.getNowId() !== cur.id) finishListen(); });
-    a.addEventListener('error', () => { const e = a.error; track('error', Object.assign(nowInfo(), { l: 'audio' + (e ? ':' + e.code : '') })); });
+    a.addEventListener('error', () => { const e = a.error; if (e && e.code === 1) return; track('error', Object.assign(nowInfo(), { l: 'audio' + (e ? ':' + e.code : '') })); });
     a.addEventListener('ratechange', () => { sampleAudio(); flush(); });
     if (isPlaying()) startListen(A.getNowId());
   }

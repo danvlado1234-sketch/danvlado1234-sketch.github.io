@@ -9,7 +9,7 @@
 //    ברקע. הקוד נטען עם ?v=<גרסה> (index.html), אז גרסה חדשה = כתובת חדשה = מיד.
 //  - קובצי השמע (R2) וטקסט המשנה (ספריא) לא עוברים כאן בכלל - ישר לרשת.
 // ============================================================
-const CACHE = 'shiurim-v5';
+const CACHE = 'shiurim-v6';
 const CORE = ['/', '/manifest.webmanifest',
   '/icons/icon-192.png', '/icons/icon-512.png', '/icons/apple-touch-icon.png', '/icons/favicon-32.png'];
 
