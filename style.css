@@ -1509,6 +1509,65 @@ body.building .top{ display: none; }
   color: oklch(0.95 0.04 25);
   font-size: 0.86rem;
 }
+.feedback-panel [hidden] {
+  display: none !important;
+}
+.feedback-panel.is-centered-card .feedback-head {
+  justify-content: flex-end;
+  margin-bottom: -14px;
+}
+.feedback-panel.is-centered-card .sheet-head-title,
+.feedback-panel.is-centered-card .feedback-context {
+  display: none;
+}
+.mail-confirm-card {
+  text-align: center;
+  padding: 6px 8px 4px;
+}
+.mail-confirm-kicker {
+  margin-bottom: 6px;
+}
+.mail-confirm-card h3 {
+  margin: 0 0 10px;
+  font-family: var(--f-title);
+  font-weight: 900;
+  font-size: clamp(1.55rem, 1.35rem + 0.6vw, 1.85rem);
+  line-height: 1.15;
+  color: var(--text);
+}
+.mail-confirm-lead {
+  margin: 0 auto 22px;
+  max-width: 34ch;
+  color: var(--text-2);
+  font-size: 0.96rem;
+  line-height: 1.65;
+}
+.mail-confirm-card .feedback-error {
+  margin: 0 0 18px;
+  text-align: center;
+}
+.mail-confirm-acts {
+  display: flex;
+  justify-content: center;
+}
+.mail-confirm-acts .feedback-submit-btn {
+  width: 100%;
+  max-width: 300px;
+  min-height: 48px;
+  font-size: 1rem;
+  white-space: nowrap;
+}
+.mail-confirm-foot {
+  margin: 16px auto 0;
+  font-size: 0.8rem;
+  color: var(--text-3);
+  line-height: 1.5;
+}
+.mail-confirm-icon.is-err {
+  background: oklch(0.55 0.16 25 / 0.18);
+  box-shadow: inset 0 0 0 1px oklch(0.68 0.18 25 / 0.42);
+  color: oklch(0.86 0.12 25);
+}
 .feedback-error[hidden],
 #feedbackWhatsappView[hidden],
 #feedbackSuccess[hidden] {

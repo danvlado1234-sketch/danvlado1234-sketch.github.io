@@ -37,7 +37,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Frank+Ruhl+Libre:wght@400;500;700;900&family=Rubik:wght@400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="style.css?v=20261125b">
+<link rel="stylesheet" href="style.css?v=20261125c">
 </head>
 <body>
 <div class="shell">
@@ -230,7 +230,7 @@
 <div class="feedback-layer" id="feedback" role="dialog" aria-modal="true" aria-labelledby="feedbackTitle" aria-describedby="feedbackContext" hidden>
   <section class="feedback-panel">
     <div class="sheet-grab" aria-hidden="true"><i></i></div>
-    <header class="feedback-head"><div class="sheet-head-title"><span class="comments-kicker">פנייה לצוות האתר</span><h2 id="feedbackTitle">יצירת קשר</h2></div><button class="ib" id="feedbackClose" type="button" aria-label="סגירת חלונית יצירת קשר"><svg class="i"><use href="#i-x"/></svg></button></header>
+    <header class="feedback-head"><div class="sheet-head-title"><span class="comments-kicker" id="feedbackKicker">פנייה לצוות האתר</span><h2 id="feedbackTitle">יצירת קשר</h2></div><button class="ib" id="feedbackClose" type="button" aria-label="סגירת חלונית יצירת קשר"><svg class="i"><use href="#i-x"/></svg></button></header>
     <p class="feedback-context" id="feedbackContext">פנייה פרטית לצוות האתר — אינה מתפרסמת באתר.</p>
     <div class="contact-choices" id="contactChoices">
       <button class="contact-choice" type="button" data-contact-type="mail" style="--tone: oklch(0.7 0.12 250)"><span class="contact-choice-icon"><svg class="i"><use href="#i-mail"/></svg></span><span><b>קבלת השיעורים במייל</b><small>הצטרפות לרשימת התפוצה. כל שיעור חדש יגיע אליכם למייל</small></span><svg class="i contact-arrow"><use href="#i-next"/></svg></button>
@@ -263,14 +263,17 @@
       <p class="feedback-hint">נשלח אליכם מייל קצר כדי לוודא שהכתובת שלכם, ותצטרפו לרשימה אחרי שתאשרו אותו. אפשר לבקש הסרה בכל עת בתשובה לאחד המיילים.</p>
       <button class="btn feedback-submit-btn" id="feedbackMailSubmit" type="submit"><svg class="i"><use href="#i-check"/></svg><span>הרשמה</span></button>
     </form>
-    <div id="feedbackMailConfirmView" hidden>
-      <p class="feedback-hint" id="feedbackMailConfirmText">לחצו לאישור ההצטרפות לרשימת התפוצה. מרגע האישור, השיעורים החדשים יגיעו אליכם במייל.</p>
+    <div class="mail-confirm-card" id="feedbackMailConfirmView" hidden>
+      <div class="feedback-success-icon mail-confirm-icon" id="feedbackMailConfirmIcon"><svg class="i"><use href="#i-mail"/></svg></div>
+      <span class="comments-kicker mail-confirm-kicker">רשימת התפוצה</span>
+      <h3 id="feedbackMailConfirmTitle">אישור קבלת השיעורים במייל</h3>
+      <p class="mail-confirm-lead" id="feedbackMailConfirmText">השיעורים בפרשת השבוע, במועדים ובעיון יישלחו אליכם למייל כשהם עולים לאתר.</p>
       <p class="feedback-error" id="feedbackMailConfirmError" role="alert" hidden></p>
-      <div class="feedback-success-acts" style="margin-top:14px">
-        <button class="btn feedback-submit-btn" id="feedbackMailConfirmBtn" type="button"><svg class="i"><use href="#i-check"/></svg><span>כן, אני רוצה לקבל את השיעורים</span></button>
-        <button class="btn btn-ghost" id="feedbackMailConfirmRetry" type="button" hidden>להרשמה מחדש</button>
+      <div class="mail-confirm-acts">
+        <button class="btn feedback-submit-btn" id="feedbackMailConfirmBtn" type="button"><svg class="i"><use href="#i-check"/></svg><span>אישור הצטרפות</span></button>
+        <button class="btn feedback-submit-btn" id="feedbackMailConfirmRetry" type="button" hidden><svg class="i"><use href="#i-mail"/></svg><span>הרשמה מחדש</span></button>
       </div>
-      <p class="feedback-hint" style="margin-top:12px">אם לא אתם נרשמתם, אפשר פשוט לסגור את החלונית ולא יישלח אליכם דבר.</p>
+      <p class="mail-confirm-foot" id="feedbackMailConfirmFoot">לא אתם נרשמתם? אפשר לסגור ולא יישלח אליכם דבר.</p>
     </div>
     <div class="feedback-success" id="feedbackMailDone" hidden>
       <div class="feedback-success-icon"><svg class="i"><use href="#i-check"/></svg></div>
@@ -420,10 +423,10 @@
   </defs>
 </svg>
 
-<script src="gen.js?v=20261125b"></script>
-<script src="community-config.js?v=20261125b"></script>
-<script src="community.js?v=20261125b"></script>
-<script src="analytics.js?v=20261125b"></script>
-<script src="live.js?v=20261125b"></script>
+<script src="gen.js?v=20261125c"></script>
+<script src="community-config.js?v=20261125c"></script>
+<script src="community.js?v=20261125c"></script>
+<script src="analytics.js?v=20261125c"></script>
+<script src="live.js?v=20261125c"></script>
 </body>
 </html>

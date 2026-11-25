@@ -1009,12 +1009,17 @@
       ctx: 'הצטרפות לרשימת התפוצה של שיעורי הרב.',
     },
   };
+  const feedbackKicker = $('#feedbackKicker');
+  const feedbackPanel = feedback?.querySelector('.feedback-panel');
   const feedbackMailView = $('#feedbackMailView');
   const feedbackMailConfirmView = $('#feedbackMailConfirmView');
+  const feedbackMailConfirmIcon = $('#feedbackMailConfirmIcon');
+  const feedbackMailConfirmTitle = $('#feedbackMailConfirmTitle');
   const feedbackMailConfirmText = $('#feedbackMailConfirmText');
   const feedbackMailConfirmError = $('#feedbackMailConfirmError');
   const feedbackMailConfirmBtn = $('#feedbackMailConfirmBtn');
   const feedbackMailConfirmRetry = $('#feedbackMailConfirmRetry');
+  const feedbackMailConfirmFoot = $('#feedbackMailConfirmFoot');
   const feedbackMailDone = $('#feedbackMailDone');
   const feedbackMailDoneTitle = $('#feedbackMailDoneTitle');
   const feedbackMailClose = $('#feedbackMailClose');
@@ -1022,9 +1027,16 @@
   const feedbackMailError = $('#feedbackMailError');
   const feedbackMailSubmit = $('#feedbackMailSubmit');
   let pendingConfirmToken = '';
+  let earlyConfirmHandled = false;
+
+  function setCenteredCard(on) {
+    feedbackPanel?.classList.toggle('is-centered-card', Boolean(on));
+  }
 
   function showContactChoicesView() {
     contactKind = null;
+    setCenteredCard(false);
+    if (feedbackKicker) feedbackKicker.textContent = 'פנייה לצוות האתר';
     feedbackTitle.textContent = 'יצירת קשר';
     feedbackContext.textContent = 'פנייה פרטית לצוות האתר — אינה מתפרסמת באתר.';
     contactChoices.hidden = false;
@@ -1041,11 +1053,13 @@
   function openContactChoice(kind) {
     const meta = CONTACT_META[kind];
     if (!meta) return;
+    setCenteredCard(false);
     if (contactKind && contactKind !== kind && !feedbackText.value.trim()) {
       feedbackError.hidden = true;
     }
     contactKind = kind;
     ticketIdempotencyKey = newUuid();
+    if (feedbackKicker) feedbackKicker.textContent = kind === 'mail' ? 'רשימת התפוצה' : 'פנייה לצוות האתר';
     feedbackTitle.textContent = meta.title;
     feedbackContext.textContent = meta.ctx;
     contactChoices.hidden = true;
@@ -1075,12 +1089,27 @@
     }
   }
 
+  function showConfirmInvalid(message) {
+    if (feedbackMailConfirmIcon) {
+      feedbackMailConfirmIcon.classList.add('is-err');
+      feedbackMailConfirmIcon.querySelector('use')?.setAttribute('href', '#i-alert');
+    }
+    if (feedbackMailConfirmTitle) feedbackMailConfirmTitle.textContent = 'הקישור אינו תקף';
+    if (feedbackMailConfirmText) feedbackMailConfirmText.hidden = true;
+    if (feedbackMailConfirmError) {
+      feedbackMailConfirmError.textContent = message || 'ייתכן שעבר התוקף של הקישור או שההרשמה כבר אושרה.';
+      feedbackMailConfirmError.hidden = false;
+    }
+    if (feedbackMailConfirmBtn) feedbackMailConfirmBtn.hidden = true;
+    if (feedbackMailConfirmRetry) feedbackMailConfirmRetry.hidden = false;
+    if (feedbackMailConfirmFoot) feedbackMailConfirmFoot.hidden = true;
+  }
+
   function openMailConfirm(token) {
     openContact();
     contactKind = 'mail_confirm';
     pendingConfirmToken = String(token || '').trim();
-    feedbackTitle.textContent = 'אישור קבלת השיעורים במייל';
-    feedbackContext.textContent = 'הצטרפות לרשימת התפוצה של שיעורי הרב.';
+    setCenteredCard(true);
     contactChoices.hidden = true;
     feedbackForm.hidden = true;
     feedbackWhatsappView.hidden = true;
@@ -1092,21 +1121,21 @@
     feedbackMailConfirmView.hidden = false;
     const valid = /^[A-Za-z0-9_-]{30,80}$/.test(pendingConfirmToken);
     if (valid) {
+      if (feedbackMailConfirmIcon) {
+        feedbackMailConfirmIcon.classList.remove('is-err');
+        feedbackMailConfirmIcon.querySelector('use')?.setAttribute('href', '#i-mail');
+      }
+      if (feedbackMailConfirmTitle) feedbackMailConfirmTitle.textContent = 'אישור קבלת השיעורים במייל';
       if (feedbackMailConfirmText) feedbackMailConfirmText.hidden = false;
       if (feedbackMailConfirmError) feedbackMailConfirmError.hidden = true;
       if (feedbackMailConfirmBtn) { feedbackMailConfirmBtn.hidden = false; setBusy(feedbackMailConfirmBtn, false); }
       if (feedbackMailConfirmRetry) feedbackMailConfirmRetry.hidden = true;
-      feedbackMailConfirmBtn?.focus();
+      if (feedbackMailConfirmFoot) feedbackMailConfirmFoot.hidden = false;
     } else {
-      if (feedbackMailConfirmText) feedbackMailConfirmText.hidden = true;
-      if (feedbackMailConfirmError) {
-        feedbackMailConfirmError.textContent = 'הקישור אינו תקף או שפג תוקפו. אפשר להירשם מחדש בקלות.';
-        feedbackMailConfirmError.hidden = false;
-      }
-      if (feedbackMailConfirmBtn) feedbackMailConfirmBtn.hidden = true;
-      if (feedbackMailConfirmRetry) feedbackMailConfirmRetry.hidden = false;
-      feedbackMailConfirmRetry?.focus();
+      showConfirmInvalid('ייתכן שעבר התוקף של הקישור או שההרשמה כבר אושרה. אפשר להירשם מחדש בקלות.');
     }
+    feedbackPanel?.setAttribute('tabindex', '-1');
+    feedbackPanel?.focus({ preventScroll: true });
   }
 
   feedbackMailConfirmRetry?.addEventListener('click', () => openContactChoice('mail'));
@@ -1121,17 +1150,12 @@
       });
       pendingConfirmToken = '';
       if (feedbackMailConfirmView) feedbackMailConfirmView.hidden = true;
-      if (feedbackMailDoneTitle) feedbackMailDoneTitle.textContent = 'ההרשמה אושרה!';
+      if (feedbackMailDoneTitle) feedbackMailDoneTitle.textContent = 'ההרשמה אושרה';
       if (res?.message) $('#feedbackMailDoneText').textContent = res.message;
-      if (feedbackMailClose) feedbackMailClose.textContent = 'להאזנה לשיעורים';
+      if (feedbackMailClose) feedbackMailClose.textContent = 'לאתר השיעורים';
       if (feedbackMailDone) feedbackMailDone.hidden = false;
-      feedbackMailClose?.focus();
     } catch (err) {
-      if (feedbackMailConfirmError) {
-        feedbackMailConfirmError.textContent = err.message || 'לא ניתן לאשר כרגע. נסו שוב או הירשמו מחדש.';
-        feedbackMailConfirmError.hidden = false;
-      }
-      if (feedbackMailConfirmRetry) feedbackMailConfirmRetry.hidden = false;
+      showConfirmInvalid(err.message || 'לא ניתן לאשר כרגע. נסו להירשם מחדש.');
     } finally {
       setBusy(feedbackMailConfirmBtn, false);
     }
@@ -1956,10 +1980,12 @@
     }
     syncVisibleCommentBadges();
     const q = new URLSearchParams(location.search);
-    if (q.has('confirm')) {
+    if (earlyConfirmHandled) {
+      if (!feedback.hidden) app?.pushOverlay?.('contact', () => closeContact(true));
+    } else if (q.has('confirm')) {
       const confirmToken = q.get('confirm') || '';
       try { history.replaceState(history.state, '', location.pathname + (location.hash || '#/')); } catch {}
-      setTimeout(() => openMailConfirm(confirmToken), 80);
+      openMailConfirm(confirmToken);
     } else if (q.get('open_comments')) {
       setTimeout(() => openComments(q.get('open_comments')), 80);
     } else if (q.has('subscribe')) {
@@ -1969,6 +1995,17 @@
       setTimeout(() => openContact(), 80);
     } else if (q.has('open_admin')) {
       setTimeout(() => openAdmin(), 80);
+    }
+  }
+
+  // פתיחה מיידית של חלונית האישור (?confirm=...) בלי להמתין להורדת כל רשימות השיעורים (live.js)
+  {
+    const earlyQ = new URLSearchParams(location.search);
+    if (earlyQ.has('confirm')) {
+      earlyConfirmHandled = true;
+      const t = earlyQ.get('confirm') || '';
+      try { history.replaceState(history.state, '', location.pathname + (location.hash || '#/')); } catch {}
+      openMailConfirm(t);
     }
   }
 
