@@ -658,6 +658,7 @@
   const SECTION_HASH = { all: '#/', m: '#/mishna', p: '#/parasha', h: '#/moadim', i: '#/iyun' };
   const HASH_SECTION = { '': 'all', mishna: 'm', parasha: 'p', moadim: 'h', iyun: 'i' };
   const normHash = h => (!h || h === '#' || h === '#/') ? '#/' : h.startsWith('#/') ? h : '#/' + h.replace(/^#?\/?/, '');
+  const urlFor = h => h === '#/' ? (location.pathname + location.search) : h;
   function parseHash(h = location.hash) {
     const nh = normHash(h);
     let a = '', b = '', c = '', bad = false;
@@ -693,14 +694,14 @@
     const target = (a === 'admin') ? '#/' : (!a && fParam && SECTION_HASH[fParam]) ? SECTION_HASH[fParam] : nh;
     if (history.state?.np || history.state?.ov) {
       const idx = Math.max(0, curNavIdx() - 1);
-      history.replaceState({ nav: 1, idx, h: target }, '', target);
+      history.replaceState({ nav: 1, idx, h: target }, '', urlFor(target));
       syncStackAt(idx, target);
     } else if (history.state?.nav) {
       const idx = curNavIdx();
-      if (target !== nh) history.replaceState({ nav: 1, idx, h: target }, '', target);
+      if (target !== nh || (target === '#/' && location.hash)) history.replaceState({ nav: 1, idx, h: target }, '', urlFor(target));
       syncStackAt(idx, target);
     } else {
-      history.replaceState({ nav: 1, idx: 0, h: target }, '', target);
+      history.replaceState({ nav: 1, idx: 0, h: target }, '', urlFor(target));
       writeStack([target]);
     }
     if (a === 'admin') setTimeout(() => window.ShiurimCommunity?.openAdmin(), 0);
@@ -743,7 +744,7 @@
     if (popTimer) {
       clearTimeout(popTimer); popTimer = null;
       const idx = Math.max(0, curNavIdx() - 1);
-      history.replaceState({ nav: 1, idx, h: target }, '', target);
+      history.replaceState({ nav: 1, idx, h: target }, '', urlFor(target));
       syncStackAt(idx, target);
       route();
       return;
@@ -753,7 +754,7 @@
       closeAllOverlaysSilent();
       if (ovCount === 1 && history.state?.ov) {
         const idx = Math.max(0, curNavIdx() - 1);
-        history.replaceState({ nav: 1, idx, h: target }, '', target);
+        history.replaceState({ nav: 1, idx, h: target }, '', urlFor(target));
         syncStackAt(idx, target);
         route();
         return;
@@ -762,13 +763,14 @@
     const idx = curNavIdx();
     const stack = readStack();
     if (cur.nh === target) {
+      if (target === '#/' && location.hash) history.replaceState(history.state, '', urlFor(target));
       const sc = matchMedia('(min-width:1024px)').matches ? $('#main') : document.scrollingElement;
       sc.scrollTo({ top: 0, behavior: 'smooth' });
       return;
     }
     // מעבר רוחבי באותה סדרה (פרקים, week → לכל השנים) או בין טאבים/עמודים באותו עומק: לא צוברים היסטוריה
     if (cur.key === next.key || (cur.depth >= 1 && cur.depth === next.depth)) {
-      history.replaceState({ nav: 1, idx, h: target }, '', target);
+      history.replaceState({ nav: 1, idx, h: target }, '', urlFor(target));
       syncStackAt(idx, target);
       route();
       return;
@@ -785,13 +787,13 @@
         history.go(1 - idx);
         return;
       }
-      history.replaceState({ nav: 1, idx, h: target }, '', target);
+      history.replaceState({ nav: 1, idx, h: target }, '', urlFor(target));
       syncStackAt(idx, target);
       route();
       return;
     }
     const nextIdx = idx + 1;
-    history.pushState({ nav: 1, idx: nextIdx, h: target }, '', target);
+    history.pushState({ nav: 1, idx: nextIdx, h: target }, '', urlFor(target));
     syncStackAt(nextIdx, target);
     route();
   }
@@ -865,7 +867,7 @@
     }
     if (pendingReplace) {
       const pr = pendingReplace; pendingReplace = null;
-      history.replaceState({ nav: 1, idx: pr.idx, h: pr.hash }, '', pr.hash);
+      history.replaceState({ nav: 1, idx: pr.idx, h: pr.hash }, '', urlFor(pr.hash));
       syncStackAt(pr.idx, pr.hash);
       route();
       return;

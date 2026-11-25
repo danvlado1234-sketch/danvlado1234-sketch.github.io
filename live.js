@@ -21,8 +21,8 @@
   else if (q.get('seder')) h = '#/seder/' + e(q.get('seder'));
   else if (q.has('search') || q.has('q')) h = '#/search';
   else if (q.has('list')) h = '#/library';
-  else if (q.has('new') || q.has('app') || q.has('install')) h = '#/';
-  if (h) history.replaceState(null, '', location.pathname + h);
+  else if (q.has('new') || q.has('app') || q.has('install')) h = '';
+  if (h !== null) history.replaceState(null, '', location.pathname + h);
 })();
 (async () => {
   // מקור חלופי הוא כלי לפיתוח מקומי בלבד, ותמיד מאותו שרת.

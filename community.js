@@ -1871,7 +1871,7 @@
       document.body.classList.remove('feedback-open');
     }
     if (location.hash === '#/admin') {
-      history.replaceState(history.state, '', '#/');
+      history.replaceState(history.state, '', location.pathname + location.search);
     }
     if (adminReturnFocus && adminReturnFocus.isConnected) {
       adminReturnFocus.focus();
@@ -1986,7 +1986,7 @@
       if (!feedback.hidden) app?.pushOverlay?.('contact', () => closeContact(true));
     } else if (q.has('confirm')) {
       const confirmToken = q.get('confirm') || '';
-      try { history.replaceState(history.state, '', location.pathname + (location.hash || '#/')); } catch {}
+      try { history.replaceState(history.state, '', location.pathname + (location.hash && location.hash !== '#/' ? location.hash : '')); } catch {}
       openMailConfirm(confirmToken);
     } else if (q.get('open_comments')) {
       setTimeout(() => openComments(q.get('open_comments')), 80);
@@ -2006,7 +2006,7 @@
     if (earlyQ.has('confirm')) {
       earlyConfirmHandled = true;
       const t = earlyQ.get('confirm') || '';
-      try { history.replaceState(history.state, '', location.pathname + (location.hash || '#/')); } catch {}
+      try { history.replaceState(history.state, '', location.pathname + (location.hash && location.hash !== '#/' ? location.hash : '')); } catch {}
       openMailConfirm(t);
     }
   }
