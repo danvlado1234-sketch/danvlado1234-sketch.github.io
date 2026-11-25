@@ -44,38 +44,86 @@
     return 'id-' + Date.now() + '-' + Math.random().toString(36).slice(2, 10);
   }
 
+  function setBusy(btn, busy, busyLabel = 'שולח…') {
+    if (!btn) return;
+    btn.disabled = busy;
+    btn.classList.toggle('is-busy', busy);
+    btn.setAttribute('aria-busy', busy ? 'true' : 'false');
+    const span = btn.querySelector('span');
+    if (span) {
+      if (busy) {
+        if (!btn.dataset.origLabel) btn.dataset.origLabel = span.textContent;
+        span.textContent = busyLabel;
+      } else if (btn.dataset.origLabel) {
+        span.textContent = btn.dataset.origLabel;
+      }
+    }
+  }
+
+  function loadTurnstileScript() {
+    if (window.turnstile) return Promise.resolve();
+    if (!turnstileScript) {
+      turnstileScript = new Promise((resolve, reject) => {
+        const script = document.createElement('script');
+        script.src = 'https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit';
+        script.async = true;
+        script.onload = resolve;
+        script.onerror = () => {
+          turnstileScript = null;
+          reject(new Error('טעינת האימות נכשלה. בדקו חיבור ונסו שוב.'));
+        };
+        document.head.appendChild(script);
+      });
+    }
+    return turnstileScript;
+  }
+
+  function preloadTurnstile() {
+    if (LOCAL_MODE || window.turnstile || turnstileScript) return;
+    productionReady.then(() => {
+      if (!productionConfig?.turnstile_sitekey || window.turnstile || turnstileScript) return;
+      loadTurnstileScript().catch(() => {});
+    });
+  }
+
   async function makeChallengeToken(action, container) {
     if (LOCAL_MODE) return `pass:${action}:${newUuid()}`;
     await productionReady;
     if (action === 'comment_create' && productionIdentity.role !== 'guest') return '';
     if (!productionConfig?.turnstile_sitekey) throw new Error('אימות הטופס אינו זמין כרגע. הטקסט נשמר.');
-    if (!window.turnstile) {
-      if (!turnstileScript) turnstileScript = new Promise((resolve, reject) => {
-        const script = document.createElement('script');
-        script.src = 'https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit';
-        script.async = true;
-        script.onload = resolve;
-        script.onerror = () => { turnstileScript = null; reject(new Error('טעינת האימות נכשלה. בדקו חיבור ונסו שוב.')); };
-        document.head.appendChild(script);
-      });
-      await turnstileScript;
-    }
+    await loadTurnstileScript();
+    const target = container || (action === 'ticket_create' ? $('#feedbackForm') : $('#commentsForm'));
     const holder = document.createElement('div');
     holder.className = 'community-challenge';
-    (container || (action === 'ticket_create' ? $('#feedbackForm') : $('#commentsForm'))).appendChild(holder);
+    const note = document.createElement('p');
+    note.className = 'community-challenge-note';
+    note.textContent = 'מאמתים את הבקשה… אם מופיעה תיבת אימות, יש לסמן אותה.';
+    note.hidden = true;
+    const slot = document.createElement('div');
+    holder.appendChild(note);
+    holder.appendChild(slot);
+    const anchor = target.querySelector('.comments-form-acts, .cmt-inline-edit-acts, .feedback-submit-btn');
+    if (anchor && anchor.parentNode) anchor.parentNode.insertBefore(holder, anchor);
+    else target.appendChild(holder);
     return new Promise((resolve, reject) => {
       let widget, finished = false;
       const finish = (error, token) => {
         if (finished) return;
         finished = true;
         clearTimeout(timer);
+        clearTimeout(hintTimer);
         if (widget !== undefined) window.turnstile.remove(widget);
         holder.remove();
         error ? reject(new Error(error)) : resolve(token);
       };
+      const hintTimer = setTimeout(() => {
+        if (finished) return;
+        note.hidden = false;
+        holder.scrollIntoView?.({ behavior: 'smooth', block: 'nearest' });
+      }, 1200);
       const timer = setTimeout(() => finish('אימות הטופס הסתיים ללא תשובה. הטקסט נשמר; נסו שוב.'), 120000);
       try {
-        widget = window.turnstile.render(holder, {
+        widget = window.turnstile.render(slot, {
           sitekey: productionConfig.turnstile_sitekey, action, language: 'he', appearance: 'interaction-only',
           callback: token => finish(null, token),
           'error-callback': () => finish('אימות הטופס נכשל. הטקסט נשמר; נסו שוב.'),
@@ -362,6 +410,7 @@
     currentReplyTo = replyObj || null;
     commentIdempotencyKey = newUuid();
     if (currentReplyTo) {
+      preloadTurnstile();
       commentsReplyBanner.hidden = false;
       commentsReplyTarget.textContent = `מענה לתגובה של ${currentReplyTo.name}`;
       commentsForm.hidden = false;
@@ -559,6 +608,7 @@
       if (reportBtn.disabled) return;
       reportBox.hidden = !reportBox.hidden;
       if (!reportBox.hidden) {
+        preloadTurnstile();
         setTimeout(() => {
           reportBox.scrollIntoView?.({ behavior: 'smooth', block: 'nearest' });
           reportInput.focus();
@@ -758,6 +808,7 @@
     resetSheet(commentsLayer);
     commentsLayer.hidden = false;
     document.body.classList.add('feedback-open');
+    app?.pushOverlay?.('comments', () => closeComments(true));
     commentsWriteToggle.focus();
 
     const reqSeq = ++activeRequestSeq;
@@ -780,10 +831,11 @@
     }
   }
 
-  function closeComments() {
+  function closeComments(fromPop = false) {
     saveCurrentCommentDraft();
     resetSheet(commentsLayer);
     commentsLayer.hidden = true;
+    if (fromPop !== true) app?.popOverlay?.('comments');
     if ($('#feedback').hidden && $('#adminLayer').hidden) {
       document.body.classList.remove('feedback-open');
     }
@@ -796,6 +848,7 @@
     commentsForm.hidden = !commentsForm.hidden;
     commentError.hidden = true;
     if (!commentsForm.hidden) {
+      preloadTurnstile();
       commentIdempotencyKey = newUuid();
       if (getCurrentRole() === 'rabbi' && !commentAuthor.value.trim()) {
         commentAuthor.value = 'הרב ולדומירסקי';
@@ -843,7 +896,7 @@
       return;
     }
 
-    commentSubmitBtn.disabled = true;
+    setBusy(commentSubmitBtn, true);
     try {
       const activeRole = getCurrentRole();
       const isOfficial = activeRole === 'rabbi' || activeRole === 'admin';
@@ -907,7 +960,7 @@
       } else app?.toast?.('שליחת התגובה הקודמת לא אושרה. הטיוטה נשמרה.');
       // מפתח השליחה נשמר אחרי אובדן תשובת רשת; טוקן האימות יוחלף בניסיון הבא.
     } finally {
-      commentSubmitBtn.disabled = false;
+      setBusy(commentSubmitBtn, false);
     }
   });
 
@@ -1022,15 +1075,18 @@
 
   function openContact(triggerEl) {
     contactReturnFocus = triggerEl || document.activeElement;
+    preloadTurnstile();
     resetSheet(feedback);
     feedback.hidden = false;
     document.body.classList.add('feedback-open');
+    app?.pushOverlay?.('contact', () => closeContact(true));
     showContactChoicesView();
   }
 
-  function closeContact() {
+  function closeContact(fromPop = false) {
     resetSheet(feedback);
     feedback.hidden = true;
+    if (fromPop !== true) app?.popOverlay?.('contact');
     if (commentsLayer.hidden && $('#adminLayer').hidden) {
       document.body.classList.remove('feedback-open');
     }
@@ -1058,7 +1114,7 @@
       feedbackMailEmail.focus();
       return;
     }
-    feedbackMailSubmit.disabled = true;
+    setBusy(feedbackMailSubmit, true);
     try {
       const res = await apiFetch('/v1/subscriptions', {
         method: 'POST',
@@ -1073,7 +1129,7 @@
       feedbackMailError.textContent = err.message || 'ההרשמה לא נשלחה. נסו שוב בעוד רגע.';
       feedbackMailError.hidden = false;
     } finally {
-      feedbackMailSubmit.disabled = false;
+      setBusy(feedbackMailSubmit, false);
     }
   });
   $('#feedbackWhatsappBack')?.addEventListener('click', showContactChoicesView);
@@ -1103,7 +1159,7 @@
       return;
     }
 
-    feedbackSubmitBtn.disabled = true;
+    setBusy(feedbackSubmitBtn, true);
     try {
       const res = await apiFetch('/v1/tickets', {
         method: 'POST',
@@ -1134,7 +1190,7 @@
       feedbackError.textContent = err.message || 'שגיאה בשליחת הפנייה. הטקסט שכתבתם נשמר.';
       feedbackError.hidden = false;
     } finally {
-      feedbackSubmitBtn.disabled = false;
+      setBusy(feedbackSubmitBtn, false);
     }
   });
 
@@ -1556,7 +1612,7 @@
                 display_name: currentRole === 'rabbi' ? 'הרב ולדומירסקי' : 'דניאל (צוות האתר)',
                 body: txt,
                 publish_immediately: true,
-                turnstile_token: await makeChallengeToken('comment_create'),
+                challenge_token: await makeChallengeToken('comment_create'),
               },
             });
             app?.toast?.(currentRole === 'rabbi' ? 'תשובת הרב פורסמה באתר' : 'התשובה הרשמית פורסמה');
@@ -1703,17 +1759,19 @@
     resetSheet(adminLayer);
     adminLayer.hidden = false;
     document.body.classList.add('feedback-open');
+    app?.pushOverlay?.('admin', () => closeAdmin(true));
     renderAdminContent();
   }
 
-  function closeAdmin() {
+  function closeAdmin(fromPop = false) {
     resetSheet(adminLayer);
     adminLayer.hidden = true;
+    if (fromPop !== true) app?.popOverlay?.('admin');
     if (commentsLayer.hidden && feedback.hidden) {
       document.body.classList.remove('feedback-open');
     }
     if (location.hash === '#/admin') {
-      history.replaceState(null, '', '#/');
+      history.replaceState(history.state, '', '#/');
     }
     if (adminReturnFocus && adminReturnFocus.isConnected) {
       adminReturnFocus.focus();

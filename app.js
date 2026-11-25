@@ -457,7 +457,7 @@
     const total = PEREK_COUNTS[name] || 0;
     const art = mArt(name) || SEDER_ART[seder];
     if (!s) return `<section class="hero"><img src="${IMG(art, 1800)}" alt="" style="filter:grayscale(1) brightness(.5)">
-      <div><span class="kick">סדר ${seder} · ${total} פרקים</span><h1>מסכת ${esc(name)}</h1><p>עוד לא הוקלטו שיעורים במסכת הזו. כשתעלה המשנה הראשונה — היא תופיע כאן, ובשורת "חדש השבוע".</p>
+      <div><a class="kick-link" href="#/seder/${encodeURIComponent(seder)}">${icon('prev')}סדר ${esc(seder)}</a><h1>מסכת ${esc(name)}</h1><p>עוד לא הוקלטו שיעורים במסכת הזו. כשתעלה המשנה הראשונה — היא תופיע כאן, ובשורת "חדש השבוע".</p>
       <div class="acts"><a class="btn btn-ghost" href="#/seder/${encodeURIComponent(seder)}">לכל מסכתות סדר ${seder}</a></div></div></section>`;
     if (perekArg && !(+perekArg >= 1 && +perekArg <= total)) return notFound(); // פרק שאין במסכת (כתובת שגויה)
     const lastP = Object.keys(prog).map(id => byId[id]).filter(i => i && i.kind === 'm' && i.masechet === name).sort((a, b) => (prog[b.id][2] || 0) - (prog[a.id][2] || 0))[0];
@@ -465,7 +465,7 @@
     const resume = (lastP && fracOf(lastP.id) < 0.95 ? lastP : s.perakim[perek]?.[0]) || s.items[0]; // פרק שעוד לא הוקלט — מתחילים מהראשון
     const eps = s.perakim[perek] || [];
     const html = `<section class="hero"><img src="${HERO(art)}" alt="">
-      <div><span class="kick">סדר ${seder} · מסכת</span><h1>${esc(name)}</h1>
+      <div><a class="kick-link" href="#/seder/${encodeURIComponent(seder)}">${icon('prev')}סדר ${esc(seder)}</a><h1>${esc(name)}</h1>
         <div class="bb-meta"><span>${total} פרקים</span><span>${s.items.length} שיעורים הוקלטו</span><span class="new">${rel(s.last)}</span></div>
         <p>${esc(ABOUT[name] || '')}</p>
         <div class="acts"><button class="fab" data-play="${esc(resume.id)}" aria-label="נגן">${icon('play')}</button>
@@ -517,7 +517,7 @@
       const art = (has(ART, title) ? ART[title] : null) || FALLBACK;
       return `<section class="hero hero-soon"><img src="${HERO(art)}" alt="">
         <div>
-          <span class="kick">${isMoed ? `מועדים${MOED_MONTH[title] ? ` · ${MOED_MONTH[title]}` : ''}` : `חומש ${esc(book)}${isWeek ? ` · פרשת השבוע · שבת ${esc(hebDate(weekParasha.date))}` : ''}`}</span>
+          <a class="kick-link" href="${isMoed ? '#/moadim' : `#/book/${encodeURIComponent(book)}`}">${icon('prev')}${isMoed ? 'מועדים' : `חומש ${esc(book)}`}</a>
           <h1>${esc(name)}</h1>
           <div class="soon-pill">יעלה בקרוב</div>
           <p>${isWeek
@@ -538,8 +538,10 @@
     const g = iy ? { ...g0, items: iyItems(title) } : weekOnly ? { ...g0, items: weekItems } : g0;
     const name = g.moed ? (MOED_NAME[title] || title) : `פרשת ${weekOnly && title === weekParasha.name ? weekParasha.label : title}`;
     const art = (iy ? iyArt(title) : (has(ART, title) ? ART[title] : null)) || FALLBACK;
+    const parentHref = iy ? '#/iyun' : g.moed ? '#/moadim' : `#/book/${encodeURIComponent(g.book)}`;
+    const parentLbl = iy ? 'עיון' : g.moed ? 'מועדים' : `חומש ${g.book}`;
     return `<section class="hero"><img src="${HERO(art)}" alt="">
-      <div><span class="kick">${iy ? `עיון · ${MOED_MONTH[title] || ''}` : g.moed ? `מועדים · ${MOED_MONTH[title] || ''}` : weekOnly ? `פרשת השבוע · שבת ${esc(hebDate(weekParasha.date))}` : `חומש ${esc(g.book)}`}</span><h1>${esc(name)}</h1>
+      <div><a class="kick-link" href="${parentHref}">${icon('prev')}${esc(parentLbl)}</a><h1>${esc(name)}</h1>
         <div class="bb-meta"><span>${g.items.length === 1 ? 'שיעור אחד' : `${g.items.length} שיעורים`}</span>${g.items.some(i => i.pdf) ? '<span>עם סיכום כתוב</span>' : ''}</div>
         <p>${iy ? `שיעורי העיון של הרב ל${esc(name)} — סוגיות ההלכה של החג, מהחדש לישן.` : g.moed ? `שיעורי הרב ל${esc(name)} — הוורט לחג, מהחדש לישן. שיעורי העיון — במדור העיון.` : weekOnly ? `השיעורים שעלו על ${esc(name)} (${esc(g.items[0].year)}).` : `השיעורים על ${esc(name)} מכל השנים, מהחדש לישן.`}</p>
         <div class="acts"><button class="fab" data-play="${esc(g.items[0].id)}" aria-label="נגן">${icon('play')}</button><span class="kick">${esc(epName(g.items[0]) || g.items[0].year)}</span>${hasOlder ? `<a class="btn btn-ghost" href="#/p/${encodeURIComponent(title)}">לכל השנים (${g0.items.length})</a>` : ''}</div></div></section>
@@ -554,7 +556,7 @@
   function sederPage(s) {
     const e = SEDARIM.find(x => x[0] === s); if (!e) return notFound();
     const n = e[1].reduce((a, m) => a + (masechet[m]?.items.length || 0), 0);
-    return `<h1 class="page-title">סדר ${s}</h1><p class="note">${e[1].length} מסכתות · ${n ? `${n} שיעורים` : 'טרם הוקלט'}. כל המסכתות מופיעות — גם מה שעוד לא הוקלט.</p><br><div class="grid">${e[1].map(posterCard).join('')}</div>`;
+    return `<a class="up-link" href="#/mishna">${icon('prev')}משנה</a><h1 class="page-title">סדר ${s}</h1><p class="note">${e[1].length} מסכתות · ${n ? `${n} שיעורים` : 'טרם הוקלט'}. כל המסכתות מופיעות — גם מה שעוד לא הוקלט.</p><br><div class="grid">${e[1].map(posterCard).join('')}</div>`;
   }
 
   function searchPage(q = '') {
@@ -620,7 +622,7 @@
     const its = l.ids.map(id => byId[id]).filter(Boolean), f = its[0];
     const art = f ? artOf(f) : FALLBACK;
     return `<section class="hero"><img src="${HERO(art)}" alt="">
-      <div><span class="kick">${l.fav ? 'שמורים' : 'רשימה שלך'}</span><h1>${esc(l.name)}</h1>
+      <div><a class="kick-link" href="#/library">${icon('prev')}הספרייה שלי</a><h1>${esc(l.name)}</h1>
         <div class="bb-meta"><span>${its.length === 1 ? 'שיעור אחד' : `${its.length} שיעורים`}</span></div>
         <div class="acts lacts">${its.length ? `<button class="fab" data-list="${esc(l.at)}" aria-label="נגן את הרשימה">${icon('play')}</button>` : ''}
           <button class="btn btn-ghost" data-ladd>${icon('plus')}הוספת שיעורים</button>
@@ -637,34 +639,177 @@
   }
   const notFound = () => `<h1 class="page-title">לא נמצא</h1><p class="note"><a href="#/" style="text-decoration:underline">חזרה לדף הבית</a></p>`;
 
-  // ---------- ניתוב ----------
+  // ---------- ניתוב וניווט לוגי ----------
   const top = $('#top');
+  const SECTION_HASH = { all: '#/', m: '#/mishna', p: '#/parasha', h: '#/moadim', i: '#/iyun' };
+  const HASH_SECTION = { '': 'all', mishna: 'm', parasha: 'p', moadim: 'h', iyun: 'i' };
+  const normHash = h => (!h || h === '#' || h === '#/') ? '#/' : h.startsWith('#/') ? h : '#/' + h.replace(/^#?\/?/, '');
+  function parseHash(h = location.hash) {
+    const nh = normHash(h);
+    let a = '', b = '', c = '', bad = false;
+    try { [, a = '', b = '', c = ''] = nh.split('/').map(decodeURIComponent); } catch { bad = true; a = 'x'; }
+    return { a, b, c, bad, nh };
+  }
+  function routeMeta(h = location.hash) {
+    const { a, b, c, bad, nh } = parseHash(h);
+    if (bad || !a || a === 'admin') return { a: '', b: '', c: '', nh: '#/', depth: 0, key: 'home' };
+    if (['mishna', 'parasha', 'moadim', 'search', 'library'].includes(a) || (a === 'iyun' && !b)) {
+      return { a, b: '', c: '', nh, depth: 1, key: a };
+    }
+    if (a === 'seder' || a === 'book') return { a, b, c: '', nh, depth: 2, key: `${a}/${b}` };
+    if (a === 'm' || a === 'p' || a === 'iyun' || a === 'l') return { a, b, c, nh, depth: 3, key: `${a}/${b}` };
+    return { a, b, c, nh, depth: 1, key: `${a}/${b}` };
+  }
+  const STACK_KEY = 'shiurim.navStack';
+  function readStack() { try { const s = JSON.parse(sessionStorage.getItem(STACK_KEY)); return Array.isArray(s) ? s : []; } catch { return []; } }
+  function writeStack(s) { try { sessionStorage.setItem(STACK_KEY, JSON.stringify(s.slice(0, 12))); } catch {} }
+  let renderedHash = null;
+  let pendingReplace = null;
+  const overlayStack = [];
+  let popTimer = null;
+  function curNavIdx() { return (history.state && typeof history.state.idx === 'number') ? history.state.idx : 0; }
+  function syncStackAt(idx, nh) {
+    const s = readStack().slice(0, Math.max(0, idx));
+    s[idx] = nh;
+    writeStack(s);
+  }
+  function initNavState() {
+    const { a, nh } = parseHash(location.hash);
+    const fParam = params.get('f');
+    const target = (a === 'admin') ? '#/' : (!a && fParam && SECTION_HASH[fParam]) ? SECTION_HASH[fParam] : nh;
+    if (history.state?.np || history.state?.ov) {
+      const idx = Math.max(0, curNavIdx() - 1);
+      history.replaceState({ nav: 1, idx, h: target }, '', target);
+      syncStackAt(idx, target);
+    } else if (history.state?.nav) {
+      const idx = curNavIdx();
+      if (target !== nh) history.replaceState({ nav: 1, idx, h: target }, '', target);
+      syncStackAt(idx, target);
+    } else {
+      history.replaceState({ nav: 1, idx: 0, h: target }, '', target);
+      writeStack([target]);
+    }
+    if (a === 'admin') setTimeout(() => window.ShiurimCommunity?.openAdmin(), 0);
+  }
+  function pushOverlay(id, closeSilent) {
+    const k = overlayStack.findIndex(o => o.id === id);
+    if (k >= 0) { overlayStack[k].closeSilent = closeSilent; return; }
+    if (popTimer) {
+      clearTimeout(popTimer); popTimer = null;
+      overlayStack.push({ id, closeSilent });
+      history.replaceState({ ov: id, idx: Math.max(1, curNavIdx()) }, '');
+      return;
+    }
+    const idx = curNavIdx() + 1;
+    overlayStack.push({ id, closeSilent });
+    history.pushState({ ov: id, idx }, '');
+  }
+  function popOverlay(id) {
+    const k = overlayStack.findIndex(o => o.id === id);
+    if (k < 0) return;
+    overlayStack.splice(k, 1);
+    if (history.state?.ov === id) {
+      if (popTimer) clearTimeout(popTimer);
+      popTimer = setTimeout(() => {
+        popTimer = null;
+        if (history.state?.ov === id) history.back();
+      }, 0);
+    }
+  }
+  function closeAllOverlaysSilent() {
+    while (overlayStack.length) {
+      const topOv = overlayStack.pop();
+      try { topOv.closeSilent(); } catch {}
+    }
+  }
+  function navigate(rawHash) {
+    const target = normHash(rawHash);
+    const cur = routeMeta(location.hash);
+    const next = routeMeta(target);
+    if (popTimer) {
+      clearTimeout(popTimer); popTimer = null;
+      const idx = Math.max(0, curNavIdx() - 1);
+      history.replaceState({ nav: 1, idx, h: target }, '', target);
+      syncStackAt(idx, target);
+      route();
+      return;
+    }
+    if (overlayStack.length) {
+      const ovCount = overlayStack.length;
+      closeAllOverlaysSilent();
+      if (ovCount === 1 && history.state?.ov) {
+        const idx = Math.max(0, curNavIdx() - 1);
+        history.replaceState({ nav: 1, idx, h: target }, '', target);
+        syncStackAt(idx, target);
+        route();
+        return;
+      }
+    }
+    const idx = curNavIdx();
+    const stack = readStack();
+    if (cur.nh === target) {
+      const sc = matchMedia('(min-width:1024px)').matches ? $('#main') : document.scrollingElement;
+      sc.scrollTo({ top: 0, behavior: 'smooth' });
+      return;
+    }
+    // מעבר רוחבי באותה סדרה (פרקים, week → לכל השנים) או בין טאבים/עמודים באותו עומק: לא צוברים היסטוריה
+    if (cur.key === next.key || (cur.depth >= 1 && cur.depth === next.depth)) {
+      history.replaceState({ nav: 1, idx, h: target }, '', target);
+      syncStackAt(idx, target);
+      route();
+      return;
+    }
+    // חזרה למעלה / לבית: מקצרים אחורה במחסנית האמיתית כדי לא ליצור טיול ארוך ב"אחורה"
+    if (next.depth < cur.depth) {
+      const backAt = stack.slice(0, idx).lastIndexOf(target);
+      if (backAt >= 0 && stack[idx] === cur.nh) {
+        history.go(backAt - idx);
+        return;
+      }
+      if (next.depth === 1 && idx > 1 && stack[0] === '#/' && stack[idx] === cur.nh) {
+        pendingReplace = { idx: 1, hash: target };
+        history.go(1 - idx);
+        return;
+      }
+      history.replaceState({ nav: 1, idx, h: target }, '', target);
+      syncStackAt(idx, target);
+      route();
+      return;
+    }
+    const nextIdx = idx + 1;
+    history.pushState({ nav: 1, idx: nextIdx, h: target }, '', target);
+    syncStackAt(nextIdx, target);
+    route();
+  }
+
   let lastKey = '';
   function route() {
-    let a, b, c, bad = false;
-    try { [, a, b, c] = location.hash.split('/').map(decodeURIComponent); } catch { bad = true; a = 'x'; } // קידוד משובש בכתובת
-    let html, flat = true, nav = '';
+    const { a, b, c, bad, nh } = parseHash(location.hash);
+    renderedHash = nh;
+    let html, flat = true, nav = '', activeChip = 'all';
     if (bad) html = notFound();
-    else if (!a) { html = home(); flat = false; nav = 'home'; }
+    else if (!a) { filter = 'all'; html = home(); flat = false; nav = 'home'; activeChip = 'all'; }
+    else if (a === 'mishna') { filter = 'm'; html = sectionPage('m'); flat = false; nav = 'home'; activeChip = 'm'; }
+    else if (a === 'parasha') { filter = 'p'; html = sectionPage('p'); flat = false; nav = 'home'; activeChip = 'p'; }
+    else if (a === 'moadim') { filter = 'h'; html = sectionPage('h'); flat = false; nav = 'home'; activeChip = 'h'; }
+    else if (a === 'iyun' && !b) { filter = 'i'; html = sectionPage('i'); flat = false; nav = 'home'; activeChip = 'i'; }
     else if (a === 'm') html = masechetPage(b, c);
     else if (a === 'p') html = groupPage(b, false, c === 'week');
     else if (a === 'seder') html = sederPage(b);
-    else if (a === 'book' && has(CHUMASH, b)) html = `<h1 class="page-title">חומש ${esc(b)}</h1><p class="note">${CHUMASH[b].length} פרשות · כל הפרשות מופיעות — גם מה שעוד לא הוקלט.</p><br>
+    else if (a === 'book' && has(CHUMASH, b)) html = `<a class="up-link" href="#/parasha">${icon('prev')}פרשת השבוע</a><h1 class="page-title">חומש ${esc(b)}</h1><p class="note">${CHUMASH[b].length} פרשות · כל הפרשות מופיעות — גם מה שעוד לא הוקלט.</p><br>
       <div class="grid sq-grid">${CHUMASH[b].map(t => groups[t] ? squareCard(groups[t]) : ghostSq(t, `פרשת ${t}`)).join('')}</div>`;
-    else if (a === 'moadim') html = `<h1 class="page-title">מועדים</h1><p class="note">לפי סדר השנה, מהקרוב.</p><br>
-      <div class="grid sq-grid">${[...MOED_NEXT, ...ALL_MOADIM.filter(m => !MOED_NEXT.includes(m))].map(t => groups[t] ? squareCard(groups[t]) : ghostSq(t, MOED_NAME[t] || t)).join('')}</div>`;
     else if (a === 'iyun' && b) html = groupPage(b, true);
-    else if (a === 'iyun') html = `<h1 class="page-title">עיון</h1><p class="note">לפי סדר השנה, מהקרוב.</p><br>${iyunGrid()}`;
     else if (a === 'search') { html = searchPage(); nav = 'search'; }
     else if (a === 'library') { html = libraryPage(); nav = 'library'; }
     else if (a === 'l') { html = listPage(b); nav = 'library'; }
-    else if (a === 'admin') { html = home(); flat = false; nav = 'home'; setTimeout(() => window.ShiurimCommunity?.openAdmin(), 0); }
+    else if (a === 'admin') { filter = 'all'; html = home(); flat = false; nav = 'home'; activeChip = 'all'; setTimeout(() => window.ShiurimCommunity?.openAdmin(), 0); }
     else html = notFound();
     const key = bad ? '' : `${a}/${b}`, keep = a === 'm' && key === lastKey; lastKey = key;
     const sc = matchMedia('(min-width:1024px)').matches ? $('#main') : document.scrollingElement, y = sc.scrollTop, sx = $('.seasons')?.scrollLeft;
     view.innerHTML = `${building ? buildBar() : ''}<div class="view-in${keep ? ' no-in' : ''}">${html}</div>`;
     setPageBg(a, b);
     top.classList.toggle('is-flat', flat);
+    $$('#topChips .chip').forEach(x => x.classList.toggle('is-on', x.dataset.f === activeChip));
     $$('[data-nav]').forEach(x => x.classList.toggle('is-on', x.dataset.nav === nav));
     if (a === 'search') { const q = $('#q'); $('#res').innerHTML = searchResults(''); q.addEventListener('input', () => { $('#res').innerHTML = searchResults(q.value); }); if (matchMedia('(hover:hover)').matches) q.focus(); }
     sc.scrollTop = keep ? y : 0;
@@ -682,10 +827,9 @@
     if (a === 'p') return has(ART, b) ? ART[b] : null;
     if (a === 'seder') return has(SEDER_ART, b) ? SEDER_ART[b] : null;
     if (a === 'book') return firstGen(has(CHUMASH, b) ? CHUMASH[b] : []);
-    if (a === 'moadim') return firstGen(MOED_NEXT);
-    if (a === 'iyun') return b ? (has(ART, b) ? iyArt(b) : null) : iyArt(iyunMoadim()[0]);
+    if (a === 'iyun' && b) return has(ART, b) ? iyArt(b) : null;
     if (a === 'l') { const f = byId[listBy(b)?.ids[0]]; return f ? artOf(f) : null; }
-    return null; // בית, חיפוש, ספרייה — רקע הבית
+    return null; // בית, מדורים ראשיים, חיפוש, ספרייה — רקע הבית
   }
   function setPageBg(a, b) {
     const art = bgFor(a, b);
@@ -699,20 +843,30 @@
     requestAnimationFrame(() => requestAnimationFrame(() => layer.classList.add('on')));
     setTimeout(() => { while (pageBg.children.length > 1) pageBg.firstChild.remove(); }, 800);
   }
-  window.addEventListener('hashchange', route);
+  function handleHistoryChange() {
+    while (overlayStack.length && history.state?.ov !== overlayStack[overlayStack.length - 1].id) {
+      const topOv = overlayStack.pop();
+      try { topOv.closeSilent(); } catch {}
+    }
+    if (pendingReplace) {
+      const pr = pendingReplace; pendingReplace = null;
+      history.replaceState({ nav: 1, idx: pr.idx, h: pr.hash }, '', pr.hash);
+      syncStackAt(pr.idx, pr.hash);
+      route();
+      return;
+    }
+    const nh = normHash(location.hash);
+    if (nh !== renderedHash) route();
+  }
+  window.addEventListener('popstate', handleHistoryChange);
+  window.addEventListener('hashchange', handleHistoryChange);
   document.addEventListener('click', e => {
     const d = e.target.closest('.door[data-f], .qk[data-f]'); if (!d) return;
-    e.preventDefault(); filter = d.dataset.f; $$('#topChips .chip').forEach(x => x.classList.toggle('is-on', x.dataset.f === filter)); route();
+    e.preventDefault(); navigate(SECTION_HASH[d.dataset.f] || '#/');
   });
-  // "בית" = דף הבית (שלט + שורות). כבר בבית? חוזר להתחלה ומאפס את הסינון.
-  $$('[data-nav=home]').forEach(a => a.addEventListener('click', () => {
-    filter = 'all'; $$('#topChips .chip').forEach(x => x.classList.toggle('is-on', x.dataset.f === 'all'));
-    if (!location.hash || location.hash === '#/') route();
-  }));
   $('#topChips').addEventListener('click', e => {
     const b = e.target.closest('[data-f]'); if (!b) return;
-    filter = b.dataset.f; $$('#topChips .chip').forEach(x => x.classList.toggle('is-on', x === b));
-    if (location.hash && location.hash !== '#/') location.hash = '#/'; else route();
+    navigate(SECTION_HASH[b.dataset.f] || '#/');
   });
   function onScroll() {
     const y = matchMedia('(min-width:1024px)').matches ? $('#main').scrollTop : window.scrollY;
@@ -915,7 +1069,7 @@
     if (rm) { e.stopPropagation(); l.ids = l.ids.filter(x => x !== rm.dataset.lrm); saveLists(); route(); toast('הוסר מהרשימה'); return; }
     if (e.target.closest('[data-ladd]')) { startBuild('list', l); return; }
     if (e.target.closest('[data-lren]')) { const n = prompt('שם הרשימה', l.name); if (n && n.trim()) { l.name = n.trim(); saveLists(); route(); } return; }
-    if (e.target.closest('[data-ldel]')) { if (!confirm(`למחוק את הרשימה "${l.name}"?`)) return; lists = lists.filter(x => x !== l); saveLists(); toast('הרשימה נמחקה'); location.hash = '#/library'; return; }
+    if (e.target.closest('[data-ldel]')) { if (!confirm(`למחוק את הרשימה "${l.name}"?`)) return; lists = lists.filter(x => x !== l); saveLists(); toast('הרשימה נמחקה'); navigate('#/library'); return; }
     const row = e.target.closest('[data-lk]');
     if (row && !e.target.closest('button')) { e.preventDefault(); e.stopPropagation(); playList(at, +row.dataset.lk); }
   }, true);
@@ -988,12 +1142,12 @@
     const bar = $('.buildbar'); if (bar) bar.outerHTML = buildBar();
   }
   function startBuild(target = 'list', edit = null) {
-    if (np.classList.contains('is-open')) { shutNP(); if (history.state?.np) history.replaceState(null, '', '#/search'); } // מהנגן המלא — סוגרים אותו כדי שהחיפוש ייראה
+    if (np.classList.contains('is-open')) { shutNP(); popOverlay('np'); } // מהנגן המלא — סוגרים אותו כדי שהחיפוש ייראה
     building = edit ? { name: edit.name, ids: [...edit.ids], target, at: edit.at } : { name: '', ids: [], target }; document.body.classList.add('building');
     if (!isMob()) openDock(target === 'queue' && nowId ? 'queue' : 'build');
     else minDock();
     buildPanel();
-    if (location.hash === '#/search') route(); else location.hash = '#/search';
+    if (normHash(location.hash) === '#/search') route(); else navigate('#/search');
   }
   function endBuild(save) {
     const b = building; building = null; document.body.classList.remove('building');
@@ -1004,7 +1158,7 @@
     minDock(); // הלוח נפתח רק מלחיצה
     // שמירה וגם ביטול (X) חוזרים לדף הרשימות — או לרשימה שהוסיפו אליה (דניאל, 30.10)
     const to = l ? `#/l/${l.at}` : '#/library';
-    if (location.hash === to) route(); else location.hash = to;
+    if (normHash(location.hash) === to) route(); else navigate(to);
   }
   function toggleAdd(id) {
     if (!building) return;
@@ -1155,10 +1309,9 @@
     $('#barSpeed span').textContent = $('#npSpeed .spd').textContent = speed + '×';
   });
   // "חזור" (בטלפון) סוגר קודם את הנגן המלא, והלחיצה הבאה חוזרת בדפים (דניאל, 26.10):
-  // פתיחה מוסיפה רשומה אחת להיסטוריה; סגירה בכל דרך אחרת מורידה אותה.
-  if (history.state?.np) history.replaceState(null, ''); // רענון כשהנגן היה פתוח
+  // פתיחה מוסיפה רשומת שכבה להיסטוריה; סגירה בכל דרך אחרת מורידה אותה.
   function openNP(pane) {
-    if (!history.state?.np) history.pushState({ np: 1 }, '');
+    pushOverlay('np', shutNP);
     np.hidden = false; npWant = true;
     setPane(pane || null);
     document.body.style.overflow = 'hidden';
@@ -1234,8 +1387,7 @@
     cov.style.translate = cov.style.scale = cov.style.borderRadius = '';
     if (!open) np.hidden = true;
   }
-  function closeNP() { shutNP(); if (history.state?.np) history.back(); }
-  window.addEventListener('popstate', () => { if (!history.state?.np && !np.hidden) shutNP(); });
+  function closeNP() { shutNP(); popOverlay('np'); }
   // pane: 'text' / 'queue' / null (נייד: null = כריכה; מחשב: הלוח תמיד פתוח, ברירת מחדל טקסט)
   let pane = null;
   let bartOn = store.get('bartOn', false);
@@ -1379,7 +1531,7 @@
       if (lock === 'y') {
         const open = -dy > innerHeight * 0.2 || vy < -0.45;
         // כמו פתיחה בנגיעה: רשומה בהיסטוריה, כדי ש"חזור" בטלפון יסגור את הנגן ולא ייצא מהאתר
-        if (open) { buzz(); if (!history.state?.np) history.pushState({ np: 1 }, ''); npWant = true; document.body.style.overflow = 'hidden'; morphTo(1); }
+        if (open) { buzz(); pushOverlay('np', shutNP); npWant = true; document.body.style.overflow = 'hidden'; morphTo(1); }
         else morphTo(0);
         return;
       }
@@ -1403,7 +1555,7 @@
     end(lock, dx, dy, vx, vy) {
       if (dy > innerHeight * 0.22 || vy > 0.45) {
         buzz(); npWant = false; document.body.style.overflow = '';
-        morphTo(0, () => { if (history.state?.np) history.back(); });
+        morphTo(0, () => { popOverlay('np'); });
       } else morphTo(1);
     },
   });
@@ -1512,8 +1664,17 @@
     if (onCard && !e.target.closest('.over, .playbtn') && !e.metaKey) return; // לחיצה על הכרטיס — פותחת את הסדרה
     e.preventDefault(); tapPlay(p);
   });
+  // יירוט קישורים פנימיים (#/...) דרך navigate() כדי לשמור על היסטוריה לוגית בלי הצטברות כרטיסיות/פרקים
+  document.addEventListener('click', e => {
+    if (e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+    const a = e.target.closest('a[href^="#/"]');
+    if (!a || a.target) return;
+    e.preventDefault();
+    navigate(a.getAttribute('href'));
+  });
   document.addEventListener('keydown', e => {
-    if (!feedback.hidden) return;
+    const fb = $('#feedback'), cm = $('#commentsLayer'), ad = $('#adminLayer');
+    if ((fb && !fb.hidden) || (cm && !cm.hidden) || (ad && !ad.hidden)) return;
     if (e.key === 'Enter' && e.target.matches('.ep')) { const at = e.target.closest('[data-lat]')?.dataset.lat; if (at) playList(at, +e.target.dataset.lk); else tapPlay(e.target); }
     if (e.key === ' ' && !e.target.matches('input, textarea, button, a, [role=button]')) { e.preventDefault(); toggle(); }
     if (e.key === 'Escape' && np.classList.contains('is-open')) closeNP();
@@ -1627,8 +1788,9 @@
         <div class="ios-acts">${copy ? '<button class="ios-copy" id="iosCopy">העתקת הקישור לאתר</button>' : ''}<button class="ios-done" id="iosDone">כבר התקנתי</button></div>
       </div>${arrow ? '<div class="ios-arrow" aria-hidden="true">' + icon('down') + '</div>' : ''}</div>`;
     }
-    const closeGuide = () => $('#iosBg')?.remove();
-    const openGuide = () => { closeGuide(); document.body.insertAdjacentHTML('beforeend', guide()); $('#iosX').focus(); };
+    const shutGuide = () => $('#iosBg')?.remove();
+    const closeGuide = () => { shutGuide(); popOverlay('install'); };
+    const openGuide = () => { shutGuide(); document.body.insertAdjacentHTML('beforeend', guide()); pushOverlay('install', shutGuide); $('#iosX').focus(); };
     document.addEventListener('click', e => {
       if (!$('#iosBg')) return;
       if (e.target.id === 'iosBg' || e.target.closest('#iosX')) closeGuide();
@@ -1647,9 +1809,9 @@
   }
 
   // audio + getNowFrom — לסטטיסטיקות (analytics.js): מודדים כמה נשמע בפועל ומאיפה הופעל השיעור
-  window.SHIURIM_APP = { items, byId, fullName, seriesName, epName, seriesHref, toast, artOf, IMG, getNowId: () => nowId, audio, getNowFrom: () => nowFrom };
+  window.SHIURIM_APP = { items, byId, fullName, seriesName, epName, seriesHref, toast, artOf, IMG, getNowId: () => nowId, audio, getNowFrom: () => nowFrom, navigate, pushOverlay, popOverlay };
   window.ShiurimCommunity?.init(window.SHIURIM_APP);
-  if (params.get('f')) { filter = params.get('f'); $$('#topChips .chip').forEach(x => x.classList.toggle('is-on', x.dataset.f === filter)); }
+  initNavState();
   sideList();
   route();
   if ((SNAP.failed || []).some(p => p.endsWith('list.json'))) toast('חלק מהשיעורים לא נטענו — כדאי לרענן את הדף');
